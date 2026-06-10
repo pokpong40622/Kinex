@@ -8,8 +8,6 @@ import 'screens/practice_page.dart';
 import 'screens/quest_page.dart';
 import 'screens/info_page.dart';
 import 'screens/mega_dance_start.dart';
-import 'screens/mega_dance_first_pose.dart';
-import 'screens/mega_dance_correct.dart';
 import 'screens/mega_dance_game.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
@@ -31,12 +29,6 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/mega-dance/game',
                 builder: (context, _) => const MegaDanceGameScreen()),
-            GoRoute(
-                path: '/mega-dance/first-pose',
-                builder: (context, _) => const MegaDanceFirstPosePage()),
-            GoRoute(
-                path: '/mega-dance/correct',
-                builder: (context, _) => const MegaDanceCorrectPage()),
           ],
         ),
       ],
