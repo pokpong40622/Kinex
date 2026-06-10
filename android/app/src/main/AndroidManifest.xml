@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- SPIKE — flutter_embed_unity: required for the live camera feed inside Unity. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+
     <application
         android:label="kinex_app"
         android:name="${applicationName}"
