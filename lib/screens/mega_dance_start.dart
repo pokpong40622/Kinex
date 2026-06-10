@@ -59,7 +59,7 @@ class MegaDanceStartPage extends ConsumerWidget {
                 left: 40,
                 right: 40,
                 child: GestureDetector(
-                  onTap: () => context.go('/mega-dance/first-pose'),
+                  onTap: () => context.go('/mega-dance/game'),
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(

@@ -24,3 +24,8 @@ plugins {
 }
 
 include(":app")
+
+// SPIKE — flutter_embed_unity: unityLibrary module is exported by Unity later.
+// This folder does not exist yet; it is wired in advance for when Unity exports it
+// to D:\kinex_app\android\unityLibrary.
+include(":unityLibrary")

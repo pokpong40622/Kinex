@@ -2,6 +2,11 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // SPIKE — flutter_embed_unity: required so the app module can resolve
+        // the .aar libraries that Unity's exported unityLibrary module ships in its libs/ folder.
+        flatDir {
+            dirs(file("${project(":unityLibrary").projectDir}/libs"))
+        }
     }
 }
 

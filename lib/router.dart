@@ -10,6 +10,7 @@ import 'screens/info_page.dart';
 import 'screens/mega_dance_start.dart';
 import 'screens/mega_dance_first_pose.dart';
 import 'screens/mega_dance_correct.dart';
+import 'screens/mega_dance_game.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
       initialLocation: '/',
@@ -26,6 +27,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/mega-dance',
                 builder: (context, _) => const MegaDanceStartPage()),
+            // Real embedded Unity game (MEGA DANCE).
+            GoRoute(
+                path: '/mega-dance/game',
+                builder: (context, _) => const MegaDanceGameScreen()),
             GoRoute(
                 path: '/mega-dance/first-pose',
                 builder: (context, _) => const MegaDanceFirstPosePage()),
