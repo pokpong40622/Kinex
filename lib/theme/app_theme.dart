@@ -19,6 +19,7 @@ class KColors {
   static const purpleCard = Color(0xFF6F1BC8);
   static const indigo = Color(0xFF6349F1);
   static const teal = Color(0xFF11C18E);
+  static const tealDark = Color(0xFF0E9E78);
 
   static const greenGradient = LinearGradient(
     begin: Alignment.topCenter,
@@ -49,6 +50,13 @@ class KColors {
     end: Alignment.bottomCenter,
     colors: [orange, orangeDark],
   );
+
+  // Healthcare palette for the fitness-assessment module.
+  static const tealGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [teal, blue],
+  );
 }
 
 TextStyle montserrat({
@@ -75,6 +83,15 @@ TextStyle poppins({
   Color color = Colors.white,
 }) =>
     GoogleFonts.poppins(fontSize: size, fontWeight: weight, color: color);
+
+/// Thai-capable font for the fitness-assessment module. The display fonts
+/// (Montserrat/Nunito/Poppins) lack Thai glyphs, so Thai UI text uses this.
+TextStyle thaiSans({
+  double size = 16,
+  FontWeight weight = FontWeight.w700,
+  Color color = KColors.navyText,
+}) =>
+    GoogleFonts.notoSansThai(fontSize: size, fontWeight: weight, color: color);
 
 BoxDecoration cardDecoration({double radius = 25, Color color = KColors.cardBg}) =>
     BoxDecoration(

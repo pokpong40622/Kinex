@@ -166,10 +166,99 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
               ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
+                child: _AssessmentCard(
+                  onTap: () => context.go('/assessment'),
+                ),
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Home-tab entry point for the elderly fitness-assessment module.
+/// Styled after [_WorldCard] but in the healthcare (teal→blue) palette.
+class _AssessmentCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AssessmentCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MediaQuery.sizeOf(context).height;
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: h * 0.16,
+        child: LayoutBuilder(
+          builder: (context, cs) {
+            final cw = cs.maxWidth;
+            return Container(
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                gradient: KColors.tealGradient,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withAlpha(112), width: 3),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 20,
+                      offset: Offset(5, 5))
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          cw * 0.06, cw * 0.045, cw * 0.03, cw * 0.045),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('ประเมินสมรรถภาพ',
+                              style: thaiSans(
+                                  size: cw * 0.060,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white)),
+                          SizedBox(height: cw * 0.012),
+                          Text('ทดสอบสมรรถภาพทางกายสำหรับผู้สูงอายุ',
+                              style: thaiSans(
+                                  size: cw * 0.030,
+                                  weight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(height: cw * 0.03),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: cw * 0.05, vertical: cw * 0.022),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('เริ่มประเมิน',
+                                style: thaiSans(
+                                    size: cw * 0.036,
+                                    weight: FontWeight.w800,
+                                    color: KColors.tealDark)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: cw * 0.05),
+                    child: Icon(Icons.monitor_heart_rounded,
+                        size: cw * 0.22, color: Colors.white.withAlpha(230)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
