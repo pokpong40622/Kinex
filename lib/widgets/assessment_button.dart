@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 /// Large, high-contrast action button for the assessment flow.
 /// [primary] = filled teal; otherwise a white/outlined secondary button.
@@ -31,7 +32,7 @@ class AssessmentButton extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: EdgeInsets.symmetric(vertical: context.r(18)),
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(18),
@@ -51,12 +52,12 @@ class AssessmentButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: fg, size: 24),
-                const SizedBox(width: 10),
+                Icon(icon, color: fg, size: context.r(24)),
+                SizedBox(width: context.r(10)),
               ],
               Text(
                 label,
-                style: thaiSans(size: 20, weight: FontWeight.w800, color: fg),
+                style: thaiSans(size: context.r(20), weight: FontWeight.w800, color: fg),
               ),
             ],
           ),

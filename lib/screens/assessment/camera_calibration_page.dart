@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../data/assessment_session.dart';
+import '../../models/assessment_stage.dart';
 import '../../rep_counters/pose_frame.dart';
 import '../../rep_counters/rep_counter.dart';
 import '../../rep_counters/rep_counter_factory.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/assessment_button.dart';
+import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/pose_camera_view.dart';
 
@@ -59,14 +62,21 @@ class _CameraCalibrationPageState extends ConsumerState<CameraCalibrationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(assessmentSessionProvider);
+
     return AssessmentScaffold(
       title: 'จัดท่าให้พร้อม',
+      progress: AssessmentProgressRail(
+        session: session,
+        currentStage: stageIndexForTest(widget.testId),
+      ),
       body: _body(),
       bottom: _permission == _PermissionState.granted
           ? AssessmentButton(
               label: 'เริ่มจับเวลา',
               onTap: _ready
-                  ? () => context.go('/assessment/test/${widget.testId}/live')
+                  ? () => context.pushReplacement(
+                      '/assessment/test/${widget.testId}/live')
                   : null,
             )
           : null,

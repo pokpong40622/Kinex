@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 /// Large numeric entry for elderly users: a big value display, a range hint,
 /// and an oversized 0–9 keypad. Reports the parsed value via [onChanged]
@@ -80,30 +81,30 @@ class _BigNumberPadState extends State<BigNumberPad> {
           children: [
             Text(_text.isEmpty ? '0' : _text,
                 style: thaiSans(
-                    size: 64,
+                    size: context.r(64),
                     weight: FontWeight.w800,
                     color: _text.isEmpty
                         ? KColors.navyText.withAlpha(60)
                         : KColors.navyText)),
-            const SizedBox(width: 8),
+            SizedBox(width: context.r(8)),
             Text(widget.unit,
                 style: thaiSans(
-                    size: 24,
+                    size: context.r(24),
                     weight: FontWeight.w700,
                     color: KColors.navyText.withAlpha(150))),
           ],
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: context.r(6)),
         Text(
           outOfRange
               ? 'กรุณากรอกค่าระหว่าง ${_fmt(widget.min)}–${_fmt(widget.max)}'
               : 'ค่าที่ยอมรับ ${_fmt(widget.min)}–${_fmt(widget.max)} ${widget.unit}',
           style: thaiSans(
-              size: 14,
+              size: context.r(14),
               weight: FontWeight.w600,
               color: outOfRange ? const Color(0xFFD32F2F) : KColors.navyText.withAlpha(140)),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: context.r(16)),
         // Keypad
         for (final row in const [
           ['1', '2', '3'],
@@ -117,13 +118,13 @@ class _BigNumberPadState extends State<BigNumberPad> {
   }
 
   Widget _row(List<String> keys) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: EdgeInsets.symmetric(vertical: context.r(6)),
         child: Row(
           children: keys.map((k) {
             final disabled = k == '.' && !widget.allowDecimal;
             return Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding: EdgeInsets.symmetric(horizontal: context.r(6)),
                 child: _Key(label: disabled ? '' : k, onTap: disabled ? null : () => _tap(k)),
               ),
             );
@@ -146,7 +147,7 @@ class _Key extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        height: 64,
+        height: context.r(64),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: onTap == null ? Colors.transparent : Colors.white,
@@ -161,9 +162,9 @@ class _Key extends StatelessWidget {
                 ],
         ),
         child: label == '⌫'
-            ? const Icon(Icons.backspace_outlined, color: KColors.navyText)
+            ? Icon(Icons.backspace_outlined, size: context.r(24), color: KColors.navyText)
             : Text(label,
-                style: thaiSans(size: 28, weight: FontWeight.w700)),
+                style: thaiSans(size: context.r(28), weight: FontWeight.w700)),
       ),
     );
   }

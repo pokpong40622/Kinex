@@ -4,57 +4,82 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/assessment_session.dart';
+import '../../data/recording_pref.dart';
+import '../../models/assessment_stage.dart';
 import '../../models/assessment_test.dart';
 import '../../models/test_results.dart';
 import '../../rep_counters/pose_frame.dart';
 import '../../rep_counters/rep_counter.dart';
 import '../../rep_counters/rep_counter_factory.dart';
 import '../../services/fitness_scoring.dart';
+import '../../services/recording_service.dart';
 import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/assessment_button.dart';
+import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/pose_camera_view.dart';
+import 'tug_live_page.dart';
 
-enum _Phase { calibrating, countdown, counting, done }
+enum _Phase { ready, countdown, counting, done }
 
-/// THE core camera test screen: calibrates (if needed), counts down, then
-/// runs the timed rep-counting window and stores the result.
+/// THE core camera test screen. Opens the camera ONCE for the whole test:
+/// a "ready" phase (position + capture baseline) → countdown → timed counting.
+/// Entered directly from the instruction screen so only one camera is ever open.
 class LiveAssessmentPage extends ConsumerStatefulWidget {
   final String testId;
   const LiveAssessmentPage({super.key, required this.testId});
 
   @override
-  ConsumerState<LiveAssessmentPage> createState() =>
-      _LiveAssessmentPageState();
+  ConsumerState<LiveAssessmentPage> createState() => _LiveAssessmentPageState();
 }
 
 class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
   late final RepCounter _counter;
   late final AssessmentTest _test;
 
-  _Phase _phase = _Phase.calibrating;
+  _Phase _phase = _Phase.ready;
   int _countdown = 3;
   int _secondsLeft = 0;
   Timer? _timer;
+  bool _recordingStarted = false;
+
+  bool _bodyOk = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.testId == 'tug') return; // delegated to TugLivePage in build()
     _test = assessmentTestById(widget.testId);
     _counter = createRepCounter(widget.testId);
     _secondsLeft = _test.durationSeconds;
+  }
 
-    if (_counter.needsCalibration) {
-      _phase = _Phase.calibrating;
-    } else {
-      _startCountdown();
+  /// Key landmarks that must be visible for the camera angle to be "OK".
+  List<int> get _requiredLandmarks {
+    switch (widget.testId) {
+      case 'step_test':
+        return const [Lm.leftHip, Lm.rightHip, Lm.rightKnee];
+      case 'arm_curl':
+        return const [
+          Lm.leftShoulder,
+          Lm.rightShoulder,
+          Lm.leftElbow,
+          Lm.rightElbow
+        ];
+      default: // chair_stand + fallback
+        return const [Lm.leftShoulder, Lm.rightShoulder, Lm.leftHip, Lm.rightHip];
     }
   }
 
+  bool get _readyToStart =>
+      _bodyOk && (!_counter.needsCalibration || _counter.isCalibrated);
+
   void _startCountdown() {
-    _phase = _Phase.countdown;
-    _countdown = 3;
+    setState(() {
+      _phase = _Phase.countdown;
+      _countdown = 3;
+    });
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() {
@@ -70,6 +95,10 @@ class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
 
   void _startCounting() {
     _phase = _Phase.counting;
+    if (ref.read(recordingEnabledProvider)) {
+      _recordingStarted = true;
+      ref.read(recordingServiceProvider).start(widget.testId);
+    }
     ref.read(ttsServiceProvider).speak('เริ่ม');
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -91,13 +120,10 @@ class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
 
   void _onFrame(PoseFrame frame) {
     switch (_phase) {
-      case _Phase.calibrating:
-        _counter.calibrate(frame);
-        if (_counter.isCalibrated) {
-          setState(_startCountdown);
-        } else {
-          setState(() {});
-        }
+      case _Phase.ready:
+        _bodyOk = frame.allVisible(_requiredLandmarks);
+        if (_counter.needsCalibration) _counter.calibrate(frame);
+        setState(() {});
       case _Phase.counting:
         final before = _counter.reps;
         _counter.add(frame);
@@ -114,6 +140,10 @@ class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
   void _finish() {
     if (_phase == _Phase.done) return;
     _phase = _Phase.done;
+    if (_recordingStarted) {
+      _recordingStarted = false;
+      ref.read(recordingServiceProvider).stopAndSave();
+    }
     final reps = _counter.reps;
     final level = switch (widget.testId) {
       'arm_curl' => FitnessScoring.armCurlLevel(reps),
@@ -124,26 +154,30 @@ class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
     ref
         .read(assessmentSessionProvider.notifier)
         .setMovementResult(widget.testId, RepCountResult(reps, level));
-    context.go('/assessment/test/${widget.testId}/result');
+    context.pushReplacement('/assessment/test/${widget.testId}/result');
   }
 
   Future<void> _confirmStop() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('หยุดการทดสอบ?', style: thaiSans(size: 18, weight: FontWeight.w800)),
+        title: Text('หยุดการทดสอบ?',
+            style: thaiSans(size: 18, weight: FontWeight.w800)),
         content: Text('ระบบจะบันทึกจำนวนครั้งปัจจุบันเป็นผลลัพธ์',
             style: thaiSans(size: 15, weight: FontWeight.w600)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('ยกเลิก', style: thaiSans(size: 15, weight: FontWeight.w700)),
+            child: Text('ยกเลิก',
+                style: thaiSans(size: 15, weight: FontWeight.w700)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text('หยุด',
                 style: thaiSans(
-                    size: 15, weight: FontWeight.w800, color: const Color(0xFFD32F2F))),
+                    size: 15,
+                    weight: FontWeight.w800,
+                    color: const Color(0xFFD32F2F))),
           ),
         ],
       ),
@@ -157,67 +191,135 @@ class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    if (_recordingStarted) {
+      _recordingStarted = false;
+      ref.read(recordingServiceProvider).stopAndSave();
+    }
     ref.read(ttsServiceProvider).stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.testId == 'tug') return const TugLivePage();
+
+    final session = ref.watch(assessmentSessionProvider);
+    final showRail = _phase == _Phase.ready || _phase == _Phase.countdown;
+
     return AssessmentScaffold(
       title: _test.thaiName,
+      progress: showRail
+          ? AssessmentProgressRail(
+              session: session,
+              currentStage: stageIndexForTest(widget.testId),
+            )
+          : null,
       body: Stack(
         fit: StackFit.expand,
         children: [
           PoseCameraView(onFrame: _onFrame),
-          _overlay(),
+          _overlay(context),
         ],
       ),
-      bottom: _phase == _Phase.counting
-          ? AssessmentButton(label: 'หยุด', primary: false, onTap: _confirmStop)
-          : null,
+      bottom: _bottom(),
     );
   }
 
-  Widget _overlay() {
+  Widget? _bottom() {
+    switch (_phase) {
+      case _Phase.ready:
+        return AssessmentButton(
+          label: 'เริ่มจับเวลา',
+          icon: Icons.timer_outlined,
+          onTap: _readyToStart ? _startCountdown : null,
+        );
+      case _Phase.counting:
+        return AssessmentButton(
+            label: 'หยุด', primary: false, onTap: _confirmStop);
+      case _Phase.countdown:
+      case _Phase.done:
+        return null;
+    }
+  }
+
+  Widget _overlay(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
     final children = <Widget>[];
 
     switch (_phase) {
-      case _Phase.calibrating:
-        children.add(_panel(
-          Text(_counter.calibrationPrompt,
-              textAlign: TextAlign.center,
-              style: thaiSans(size: 26, weight: FontWeight.w800, color: Colors.white)),
+      case _Phase.ready:
+        final String prompt;
+        if (!_bodyOk) {
+          prompt = 'ขยับตำแหน่ง ให้กล้องเห็นทั้งตัว';
+        } else if (_counter.needsCalibration && !_counter.isCalibrated) {
+          prompt = _counter.calibrationPrompt;
+        } else {
+          prompt = 'พร้อม! กดปุ่ม "เริ่มจับเวลา"';
+        }
+        children.add(Positioned(
+          left: w * 0.04,
+          right: w * 0.04,
+          bottom: w * 0.04,
+          child: _panel(
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _bodyOk
+                      ? Icons.check_circle_rounded
+                      : Icons.center_focus_strong_rounded,
+                  color:
+                      _bodyOk ? KColors.greenLight : const Color(0xFFFFB74D),
+                  size: w * 0.13,
+                ),
+                SizedBox(height: w * 0.02),
+                Text(prompt,
+                    textAlign: TextAlign.center,
+                    style: thaiSans(
+                        size: w * 0.055,
+                        weight: FontWeight.w800,
+                        color: Colors.white)),
+              ],
+            ),
+          ),
         ));
       case _Phase.countdown:
-        children.add(_panel(
-          Text('$_countdown',
-              style: thaiSans(size: 96, weight: FontWeight.w900, color: Colors.white)),
+        children.add(Center(
+          child: _panel(
+            Text('$_countdown',
+                style: thaiSans(
+                    size: w * 0.28,
+                    weight: FontWeight.w900,
+                    color: Colors.white)),
+          ),
         ));
       case _Phase.counting:
         children.add(Positioned(
-          top: 16,
-          left: 16,
-          right: 16,
+          top: w * 0.04,
+          left: w * 0.04,
+          right: w * 0.04,
           child: _panel(
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _stat('${_counter.reps}', 'ครั้ง'),
-                _stat('$_secondsLeft', 'วินาที'),
+                _stat('${_counter.reps}', 'ครั้ง', w),
+                _stat('$_secondsLeft', 'วินาที', w),
               ],
             ),
           ),
         ));
         if (_counter.guidance != null) {
           children.add(Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
+            left: w * 0.04,
+            right: w * 0.04,
+            bottom: w * 0.04,
             child: _panel(
               Text(_counter.guidance!,
                   textAlign: TextAlign.center,
                   style: thaiSans(
-                      size: 20, weight: FontWeight.w800, color: const Color(0xFFFF8A65))),
+                      size: w * 0.05,
+                      weight: FontWeight.w800,
+                      color: const Color(0xFFFF8A65))),
             ),
           ));
         }
@@ -238,12 +340,19 @@ class _LiveAssessmentPageState extends ConsumerState<LiveAssessmentPage> {
         child: Center(child: child),
       );
 
-  Widget _stat(String value, String unit) => Column(
+  Widget _stat(String value, String unit, double w) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(value,
-              style: thaiSans(size: 56, weight: FontWeight.w900, color: Colors.white)),
-          Text(unit, style: thaiSans(size: 16, weight: FontWeight.w700, color: Colors.white)),
+              style: thaiSans(
+                  size: w * 0.15,
+                  weight: FontWeight.w900,
+                  color: Colors.white)),
+          Text(unit,
+              style: thaiSans(
+                  size: w * 0.042,
+                  weight: FontWeight.w700,
+                  color: Colors.white)),
         ],
       );
 }

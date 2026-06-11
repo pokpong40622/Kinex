@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/assessment_repository.dart';
 import '../../models/assessment_record.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/fitness_level_badge.dart';
@@ -19,32 +20,31 @@ class HistoryListPage extends ConsumerWidget {
 
     return AssessmentScaffold(
       title: 'ประวัติการประเมิน',
-      onBack: () => context.go('/assessment'),
       body: history.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text(
             'เกิดข้อผิดพลาดในการโหลดประวัติ',
-            style: thaiSans(size: 16, weight: FontWeight.w700),
+            style: thaiSans(size: context.r(16), weight: FontWeight.w700),
           ),
         ),
         data: (records) {
           if (records.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(context.r(24)),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'ยังไม่มีประวัติการประเมิน',
                       textAlign: TextAlign.center,
-                      style: thaiSans(size: 18, weight: FontWeight.w700),
+                      style: thaiSans(size: context.r(18), weight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: context.r(24)),
                     AssessmentButton(
                       label: 'เริ่มการประเมินใหม่',
-                      onTap: () => context.go('/assessment/intro'),
+                      onTap: () => context.push('/assessment/intro'),
                     ),
                   ],
                 ),
@@ -53,7 +53,7 @@ class HistoryListPage extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+            padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
             itemCount: records.length,
             itemBuilder: (context, index) =>
                 _HistoryCard(record: records[index]),
@@ -78,11 +78,11 @@ class _HistoryCard extends StatelessWidget {
     ].join(' · ');
 
     return GestureDetector(
-      onTap: () => context.go('/assessment/history/${record.id}'),
+      onTap: () => context.push('/assessment/history/${record.id}'),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: EdgeInsets.only(bottom: context.r(12)),
+        padding: EdgeInsets.symmetric(horizontal: context.r(16), vertical: context.r(14)),
         decoration: cardDecoration(radius: 16),
         child: Row(
           children: [
@@ -90,17 +90,17 @@ class _HistoryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dateLabel, style: thaiSans(size: 16, weight: FontWeight.w800)),
-                  const SizedBox(height: 4),
+                  Text(dateLabel, style: thaiSans(size: context.r(16), weight: FontWeight.w800)),
+                  SizedBox(height: context.r(4)),
                   Text(
                     personLabel,
                     style: thaiSans(
-                        size: 14, weight: FontWeight.w600, color: KColors.navyText.withAlpha(160)),
+                        size: context.r(14), weight: FontWeight.w600, color: KColors.navyText.withAlpha(160)),
                   ),
                 ],
               ),
             ),
-            FitnessLevelBadge(record.overall),
+            FitnessLevelBadge(record.overall, fontSize: context.r(16)),
           ],
         ),
       ),

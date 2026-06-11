@@ -169,7 +169,7 @@ class _HomeTab extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
                 child: _AssessmentCard(
-                  onTap: () => context.go('/assessment'),
+                  onTap: () => context.push('/assessment'),
                 ),
               ),
             ],

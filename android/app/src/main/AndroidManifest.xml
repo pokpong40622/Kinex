@@ -1,6 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- SPIKE — flutter_embed_unity: required for the live camera feed inside Unity. -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- flutter_screen_recording: foreground service for screen capture -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"/>
+    <!-- flutter_screen_recording: audio recording alongside screen capture -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- flutter_foreground_task: post notification for the recording indicator -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="kinex_app"

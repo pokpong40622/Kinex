@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/assessment_session.dart';
 import '../../models/person_info.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 
@@ -45,7 +46,7 @@ class _PersonInfoPageState extends ConsumerState<PersonInfoPage> {
     ref.read(assessmentSessionProvider.notifier).setPerson(
           PersonInfo(name: name.isEmpty ? null : name, age: age, gender: gender),
         );
-    context.go('/assessment/height');
+    context.push('/assessment/height');
   }
 
   @override
@@ -53,21 +54,21 @@ class _PersonInfoPageState extends ConsumerState<PersonInfoPage> {
     return AssessmentScaffold(
       title: 'ข้อมูลผู้รับการประเมิน',
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
         child: ListView(
           children: [
             Text('ชื่อ (ไม่บังคับ)',
-                style: thaiSans(size: 16, weight: FontWeight.w700)),
-            const SizedBox(height: 8),
+                style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+            SizedBox(height: context.r(8)),
             _TextField(
               controller: _nameController,
               hint: 'กรอกชื่อ',
               keyboardType: TextInputType.name,
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 20),
-            Text('อายุ (ปี)', style: thaiSans(size: 16, weight: FontWeight.w700)),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(20)),
+            Text('อายุ (ปี)', style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+            SizedBox(height: context.r(8)),
             _TextField(
               controller: _ageController,
               hint: 'กรอกอายุ',
@@ -77,9 +78,9 @@ class _PersonInfoPageState extends ConsumerState<PersonInfoPage> {
               ],
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 20),
-            Text('เพศ', style: thaiSans(size: 16, weight: FontWeight.w700)),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(20)),
+            Text('เพศ', style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+            SizedBox(height: context.r(8)),
             Row(
               children: [
                 Expanded(
@@ -90,7 +91,7 @@ class _PersonInfoPageState extends ConsumerState<PersonInfoPage> {
                     onTap: () => setState(() => _gender = Gender.male),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: context.r(16)),
                 Expanded(
                   child: _GenderButton(
                     label: Gender.female.thaiLabel,
@@ -143,15 +144,15 @@ class _TextField extends StatelessWidget {
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
         onChanged: onChanged,
-        style: thaiSans(size: 18, weight: FontWeight.w700),
+        style: thaiSans(size: context.r(18), weight: FontWeight.w700),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: thaiSans(
-              size: 18,
+              size: context.r(18),
               weight: FontWeight.w500,
               color: KColors.navyText.withAlpha(120)),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              EdgeInsets.symmetric(horizontal: context.r(20), vertical: context.r(18)),
           border: InputBorder.none,
         ),
       ),
@@ -178,7 +179,7 @@ class _GenderButton extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: EdgeInsets.symmetric(vertical: context.r(24)),
         decoration: BoxDecoration(
           color: selected ? KColors.teal.withAlpha(28) : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -194,12 +195,12 @@ class _GenderButton extends StatelessWidget {
         child: Column(
           children: [
             Icon(icon,
-                size: 36,
+                size: context.r(36),
                 color: selected ? KColors.tealDark : KColors.navyText.withAlpha(160)),
-            const SizedBox(height: 8),
+            SizedBox(height: context.r(8)),
             Text(label,
                 style: thaiSans(
-                    size: 18,
+                    size: context.r(18),
                     weight: FontWeight.w800,
                     color: selected ? KColors.tealDark : KColors.navyText)),
           ],

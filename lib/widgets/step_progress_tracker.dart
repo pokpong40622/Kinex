@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 /// Status of a single step in [StepProgressTracker].
 enum StepStatus { done, current, pending }
@@ -68,17 +69,17 @@ class _StepRow extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: context.r(14)),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.only(bottom: context.r(24)),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       item.label,
                       style: thaiSans(
-                        size: 16,
+                        size: context.r(16),
                         weight: item.status == StepStatus.current
                             ? FontWeight.w800
                             : FontWeight.w600,
@@ -89,7 +90,7 @@ class _StepRow extends StatelessWidget {
                     ),
                   ),
                   if (item.trailing != null) ...[
-                    const SizedBox(width: 8),
+                    SizedBox(width: context.r(8)),
                     item.trailing!,
                   ],
                 ],
@@ -110,7 +111,7 @@ class _StepCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 32.0;
+    final size = context.r(32);
     switch (status) {
       case StepStatus.done:
         return Container(
@@ -120,7 +121,7 @@ class _StepCircle extends StatelessWidget {
             color: KColors.teal,
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+          child: Icon(Icons.check_rounded, color: Colors.white, size: context.r(20)),
         );
       case StepStatus.current:
         return Container(
@@ -133,7 +134,7 @@ class _StepCircle extends StatelessWidget {
           ),
           child: Text('$number',
               style: thaiSans(
-                  size: 14, weight: FontWeight.w800, color: KColors.teal)),
+                  size: context.r(14), weight: FontWeight.w800, color: KColors.teal)),
         );
       case StepStatus.pending:
         return Container(
@@ -146,7 +147,7 @@ class _StepCircle extends StatelessWidget {
           ),
           child: Text('$number',
               style: thaiSans(
-                  size: 14,
+                  size: context.r(14),
                   weight: FontWeight.w700,
                   color: KColors.navyText.withAlpha(140))),
         );

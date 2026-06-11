@@ -40,6 +40,8 @@ class PoseSkeletonPainter extends CustomPainter {
     final f = frame;
     if (f == null || imageSize.width == 0 || imageSize.height == 0) return;
 
+    // The preview is stretched to fill the view, so stretch the landmark
+    // (rotated-image) coords the same way (independent X/Y) to stay aligned.
     final scaleX = size.width / imageSize.width;
     final scaleY = size.height / imageSize.height;
 

@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/assessment_session.dart';
+import '../../models/assessment_stage.dart';
 import '../../models/assessment_test.dart';
 import '../../models/fitness_level.dart';
 import '../../models/test_results.dart';
 import '../../services/fitness_scoring.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
+import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/big_number_pad.dart';
 
@@ -47,30 +50,59 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
   Widget build(BuildContext context) {
     final test = assessmentTestById(widget.testId);
 
+    final session = ref.watch(assessmentSessionProvider);
+
     return AssessmentScaffold(
       title: test.thaiName,
-      body: switch (test.method) {
-        TestMethod.manualStopwatch => _stopwatchBody(),
-        TestMethod.manualChoice => _choiceBody(),
-        TestMethod.camera => _numberPadBody(),
-      },
-      bottom: switch (test.method) {
-        TestMethod.manualStopwatch => AssessmentButton(
-            label: 'บันทึกผล',
-            onTap: !_stopwatch.isRunning && _elapsed > Duration.zero
-                ? _submitStopwatch
-                : null,
-          ),
-        TestMethod.manualChoice => AssessmentButton(
-            label: 'บันทึกผล',
-            onTap: _selectedLevel == null ? null : _submitChoice,
-          ),
-        TestMethod.camera => AssessmentButton(
-            label: 'บันทึกผล',
-            onTap: _reps == null ? null : _submitReps,
-          ),
-      },
+      progress: AssessmentProgressRail(
+        session: session,
+        currentStage: stageIndexForTest(widget.testId),
+      ),
+      body: _bodyFor(test),
+      bottom: _bottomFor(test),
     );
+  }
+
+  // ---------------------------------------------------------------------
+  // Layout routing
+  // ---------------------------------------------------------------------
+
+  /// TUG always uses the stopwatch regardless of its TestMethod.
+  /// arm_curl / chair_stand / step_test (camera) use the number pad.
+  Widget _bodyFor(AssessmentTest test) {
+    if (widget.testId == 'tug') return _stopwatchBody();
+    return switch (test.method) {
+      TestMethod.manualStopwatch => _stopwatchBody(),
+      TestMethod.manualChoice => _choiceBody(),
+      TestMethod.camera => _numberPadBody(),
+    };
+  }
+
+  Widget? _bottomFor(AssessmentTest test) {
+    if (widget.testId == 'tug') {
+      return AssessmentButton(
+        label: 'บันทึกผล',
+        onTap: !_stopwatch.isRunning && _elapsed > Duration.zero
+            ? _submitStopwatch
+            : null,
+      );
+    }
+    return switch (test.method) {
+      TestMethod.manualStopwatch => AssessmentButton(
+          label: 'บันทึกผล',
+          onTap: !_stopwatch.isRunning && _elapsed > Duration.zero
+              ? _submitStopwatch
+              : null,
+        ),
+      TestMethod.manualChoice => AssessmentButton(
+          label: 'บันทึกผล',
+          onTap: _selectedLevel == null ? null : _submitChoice,
+        ),
+      TestMethod.camera => AssessmentButton(
+          label: 'บันทึกผล',
+          onTap: _reps == null ? null : _submitReps,
+        ),
+    };
   }
 
   // ---------------------------------------------------------------------
@@ -106,7 +138,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     ref
         .read(assessmentSessionProvider.notifier)
         .setMovementResult(widget.testId, TimedResult(seconds, level));
-    context.go('/assessment/test/${widget.testId}/result');
+    context.pushReplacement('/assessment/test/${widget.testId}/result');
   }
 
   Widget _stopwatchBody() {
@@ -121,8 +153,8 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(display,
-              style: thaiSans(size: 72, weight: FontWeight.w900)),
-          const SizedBox(height: 32),
+              style: thaiSans(size: context.r(72), weight: FontWeight.w900)),
+          SizedBox(height: context.r(32)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -132,7 +164,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
                   onTap: _toggleStopwatch,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: context.r(16)),
               Expanded(
                 child: AssessmentButton(
                   label: 'รีเซ็ต',
@@ -157,7 +189,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     ref
         .read(assessmentSessionProvider.notifier)
         .setMovementResult(widget.testId, BestOfTwoResult(level));
-    context.go('/assessment/test/${widget.testId}/result');
+    context.pushReplacement('/assessment/test/${widget.testId}/result');
   }
 
   Widget _choiceBody() {
@@ -174,15 +206,22 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
           ];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
       children: [
-        Text('เลือกผลลัพธ์ที่ตรงกับการทำท่าของผู้สูงอายุ',
+        Text('ลองทำท่าด้วยตัวเอง แล้วเลือกผลที่ตรงกับคุณ',
             textAlign: TextAlign.center,
-            style: thaiSans(size: 16, weight: FontWeight.w700)),
-        const SizedBox(height: 16),
+            style: thaiSans(
+                size: context.r(15),
+                weight: FontWeight.w600,
+                color: KColors.tealDark)),
+        SizedBox(height: context.r(8)),
+        Text('เลือกผลลัพธ์ที่ตรงกับคุณ',
+            textAlign: TextAlign.center,
+            style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+        SizedBox(height: context.r(16)),
         for (final option in options)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: context.r(8)),
             child: _ChoiceCard(
               icon: option.$3,
               label: option.$2,
@@ -211,7 +250,7 @@ class _ManualEntryPageState extends ConsumerState<ManualEntryPage> {
     ref
         .read(assessmentSessionProvider.notifier)
         .setMovementResult(widget.testId, RepCountResult(repsInt, level));
-    context.go('/assessment/test/${widget.testId}/result');
+    context.pushReplacement('/assessment/test/${widget.testId}/result');
   }
 
   Widget _numberPadBody() {
@@ -245,7 +284,7 @@ class _ChoiceCard extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(context.r(18)),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -260,13 +299,14 @@ class _ChoiceCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 40, color: KColors.tealDark),
-            const SizedBox(width: 16),
+            Icon(icon, size: context.r(40), color: KColors.tealDark),
+            SizedBox(width: context.r(16)),
             Expanded(
-              child: Text(label, style: thaiSans(size: 18, weight: FontWeight.w800)),
+              child: Text(label, style: thaiSans(size: context.r(18), weight: FontWeight.w800)),
             ),
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              size: context.r(24),
               color: selected ? KColors.teal : KColors.navyText.withAlpha(100),
             ),
           ],

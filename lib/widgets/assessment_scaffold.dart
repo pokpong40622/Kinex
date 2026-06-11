@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 /// Shared chrome for every fitness-assessment screen: a soft healthcare
 /// background, a large back button, a Thai title, the body, and an optional
@@ -12,12 +13,16 @@ class AssessmentScaffold extends StatelessWidget {
   final VoidCallback? onBack;
   final Widget? bottom;
 
+  /// Optional slim progress rail shown just under the header (in-test screens).
+  final Widget? progress;
+
   const AssessmentScaffold({
     super.key,
     required this.title,
     required this.body,
     this.onBack,
     this.bottom,
+    this.progress,
   });
 
   @override
@@ -28,24 +33,29 @@ class AssessmentScaffold extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: EdgeInsets.fromLTRB(context.r(16), context.r(12), context.r(16), context.r(8)),
               child: Row(
                 children: [
                   _BackButton(onTap: onBack ?? () => _defaultBack(context)),
-                  const SizedBox(width: 12),
+                  SizedBox(width: context.r(12)),
                   Expanded(
                     child: Text(
                       title,
-                      style: thaiSans(size: 22, weight: FontWeight.w800),
+                      style: thaiSans(size: context.r(22), weight: FontWeight.w800),
                     ),
                   ),
                 ],
               ),
             ),
+            if (progress != null)
+              Padding(
+                padding: EdgeInsets.fromLTRB(context.r(20), context.r(4), context.r(20), context.r(12)),
+                child: progress!,
+              ),
             Expanded(child: body),
             if (bottom != null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: EdgeInsets.fromLTRB(context.r(16), context.r(8), context.r(16), context.r(16)),
                 child: bottom!,
               ),
           ],
@@ -73,8 +83,8 @@ class _BackButton extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        width: 48,
-        height: 48,
+        width: context.r(48),
+        height: context.r(48),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -83,7 +93,7 @@ class _BackButton extends StatelessWidget {
                 color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 2)),
           ],
         ),
-        child: const Icon(Icons.arrow_back_rounded, color: KColors.navyText),
+        child: Icon(Icons.arrow_back_rounded, size: context.r(24), color: KColors.navyText),
       ),
     );
   }

@@ -6,6 +6,7 @@ import '../../models/test_results.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/big_number_pad.dart';
+import '../../widgets/stage_image.dart';
 
 /// Collects the person's height (cm) via [BigNumberPad].
 class HeightInputPage extends ConsumerStatefulWidget {
@@ -24,14 +25,19 @@ class _HeightInputPageState extends ConsumerState<HeightInputPage> {
 
     return AssessmentScaffold(
       title: 'ส่วนสูง',
-      body: Center(
-        child: BigNumberPad(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const StageImage(name: 'body', height: 120),
+          const SizedBox(height: 8),
+          BigNumberPad(
           unit: 'ซม.',
           min: 80,
           max: 220,
           initial: initial,
           onChanged: (v) => setState(() => _value = v),
         ),
+        ],
       ),
       bottom: AssessmentButton(
         label: 'ถัดไป',
@@ -46,6 +52,6 @@ class _HeightInputPageState extends ConsumerState<HeightInputPage> {
     ref
         .read(assessmentSessionProvider.notifier)
         .setHeight(MeasurementResult(value, 'cm'));
-    context.go('/assessment/weight');
+    context.push('/assessment/weight');
   }
 }

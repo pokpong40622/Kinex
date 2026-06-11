@@ -88,9 +88,18 @@ class _PoseCameraViewState extends State<PoseCameraView> {
     if (!mounted || poses.isEmpty) return;
 
     final frame = _toPoseFrame(poses.first);
+    // ML Kit returns landmarks in the ROTATED image space, so for a 90°/270°
+    // sensor the coordinate dimensions are swapped vs the raw CameraImage.
+    final rotation =
+        InputImageRotationValue.fromRawValue(controller.description.sensorOrientation) ??
+            InputImageRotation.rotation0deg;
+    final swap = rotation == InputImageRotation.rotation90deg ||
+        rotation == InputImageRotation.rotation270deg;
     setState(() {
       _lastFrame = frame;
-      _imageSize = Size(image.width.toDouble(), image.height.toDouble());
+      _imageSize = swap
+          ? Size(image.height.toDouble(), image.width.toDouble())
+          : Size(image.width.toDouble(), image.height.toDouble());
     });
     widget.onFrame(frame);
   }

@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../data/assessment_session.dart';
 import '../../models/fitness_level.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/bmi_band_badge.dart';
+import '../../widgets/stage_image.dart';
 
 /// Shows the computed BMI value, its band badge and a short Thai note.
 class BmiResultPage extends ConsumerWidget {
@@ -30,19 +32,19 @@ class BmiResultPage extends ConsumerWidget {
         title: 'ดัชนีมวลกาย (BMI)',
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(context.r(24)),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'กรุณากรอกน้ำหนักและส่วนสูงก่อน',
                   textAlign: TextAlign.center,
-                  style: thaiSans(size: 18, weight: FontWeight.w700),
+                  style: thaiSans(size: context.r(18), weight: FontWeight.w700),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: context.r(24)),
                 AssessmentButton(
                   label: 'ไปกรอกส่วนสูง',
-                  onTap: () => context.go('/assessment/height'),
+                  onTap: () => context.push('/assessment/height'),
                 ),
               ],
             ),
@@ -53,24 +55,26 @@ class BmiResultPage extends ConsumerWidget {
 
     return AssessmentScaffold(
       title: 'ดัชนีมวลกาย (BMI)',
-      body: Center(
+      body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(context.r(24)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              StageImage(name: 'bmi', height: context.r(120)),
+              SizedBox(height: context.r(12)),
               Text(
                 bmi.value.toStringAsFixed(1),
-                style: thaiSans(size: 64, weight: FontWeight.w800),
+                style: thaiSans(size: context.r(64), weight: FontWeight.w800),
               ),
-              const SizedBox(height: 12),
-              BmiBandBadge(bmi.band, fontSize: 20),
-              const SizedBox(height: 24),
+              SizedBox(height: context.r(12)),
+              BmiBandBadge(bmi.band, fontSize: context.r(20)),
+              SizedBox(height: context.r(24)),
               Text(
                 _notes[bmi.band] ?? '',
                 textAlign: TextAlign.center,
                 style: thaiSans(
-                    size: 16,
+                    size: context.r(16),
                     weight: FontWeight.w600,
                     color: KColors.navyText.withAlpha(200)),
               ),
@@ -80,7 +84,7 @@ class BmiResultPage extends ConsumerWidget {
       ),
       bottom: AssessmentButton(
         label: 'ถัดไป',
-        onTap: () => context.go('/assessment/progress'),
+        onTap: () => context.push('/assessment/progress'),
       ),
     );
   }
