@@ -20,7 +20,9 @@ class _HomePageState extends State<HomePage> {
       body: IndexedStack(
         index: _tab,
         children: [
-          _HomeTab(onStartGame: () => context.go('/mega-dance')),
+          // Home "World" card now launches Kinex World (the exercise class).
+          // MEGA DANCE stays reachable from the Practice tab.
+          _HomeTab(onStartGame: () => context.go('/world')),
           const _QuestTab(),
           _PracticeTab(onStartGame: () => context.go('/mega-dance')),
           const _InfoTab(),
@@ -188,14 +190,22 @@ class _AssessmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.sizeOf(context).height;
+    final size = MediaQuery.sizeOf(context);
+    final h = size.height;
+    final cardH = h * 0.215;
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        height: h * 0.16,
+        height: cardH,
         child: LayoutBuilder(
           builder: (context, cs) {
             final cw = cs.maxWidth;
+            // Use card height for vertical spacing so the column never exceeds
+            // the card's fixed height, regardless of device aspect ratio.
+            final vPad = cardH * 0.12;
+            final gap1 = cardH * 0.04;
+            final gap2 = cardH * 0.06;
+            final btnVPad = cw * 0.025;
             return Container(
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
@@ -214,7 +224,7 @@ class _AssessmentCard extends StatelessWidget {
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                          cw * 0.06, cw * 0.045, cw * 0.03, cw * 0.045),
+                          cw * 0.06, vPad, cw * 0.03, vPad),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -224,16 +234,16 @@ class _AssessmentCard extends StatelessWidget {
                                   size: cw * 0.060,
                                   weight: FontWeight.w800,
                                   color: Colors.white)),
-                          SizedBox(height: cw * 0.012),
+                          SizedBox(height: gap1),
                           Text('ทดสอบสมรรถภาพทางกายสำหรับผู้สูงอายุ',
                               style: thaiSans(
                                   size: cw * 0.030,
                                   weight: FontWeight.w600,
                                   color: Colors.white)),
-                          SizedBox(height: cw * 0.03),
+                          SizedBox(height: gap2),
                           Container(
                             padding: EdgeInsets.symmetric(
-                                horizontal: cw * 0.05, vertical: cw * 0.022),
+                                horizontal: cw * 0.05, vertical: btnVPad),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
@@ -726,7 +736,7 @@ class _PracticeTab extends StatelessWidget {
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card3.png',
                       aspectRatio: 1762 / 650,
-                      onTap: null,
+                      onTap: () => context.go('/world'),
                     ),
                     SizedBox(height: h * 0.02),
                   ],

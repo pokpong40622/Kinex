@@ -175,9 +175,11 @@ class _TugLivePageState extends ConsumerState<TugLivePage> {
           onTap: _detector.isCalibrated ? _arm : null,
         );
       case _Phase.running:
+        // Prominent manual finish — the auto sit-detection can miss when the user
+        // returns to the chair, so this is always available to end the test.
         return AssessmentButton(
-          label: 'หยุด (ด้วยตนเอง)',
-          primary: false,
+          label: 'เสร็จสิ้น (นั่งแล้ว)',
+          icon: Icons.check_circle_rounded,
           onTap: _manualStop,
         );
       case _Phase.armed:
