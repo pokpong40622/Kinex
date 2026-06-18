@@ -192,7 +192,7 @@ class _AssessmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final h = size.height;
-    final cardH = h * 0.16;
+    final cardH = h * 0.215;
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -204,8 +204,8 @@ class _AssessmentCard extends StatelessWidget {
             // the card's fixed height, regardless of device aspect ratio.
             final vPad = cardH * 0.12;
             final gap1 = cardH * 0.04;
-            final gap2 = cardH * 0.08;
-            final btnVPad = cardH * 0.07;
+            final gap2 = cardH * 0.06;
+            final btnVPad = cw * 0.025;
             return Container(
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
@@ -736,7 +736,7 @@ class _PracticeTab extends StatelessWidget {
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card3.png',
                       aspectRatio: 1762 / 650,
-                      onTap: null,
+                      onTap: () => context.go('/world'),
                     ),
                     SizedBox(height: h * 0.02),
                   ],

@@ -24,6 +24,12 @@ import 'screens/assessment/test_result_page.dart';
 import 'screens/assessment/final_summary_page.dart';
 import 'screens/assessment/history_list_page.dart';
 import 'screens/assessment/history_detail_page.dart';
+import 'screens/world/world_hero_page.dart';
+import 'screens/world/world_game_screen.dart';
+import 'screens/world/world_result_page.dart';
+import 'screens/world/world_history_page.dart';
+import 'screens/world/world_history_detail_page.dart';
+import 'models/world_session_record.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
       initialLocation: '/',
@@ -95,6 +101,25 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/assessment/history/:recordId',
                 builder: (context, state) => HistoryDetailPage(
+                    recordId: state.pathParameters['recordId']!)),
+            // Kinex World — instructor-led exercise class (Unity-embedded session).
+            GoRoute(
+                path: '/world',
+                builder: (context, _) => const WorldHeroPage()),
+            GoRoute(
+                path: '/world/game/:routineId',
+                builder: (context, state) => WorldGameScreen(
+                    routineId: state.pathParameters['routineId']!)),
+            GoRoute(
+                path: '/world/result',
+                builder: (context, state) => WorldResultPage(
+                    record: state.extra as WorldSessionRecord?)),
+            GoRoute(
+                path: '/world/history',
+                builder: (context, _) => const WorldHistoryPage()),
+            GoRoute(
+                path: '/world/history/:recordId',
+                builder: (context, state) => WorldHistoryDetailPage(
                     recordId: state.pathParameters['recordId']!)),
           ],
         ),

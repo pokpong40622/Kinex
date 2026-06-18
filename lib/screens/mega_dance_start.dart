@@ -3,96 +3,115 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 
+/// MEGA DANCE start screen — matches the Figma "MegaDanceStart" frame:
+/// the room background, a big white italic "MEGA DANCE" wordmark (centred),
+/// a red back button (top-left) and a green "Start" pill (bottom-centre).
+/// English only, no gradient — like a standard game start screen.
 class MegaDanceStartPage extends ConsumerWidget {
   const MegaDanceStartPage({super.key});
 
+  static const _green = Color(0xFF6DDB2A);
+  static const _red = Color(0xFFF5333A);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final w = MediaQuery.sizeOf(context).width;
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // back button top-left
-            Positioned(
-              top: 16,
-              left: 16,
-              child: GestureDetector(
-                onTap: () => context.go('/home'),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE53935),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-            ),
-            // "MEGA DANCE" centered
-            const Center(
-              child: Text(
-                'MEGA\nDANCE',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  height: 1.1,
-                  shadows: [
-                    Shadow(
-                      color: Color(0x80000000),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Start button bottom center
-            Positioned(
-              bottom: 40,
-              left: 40,
-              right: 40,
-              child: GestureDetector(
-                onTap: () => context.go('/mega-dance/game'),
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: KColors.greenGradient,
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: Colors.white.withAlpha(115),
-                      width: 2,
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x40000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/bg_room.png', fit: BoxFit.cover),
+          // Subtle dark scrim so the white wordmark stays readable over the room.
+          Container(color: Colors.black.withAlpha(46)),
+          SafeArea(
+            child: Stack(
+              children: [
+                // ── Back button (top-left): red rounded square, white arrow ──
+                Positioned(
+                  left: w * 0.05,
+                  top: w * 0.04,
+                  child: GestureDetector(
+                    onTap: () => context.go('/home'),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: w * 0.15,
+                      height: w * 0.15,
+                      decoration: BoxDecoration(
+                        color: _red,
+                        borderRadius: BorderRadius.circular(w * 0.045),
+                        boxShadow: const [
+                          BoxShadow(
+                              color: Color(0x40000000),
+                              blurRadius: 10,
+                              offset: Offset(0, 4)),
+                        ],
                       ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'Start',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
+                      child: Icon(Icons.arrow_back_rounded,
+                          color: Colors.white, size: w * 0.09),
                     ),
                   ),
                 ),
-              ),
+
+                // ── Wordmark (centred) ──────────────────────────────────────
+                Align(
+                  alignment: const Alignment(0, -0.12),
+                  child: Text(
+                    'MEGA\nDANCE',
+                    textAlign: TextAlign.center,
+                    style: montserrat(
+                            size: w * 0.17,
+                            weight: FontWeight.w900,
+                            color: Colors.white)
+                        .copyWith(
+                      fontStyle: FontStyle.italic,
+                      height: 0.95,
+                      letterSpacing: -1,
+                      shadows: const [
+                        Shadow(
+                            color: Color(0x73000000),
+                            blurRadius: 14,
+                            offset: Offset(2, 5)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── Start button (bottom-centre): green pill ────────────────
+                Align(
+                  alignment: const Alignment(0, 0.84),
+                  child: GestureDetector(
+                    onTap: () => context.go('/mega-dance/game'),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: w * 0.56,
+                      height: w * 0.16,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: _green,
+                        borderRadius: BorderRadius.circular(w * 0.08),
+                        border: Border.all(
+                            color: Colors.white.withAlpha(170), width: 2),
+                        boxShadow: const [
+                          BoxShadow(
+                              color: Color(0x4D000000),
+                              blurRadius: 14,
+                              offset: Offset(0, 6)),
+                        ],
+                      ),
+                      child: Text(
+                        'Start',
+                        style: montserrat(
+                            size: w * 0.072,
+                            weight: FontWeight.w800,
+                            color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
