@@ -157,10 +157,12 @@ class _HomeTab extends StatelessWidget {
               SizedBox(height: h * 0.025),
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
+                // 35% smaller: 65% width (left-aligned) keeps the card's aspect ratio so the
+                // width-driven content scales down with the reduced height (see card heights).
                 child: Align(
-                  alignment: Alignment.centerRight,
-                  child: SizedBox(
-                    width: w * 0.59,
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.65,
                     child: _WorldCard(
                       onTap: onStartGame,
                       gradient: KColors.purpleRadial,
@@ -170,8 +172,14 @@ class _HomeTab extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
-                child: _AssessmentCard(
-                  onTap: () => context.push('/assessment'),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.65,
+                    child: _AssessmentCard(
+                      onTap: () => context.push('/assessment'),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -192,7 +200,7 @@ class _AssessmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final h = size.height;
-    final cardH = h * 0.215;
+    final cardH = h * 0.145; // ~25% smaller than the old 0.195 (0.127 clipped the content)
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -439,7 +447,7 @@ class _WorldCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final h = MediaQuery.sizeOf(context).height;
     return SizedBox(
-      height: h * 0.18,
+      height: h * 0.145, // ~25% smaller than the old 0.195 (0.127 clipped the content)
       child: LayoutBuilder(
         builder: (context, cs) {
           final cw = cs.maxWidth;
@@ -807,7 +815,7 @@ class _InfoTab extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF2766EF), Color(0xFFA556ED)],
+              colors: [Colors.white, Color(0xFF999999)],
             ),
           ),
         ),
@@ -839,24 +847,45 @@ class _InfoTab extends StatelessWidget {
                                 style: montserrat(
                                     size: w * 0.13,
                                     weight: FontWeight.w600,
-                                    color: Colors.white)),
+                                    color: KColors.navyText)),
                           ],
                         ),
                         Text('Username: ray_lorkasemsan',
                             style: montserrat(
                                 size: w * 0.035,
                                 weight: FontWeight.w700,
-                                color: Colors.white)),
+                                color: KColors.navyText)),
                         Text('Age: 80',
                             style: montserrat(
                                 size: w * 0.035,
                                 weight: FontWeight.w800,
-                                color: Colors.white)),
+                                color: KColors.navyText)),
                       ],
                     ),
                     const Spacer(),
-                    Image.asset('assets/images/char_main.png',
-                        height: h * 0.2, fit: BoxFit.contain),
+                    Container(
+                      height: h * 0.22,
+                      width: w * 0.3,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFE8E0FF), Color(0xFFD0C4FF)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                              color: Color(0x20000000),
+                              blurRadius: 12,
+                              offset: Offset(0, 6))
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset('assets/images/char_main.png',
+                            fit: BoxFit.cover),
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(height: h * 0.02),
@@ -873,47 +902,58 @@ class _InfoTab extends StatelessWidget {
                           offset: Offset(0, 4))
                     ],
                   ),
-                  child: Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Best update',
-                                style: montserrat(
-                                    size: w * 0.038,
-                                    weight: FontWeight.w800,
-                                    color: KColors.indigo)),
-                            SizedBox(height: h * 0.01),
-                            Text('15%',
-                                style: montserrat(
-                                    size: w * 0.095,
-                                    weight: FontWeight.w700,
-                                    color: KColors.teal)),
-                            Text('Right Muscle Leg better',
-                                style: montserrat(
-                                    size: w * 0.03,
-                                    weight: FontWeight.w700,
-                                    color: KColors.navyText)),
-                            Text('from last month',
-                                style: montserrat(
-                                    size: w * 0.028,
-                                    weight: FontWeight.w600,
-                                    color: KColors.navyText.withAlpha(140))),
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          Text('Best update',
+                              style: montserrat(
+                                  size: w * 0.038,
+                                  weight: FontWeight.w800,
+                                  color: KColors.indigo)),
+                          const Spacer(),
+                          _ArrowCircleButton(),
+                        ],
                       ),
-                      Padding(
-                        padding: EdgeInsets.only(top: h * 0.02),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            _MiniBar(fraction: 0.70, label: 'Jan'),
-                            SizedBox(width: w * 0.02),
-                            _MiniBar(fraction: 0.85, label: 'Feb', active: true),
-                          ],
-                        ),
+                      SizedBox(height: h * 0.01),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('15%',
+                                    style: montserrat(
+                                        size: w * 0.095,
+                                        weight: FontWeight.w700,
+                                        color: KColors.teal)),
+                                Text('Right Muscle Leg better',
+                                    style: montserrat(
+                                        size: w * 0.03,
+                                        weight: FontWeight.w700,
+                                        color: KColors.navyText)),
+                                Text('from last month',
+                                    style: montserrat(
+                                        size: w * 0.028,
+                                        weight: FontWeight.w600,
+                                        color: KColors.navyText.withAlpha(140))),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(bottom: h * 0.005),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                _MiniBar(fraction: 0.63, label: 'Jan'),
+                                SizedBox(width: w * 0.02),
+                                _MiniBar(fraction: 1.0, label: 'Feb', active: true),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -996,27 +1036,7 @@ class _InfoTab extends StatelessWidget {
                                     color: KColors.indigo.withAlpha(200))),
                           ),
                           SizedBox(width: w * 0.03),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: w * 0.025, vertical: h * 0.007),
-                            decoration: BoxDecoration(
-                              border:
-                                  Border.all(color: KColors.indigo, width: 1.5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('Right Leg',
-                                    style: montserrat(
-                                        size: w * 0.027,
-                                        weight: FontWeight.w700,
-                                        color: KColors.indigo)),
-                                Icon(Icons.expand_more,
-                                    color: KColors.indigo, size: w * 0.04),
-                              ],
-                            ),
-                          ),
+                          _ArrowCircleButton(),
                         ],
                       ),
                     ],
@@ -1025,31 +1045,14 @@ class _InfoTab extends StatelessWidget {
                 SizedBox(height: h * 0.02),
                 Row(
                   children: [
-                    Expanded(
-                      child: _InfoStatCard(
-                        title: 'Muscles (EMG)',
-                        value: '70%',
-                        sub: 'from last month',
-                        color: const Color(0xFFF3F2FB),
-                        valueColor: KColors.navyText,
-                      ),
-                    ),
+                    Expanded(child: _MuscleStatCard()),
                     SizedBox(width: w * 0.04),
-                    Expanded(
-                      child: _InfoStatCard(
-                        title: 'Posture\n(Pose Estimation)',
-                        value: '85%',
-                        sub: 'Excellent Stability',
-                        color: const Color(0xFFF3F2FB),
-                        valueColor: KColors.teal,
-                      ),
-                    ),
+                    Expanded(child: _PostureStatCard()),
                   ],
                 ),
                 SizedBox(height: h * 0.02),
                 Container(
                   width: double.infinity,
-                  height: h * 0.22,
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F2FB),
                     borderRadius: BorderRadius.circular(25),
@@ -1064,23 +1067,29 @@ class _InfoTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Last 6 months',
-                          style: montserrat(
-                              size: w * 0.038,
-                              weight: FontWeight.w800,
-                              color: KColors.indigo)),
-                      const Spacer(),
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: const [
-                          _Bar(fraction: 0.58, label: 'Sep'),
-                          _Bar(fraction: 0.63, label: 'Oct'),
-                          _Bar(fraction: 0.66, label: 'Nov'),
-                          _Bar(fraction: 0.68, label: 'Dec'),
-                          _Bar(fraction: 0.70, label: 'Jan'),
-                          _Bar(fraction: 0.85, label: 'Feb', active: true),
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: w * 0.04, vertical: h * 0.008),
+                            decoration: BoxDecoration(
+                              color: KColors.indigo,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('Last 6 months',
+                                style: montserrat(
+                                    size: w * 0.032,
+                                    weight: FontWeight.w800,
+                                    color: Colors.white)),
+                          ),
+                          const Spacer(),
+                          _ArrowCircleButton(),
                         ],
+                      ),
+                      SizedBox(height: h * 0.02),
+                      SizedBox(
+                        height: h * 0.20,
+                        child: _LineChart(),
                       ),
                     ],
                   ),
@@ -1093,6 +1102,239 @@ class _InfoTab extends StatelessWidget {
       ],
     );
   }
+}
+
+// A small circle button with a right-arrow icon, matching Figma's arrow pill.
+class _ArrowCircleButton extends StatelessWidget {
+  const _ArrowCircleButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    final size = w * 0.09;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: KColors.indigo,
+        boxShadow: const [
+          BoxShadow(color: Color(0x30000000), blurRadius: 6, offset: Offset(0, 3))
+        ],
+      ),
+      child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: size * 0.55),
+    );
+  }
+}
+
+// Muscles (EMG) stat card — "Right Leg" label with robot icon placeholder.
+class _MuscleStatCard extends StatelessWidget {
+  const _MuscleStatCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final w = size.width;
+    return Container(
+      padding: EdgeInsets.all(w * 0.04),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F2FB),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: const [
+          BoxShadow(color: Color(0x30000000), blurRadius: 10, offset: Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Muscles (EMG)',
+              style: montserrat(
+                  size: w * 0.035,
+                  weight: FontWeight.w800,
+                  color: KColors.indigo)),
+          SizedBox(height: w * 0.03),
+          Row(
+            children: [
+              Icon(Icons.smart_toy_rounded,
+                  size: w * 0.14, color: KColors.indigo.withAlpha(180)),
+              SizedBox(width: w * 0.03),
+              Text('Right\nLeg',
+                  style: montserrat(
+                      size: w * 0.045,
+                      weight: FontWeight.w800,
+                      color: KColors.navyText)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Posture (Pose Estimation) stat card — "/" separator with "Excellent Stability".
+class _PostureStatCard extends StatelessWidget {
+  const _PostureStatCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final w = size.width;
+    return Container(
+      padding: EdgeInsets.all(w * 0.04),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F2FB),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: const [
+          BoxShadow(color: Color(0x30000000), blurRadius: 10, offset: Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Posture\n(Pose Estimation)',
+              style: montserrat(
+                  size: w * 0.035,
+                  weight: FontWeight.w800,
+                  color: KColors.indigo)),
+          SizedBox(height: w * 0.02),
+          Text('/',
+              style: montserrat(
+                  size: w * 0.12,
+                  weight: FontWeight.w900,
+                  color: KColors.indigo.withAlpha(80))),
+          Text('Excellent\nStability',
+              style: montserrat(
+                  size: w * 0.038,
+                  weight: FontWeight.w800,
+                  color: KColors.teal)),
+        ],
+      ),
+    );
+  }
+}
+
+// Line chart for "Last 6 months" — Sep 58% → Oct 63% → Nov 66% → Dec 68% → Jan 70% → Feb 85%.
+class _LineChart extends StatelessWidget {
+  const _LineChart();
+
+  static const _points = [0.58, 0.63, 0.66, 0.68, 0.70, 0.85];
+  static const _labels = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+  static const _yLabels = ['100%', '75%', '50%', '25%', '0%'];
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    return Row(
+      children: [
+        // Y-axis labels
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: _yLabels
+              .map((l) => Text(l,
+                  style: montserrat(
+                      size: w * 0.022,
+                      weight: FontWeight.w600,
+                      color: KColors.navyText.withAlpha(140))))
+              .toList(),
+        ),
+        SizedBox(width: w * 0.02),
+        // Chart area
+        Expanded(
+          child: Column(
+            children: [
+              Expanded(
+                child: CustomPaint(
+                  painter: _LineChartPainter(
+                    points: _points,
+                    lineColor: KColors.indigo,
+                    dotColor: const Color(0xFF6F51F5),
+                    activeDotColor: const Color(0xFF6F51F5),
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              const SizedBox(height: 6),
+              // X-axis labels
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: _labels
+                    .map((l) => Text(l,
+                        style: montserrat(
+                            size: w * 0.022,
+                            weight: FontWeight.w600,
+                            color: KColors.navyText.withAlpha(140))))
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LineChartPainter extends CustomPainter {
+  final List<double> points;
+  final Color lineColor;
+  final Color dotColor;
+  final Color activeDotColor;
+
+  const _LineChartPainter({
+    required this.points,
+    required this.lineColor,
+    required this.dotColor,
+    required this.activeDotColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = points.length;
+    if (n < 2) return;
+
+    final dx = size.width / (n - 1);
+    List<Offset> offsets = [];
+    for (int i = 0; i < n; i++) {
+      offsets.add(Offset(i * dx, size.height * (1.0 - points[i])));
+    }
+
+    // Grid lines at 0%, 25%, 50%, 75%, 100%
+    final gridPaint = Paint()
+      ..color = KColors.navyText.withAlpha(25)
+      ..strokeWidth = 1;
+    for (final frac in [0.0, 0.25, 0.50, 0.75, 1.0]) {
+      final y = size.height * frac;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // Line
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
+    final path = Path()..moveTo(offsets[0].dx, offsets[0].dy);
+    for (int i = 1; i < offsets.length; i++) {
+      path.lineTo(offsets[i].dx, offsets[i].dy);
+    }
+    canvas.drawPath(path, linePaint);
+
+    // Dots
+    for (int i = 0; i < offsets.length; i++) {
+      final isLast = i == offsets.length - 1;
+      final dotPaint = Paint()
+        ..color = isLast ? activeDotColor : dotColor
+        ..style = PaintingStyle.fill;
+      final outerPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(offsets[i], isLast ? 7.0 : 5.0, outerPaint);
+      canvas.drawCircle(offsets[i], isLast ? 5.0 : 3.5, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LineChartPainter old) => false;
 }
 
 class _MiniBar extends StatelessWidget {
@@ -1114,7 +1356,7 @@ class _MiniBar extends StatelessWidget {
           width: w * 0.055,
           height: h * 0.07 * fraction,
           decoration: BoxDecoration(
-            color: active ? KColors.indigo : const Color(0xFFC0C0CB),
+            color: active ? const Color(0xFF6F51F5) : const Color(0xFFC0C0CB),
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(4)),
           ),
@@ -1124,103 +1366,10 @@ class _MiniBar extends StatelessWidget {
             style: montserrat(
                 size: w * 0.022,
                 weight: FontWeight.w600,
-                color: active ? KColors.indigo : KColors.navyText.withAlpha(140))),
+                color: active ? const Color(0xFF6F51F5) : KColors.navyText.withAlpha(140))),
       ],
     );
   }
 }
 
-class _InfoStatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String sub;
-  final Color color;
-  final Color valueColor;
-
-  const _InfoStatCard({
-    required this.title,
-    required this.value,
-    required this.sub,
-    required this.color,
-    this.valueColor = KColors.teal,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    final h = size.height;
-    return Container(
-      padding: EdgeInsets.all(w * 0.05),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x30000000), blurRadius: 10, offset: Offset(0, 4))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(title,
-              textAlign: TextAlign.center,
-              style: montserrat(
-                  size: w * 0.038,
-                  weight: FontWeight.w800,
-                  color: KColors.indigo)),
-          SizedBox(height: h * 0.01),
-          Text(value,
-              style: montserrat(
-                  size: w * 0.095,
-                  weight: FontWeight.w700,
-                  color: valueColor)),
-          Text(sub,
-              textAlign: TextAlign.center,
-              style: montserrat(
-                  size: w * 0.03,
-                  weight: FontWeight.w700,
-                  color: KColors.navyText)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Bar extends StatelessWidget {
-  final double fraction;
-  final String label;
-  final bool active;
-
-  const _Bar({
-    required this.fraction,
-    required this.label,
-    this.active = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MediaQuery.sizeOf(context).height;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          width: 20,
-          height: h * 0.12 * fraction,
-          decoration: BoxDecoration(
-            color: active ? KColors.indigo : const Color(0xFFC0C0CB),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(6),
-              topRight: Radius.circular(6),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(label,
-            style: montserrat(
-                size: 11, weight: FontWeight.w700, color: KColors.navyText)),
-      ],
-    );
-  }
-}
 
