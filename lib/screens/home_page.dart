@@ -160,7 +160,7 @@ class _HomeTab extends StatelessWidget {
                 // 35% smaller: 65% width (left-aligned) keeps the card's aspect ratio so the
                 // width-driven content scales down with the reduced height (see card heights).
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.centerRight,
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
                     child: _WorldCard(
@@ -173,7 +173,7 @@ class _HomeTab extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.centerRight,
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
                     child: _AssessmentCard(
