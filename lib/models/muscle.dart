@@ -1,3 +1,14 @@
+/// Which leg a reading belongs to. Pads sit at the same position on both legs,
+/// so every muscle is measured once per side.
+enum LegSide {
+  left('ซ้าย', 'L'),
+  right('ขวา', 'R');
+
+  final String thaiName;
+  final String code;
+  const LegSide(this.thaiName, this.code);
+}
+
 /// The two leg joints Kinex assesses for balance (การทรงตัว). Each is driven by
 /// an antagonist muscle pair the EMG hardware measures.
 enum BalanceJoint {

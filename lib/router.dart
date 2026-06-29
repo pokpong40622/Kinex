@@ -23,7 +23,6 @@ import 'screens/assessment/live_assessment_page.dart';
 import 'screens/assessment/manual_entry_page.dart';
 import 'screens/assessment/test_result_page.dart';
 import 'screens/assessment/final_summary_page.dart';
-import 'screens/assessment/mvc_calibration_page.dart';
 import 'screens/assessment/history_list_page.dart';
 import 'screens/assessment/history_detail_page.dart';
 import 'screens/world/world_hero_page.dart';
@@ -34,6 +33,7 @@ import 'screens/world/world_history_detail_page.dart';
 import 'screens/emg/emg_pin_page.dart';
 import 'screens/emg/emg_detail_page.dart';
 import 'screens/onboarding/hardware_guide_page.dart';
+import 'screens/debug/ble_debug_page.dart';
 import 'models/world_session_record.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
@@ -48,6 +48,9 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
         GoRoute(
             path: '/hardware-guide',
             builder: (context, _) => const HardwareGuidePage()),
+        // BLE debug console (connect / send / receive with the ESP32).
+        GoRoute(
+            path: '/ble-debug', builder: (context, _) => const BleDebugPage()),
         ShellRoute(
           builder: (context, state, child) => RootShell(child: child),
           routes: [
@@ -106,9 +109,6 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
                 path: '/assessment/test/:testId/result',
                 builder: (context, state) =>
                     TestResultPage(testId: state.pathParameters['testId']!)),
-            GoRoute(
-                path: '/assessment/mvc',
-                builder: (context, _) => const MvcCalibrationPage()),
             GoRoute(
                 path: '/assessment/summary',
                 builder: (context, _) => const FinalSummaryPage()),

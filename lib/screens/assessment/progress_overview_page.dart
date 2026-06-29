@@ -25,11 +25,8 @@ class ProgressOverviewPage extends ConsumerWidget {
         context.push(
             '/assessment/test/${session.nextIncompleteTestId}/instructions');
       } else {
-        if (session.mvcCalibration == null) {
-          context.push('/assessment/mvc');
-        } else {
-          context.push('/assessment/summary');
-        }
+        // MVC is now captured in the EMG hardware guide, not in the assessment.
+        context.push('/assessment/summary');
       }
     }
 

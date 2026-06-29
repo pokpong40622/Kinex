@@ -15,6 +15,39 @@ String _fmtDate(DateTime dt) =>
     '${dt.month.toString().padLeft(2, '0')}-'
     '${dt.day.toString().padLeft(2, '0')}';
 
+/// One leg's row inside the full MVC card: side label + %MVC + Peak/Mean µV.
+Widget _mvcSideRow(BuildContext context, String label, Color color, EmgSample? s) {
+  final pct = s?.percentMvc;
+  return Container(
+    padding:
+        EdgeInsets.symmetric(horizontal: context.r(10), vertical: context.r(7)),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.07),
+      borderRadius: BorderRadius.circular(context.r(10)),
+    ),
+    child: Row(
+      children: [
+        SizedBox(
+          width: context.r(58),
+          child: Text(label,
+              style: thaiSans(
+                  size: context.r(12), weight: FontWeight.w800, color: color)),
+        ),
+        Text(pct == null ? '—' : '${pct.toStringAsFixed(0)}% MVC',
+            style: montserrat(
+                size: context.r(13), weight: FontWeight.w800, color: color)),
+        const Spacer(),
+        Text(
+          s == null
+              ? ''
+              : 'Peak ${s.peakMicrovolts.toStringAsFixed(0)} · Mean ${s.meanMicrovolts.toStringAsFixed(0)} µV',
+          style: thaiSans(size: context.r(11), color: const Color(0xFF8090AA)),
+        ),
+      ],
+    ),
+  );
+}
+
 // ─── CCI Ring Gauge ───────────────────────────────────────────────────────────
 
 /// Circular ring showing co-contraction index (0–100 %) for one joint.
@@ -94,152 +127,6 @@ class _RingPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RingPainter old) =>
       old.fraction != fraction || old.color != color;
-}
-
-// ─── Right-Leg Diagram ────────────────────────────────────────────────────────
-
-/// Stylised right-leg diagram with labelled dots at the knee and ankle,
-/// each showing its CCI %.
-class LegDiagram extends StatelessWidget {
-  final double kneeCci;
-  final double ankleCci;
-  const LegDiagram({super.key, required this.kneeCci, required this.ankleCci});
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 0.48,
-      child: CustomPaint(
-        painter: _LegPainter(kneeCci: kneeCci, ankleCci: ankleCci),
-      ),
-    );
-  }
-}
-
-class _LegPainter extends CustomPainter {
-  final double kneeCci;
-  final double ankleCci;
-  const _LegPainter({required this.kneeCci, required this.ankleCci});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final cx = w * 0.40;
-
-    final hipY = h * 0.06;
-    final kneeY = h * 0.43;
-    final ankleY = h * 0.78;
-    final footY = h * 0.90;
-
-    const bgColor = Color(0xFFBFDFF2);
-
-    // Thigh
-    canvas.drawLine(
-      Offset(cx, hipY + w * 0.12),
-      Offset(cx, kneeY),
-      Paint()
-        ..color = bgColor
-        ..strokeWidth = w * 0.30
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke,
-    );
-
-    // Shin / calf
-    canvas.drawLine(
-      Offset(cx, kneeY),
-      Offset(cx, ankleY),
-      Paint()
-        ..color = bgColor
-        ..strokeWidth = w * 0.22
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke,
-    );
-
-    // Foot stub
-    canvas.drawLine(
-      Offset(cx, ankleY),
-      Offset(cx + w * 0.18, footY),
-      Paint()
-        ..color = bgColor
-        ..strokeWidth = w * 0.16
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke,
-    );
-
-    // Hip cap
-    canvas.drawCircle(
-      Offset(cx, hipY + w * 0.12),
-      w * 0.09,
-      Paint()..color = const Color(0xFFA8CDE0),
-    );
-
-    // Knee dot
-    _drawDot(
-      canvas,
-      Offset(cx, kneeY),
-      w * 0.11,
-      KColors.teal,
-      '${kneeCci.toStringAsFixed(0)}%',
-      w * 0.135,
-      w,
-    );
-
-    // Ankle dot
-    _drawDot(
-      canvas,
-      Offset(cx, ankleY),
-      w * 0.09,
-      KColors.blue,
-      '${ankleCci.toStringAsFixed(0)}%',
-      w * 0.120,
-      w,
-    );
-  }
-
-  void _drawDot(
-    Canvas canvas,
-    Offset center,
-    double radius,
-    Color color,
-    String label,
-    double fontSize,
-    double canvasW,
-  ) {
-    // Glow ring
-    canvas.drawCircle(
-      center,
-      radius + 5,
-      Paint()..color = color.withValues(alpha: 0.18),
-    );
-    // Solid dot
-    canvas.drawCircle(center, radius, Paint()..color = color);
-    // White core
-    canvas.drawCircle(center, radius * 0.42, Paint()..color = Colors.white);
-
-    // Label to the right
-    final tp = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: TextStyle(
-          fontFamily: 'Kanit',
-          fontSize: fontSize,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: canvasW * 0.55);
-
-    tp.paint(
-      canvas,
-      Offset(center.dx + radius + 7, center.dy - tp.height / 2),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_LegPainter old) =>
-      old.kneeCci != kneeCci || old.ankleCci != ankleCci;
 }
 
 // ─── %MVC Horizontal Bar ─────────────────────────────────────────────────────
@@ -353,7 +240,7 @@ class _MvcContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ยังไม่ได้ปรับเทียบค่าสูงสุด (MVC)',
+            'ยังไม่ได้วัดค่าสูงสุด (MVC) — วัดได้ตอนติดตั้งแผ่น EMG',
             style: thaiSans(
               size: context.r(14),
               color: const Color(0xFF8090AA),
@@ -361,7 +248,7 @@ class _MvcContent extends StatelessWidget {
           ),
           SizedBox(height: context.r(12)),
           ElevatedButton(
-            onPressed: () => context.push('/assessment/mvc'),
+            onPressed: () => context.push('/hardware-guide'),
             style: ElevatedButton.styleFrom(
               backgroundColor: KColors.teal,
               foregroundColor: KColors.white,
@@ -370,7 +257,7 @@ class _MvcContent extends StatelessWidget {
               ),
             ),
             child: Text(
-              'ไปปรับเทียบ',
+              'ไปวัดค่า EMG',
               style: thaiSans(size: context.r(14), color: KColors.white),
             ),
           ),
@@ -379,63 +266,73 @@ class _MvcContent extends StatelessWidget {
     }
 
     if (compact) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      String pk(EmgSample? s) =>
+          s == null ? '—' : '${s.peakMicrovolts.toStringAsFixed(0)}µV';
+      return Column(
         children: Muscle.values.map((m) {
-          final peak = cal.peakFor(m) ?? 0;
-          return Column(
-            children: [
-              Text(
-                m.code,
-                style: montserrat(
-                  size: context.r(13),
-                  weight: FontWeight.w700,
-                  color: KColors.teal,
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: context.r(3)),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: Text('${m.code} · ${m.thaiName}',
+                      style: thaiSans(
+                          size: context.r(13),
+                          weight: FontWeight.w700,
+                          color: KColors.navyText)),
                 ),
-              ),
-              Text(
-                '${peak.toStringAsFixed(0)} µV',
-                style: thaiSans(size: context.r(12), color: KColors.navyText),
-              ),
-            ],
+                Expanded(
+                  flex: 3,
+                  child: Text('L ${pk(cal.sampleFor(m, LegSide.left))}',
+                      textAlign: TextAlign.end,
+                      style: thaiSans(
+                          size: context.r(12),
+                          weight: FontWeight.w700,
+                          color: KColors.teal)),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text('R ${pk(cal.sampleFor(m, LegSide.right))}',
+                      textAlign: TextAlign.end,
+                      style: thaiSans(
+                          size: context.r(12),
+                          weight: FontWeight.w700,
+                          color: KColors.indigo)),
+                ),
+              ],
+            ),
           );
         }).toList(),
       );
     }
 
-    // Full layout
+    // Full layout — each muscle with separate left & right rows (%MVC + Peak/Mean).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...Muscle.values.map((m) {
-          final peak = cal.peakFor(m) ?? 0;
-          return Padding(
-            padding: EdgeInsets.only(bottom: context.r(8)),
-            child: Row(
-              children: [
-                Text(
-                  '${m.code} · ${m.thaiName}',
-                  style: thaiSans(
-                    size: context.r(14),
-                    color: KColors.navyText,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${peak.toStringAsFixed(0)} µV',
-                  style: montserrat(
-                    size: context.r(14),
-                    weight: FontWeight.w700,
-                    color: KColors.teal,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
+        ...Muscle.values.map((m) => Padding(
+              padding: EdgeInsets.only(bottom: context.r(12)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${m.code} · ${m.thaiName}',
+                      style: thaiSans(
+                          size: context.r(14),
+                          weight: FontWeight.w800,
+                          color: KColors.navyText)),
+                  SizedBox(height: context.r(6)),
+                  _mvcSideRow(context, 'ซ้าย (L)', KColors.teal,
+                      cal.sampleFor(m, LegSide.left)),
+                  SizedBox(height: context.r(4)),
+                  _mvcSideRow(context, 'ขวา (R)', KColors.indigo,
+                      cal.sampleFor(m, LegSide.right)),
+                ],
+              ),
+            )),
         SizedBox(height: context.r(4)),
         Text(
-          'ปรับเทียบล่าสุด: ${_fmtDate(cal.calibratedAt)}',
+          'วัดล่าสุด: ${_fmtDate(cal.calibratedAt)}',
           style: thaiSans(
             size: context.r(12),
             color: const Color(0xFFAAB4C0),

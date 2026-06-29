@@ -1,42 +1,71 @@
 import 'muscle.dart';
 
-/// The user's Maximum Voluntary Contraction reference: the peak EMG amplitude
-/// (µV) recorded while they flex each muscle as hard as they can. This is the
-/// 100% denominator for every %MVC reading ("EMGPeak", per PMC11163366).
-///
-/// This is the value the Info page "MVC value" card stores and the EMG games
-/// normalise against. Persisted by EmgRepository.
+/// One EMG capture for a single muscle on a single leg: the peak (EMGPeak, the
+/// 100% MVC reference) and mean (EMGMean) amplitude over the lift test, in µV.
+class EmgSample {
+  final double peakMicrovolts; // EMGPeak
+  final double meanMicrovolts; // EMGMean
+
+  const EmgSample({required this.peakMicrovolts, required this.meanMicrovolts});
+
+  /// EMGMean ÷ EMGPeak × 100, or null if no peak.
+  double? get percentMvc => peakMicrovolts > 0
+      ? (meanMicrovolts / peakMicrovolts * 100).clamp(0, 100).toDouble()
+      : null;
+
+  Map<String, dynamic> toJson() =>
+      {'peak': peakMicrovolts, 'mean': meanMicrovolts};
+
+  factory EmgSample.fromJson(Map<String, dynamic> j) => EmgSample(
+        peakMicrovolts: (j['peak'] as num).toDouble(),
+        meanMicrovolts: (j['mean'] as num).toDouble(),
+      );
+}
+
+/// The user's Maximum Voluntary Contraction reference — one [EmgSample] per
+/// muscle PER LEG (the pad sits at the same spot on both legs, so each muscle is
+/// measured for the left and the right side). Captured in the EMG hardware guide
+/// and persisted by EmgRepository.
 class MvcCalibration {
-  final Map<Muscle, double> peakMicrovolts;
+  /// muscle → (side → sample).
+  final Map<Muscle, Map<LegSide, EmgSample>> samples;
   final DateTime calibratedAt;
 
-  const MvcCalibration({
-    required this.peakMicrovolts,
-    required this.calibratedAt,
-  });
+  const MvcCalibration({required this.samples, required this.calibratedAt});
 
-  double? peakFor(Muscle m) => peakMicrovolts[m];
+  EmgSample? sampleFor(Muscle m, LegSide side) => samples[m]?[side];
 
-  /// All four muscles have a positive peak recorded.
-  bool get isComplete =>
-      Muscle.values.every((m) => (peakMicrovolts[m] ?? 0) > 0);
+  /// Every muscle has a positive peak on BOTH legs.
+  bool get isComplete => Muscle.values.every((m) =>
+      LegSide.values.every((s) => (samples[m]?[s]?.peakMicrovolts ?? 0) > 0));
 
   Map<String, dynamic> toJson() => {
         'calibratedAt': calibratedAt.toIso8601String(),
-        'peaks': {
-          for (final e in peakMicrovolts.entries) e.key.code: e.value,
+        'samples': {
+          for (final m in samples.keys)
+            m.code: {
+              for (final e in samples[m]!.entries) e.key.code: e.value.toJson(),
+            },
         },
       };
 
   factory MvcCalibration.fromJson(Map<String, dynamic> j) {
-    final peaks = <Muscle, double>{};
-    final raw = (j['peaks'] as Map).cast<String, dynamic>();
+    final out = <Muscle, Map<LegSide, EmgSample>>{};
+    final raw = (j['samples'] as Map?)?.cast<String, dynamic>() ?? const {};
     for (final m in Muscle.values) {
-      final v = raw[m.code];
-      if (v is num) peaks[m] = v.toDouble();
+      final sideRaw = (raw[m.code] as Map?)?.cast<String, dynamic>();
+      if (sideRaw == null) continue;
+      final sideMap = <LegSide, EmgSample>{};
+      for (final s in LegSide.values) {
+        final sv = sideRaw[s.code];
+        if (sv is Map) {
+          sideMap[s] = EmgSample.fromJson(sv.cast<String, dynamic>());
+        }
+      }
+      if (sideMap.isNotEmpty) out[m] = sideMap;
     }
     return MvcCalibration(
-      peakMicrovolts: peaks,
+      samples: out,
       calibratedAt: DateTime.parse(j['calibratedAt'] as String),
     );
   }
@@ -56,15 +85,17 @@ class MuscleReading {
   });
 }
 
-/// Co-contraction of one joint's antagonist pair, the basis of the
+/// Co-contraction of one joint's antagonist pair on one leg, the basis of the
 /// "การทรงตัวของข้อเข่า/ข้อเท้า" balance metric shown to the user.
 class JointBalance {
   final BalanceJoint joint;
+  final LegSide side;
   final MuscleReading agonist;
   final MuscleReading antagonist;
 
   const JointBalance({
     required this.joint,
+    required this.side,
     required this.agonist,
     required this.antagonist,
   });
@@ -84,13 +115,13 @@ class JointBalance {
   }
 }
 
-/// A full EMG balance snapshot — one [JointBalance] per joint. Built from a
-/// recorded task plus the user's [MvcCalibration], or from mock data while the
-/// hardware is not connected.
+/// A full EMG balance snapshot — one [JointBalance] per joint PER LEG (4 total).
+/// Built from the user's [MvcCalibration], or from mock data while the hardware
+/// is not connected.
 class BalanceReport {
   final List<JointBalance> joints;
   const BalanceReport(this.joints);
 
-  JointBalance forJoint(BalanceJoint j) =>
-      joints.firstWhere((x) => x.joint == j);
+  JointBalance forJoint(BalanceJoint j, LegSide side) =>
+      joints.firstWhere((x) => x.joint == j && x.side == side);
 }

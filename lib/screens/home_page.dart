@@ -4,8 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../state/home_intro_providers.dart';
 import '../data/assessment_repository.dart';
+import '../data/emg_repository.dart';
 import '../models/fitness_level.dart';
 import '../widgets/fitness_level_badge.dart';
+import '../ble/ble_service.dart';
+import '../theme/responsive.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -26,8 +30,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (!mounted) return;
       if (ref.read(homeGuidePendingProvider)) {
         ref.read(homeGuidePendingProvider.notifier).state = false;
-        await context.push('/hardware-guide');
+        final result = await context.push('/hardware-guide');
         if (!mounted) return;
+        // result == true only when the guide was fully finished; anything else
+        // (skip / back-dismiss) means the EMG pads weren't installed this run.
+        ref.read(emgInstallSkippedProvider.notifier).state = result != true;
         ref.read(assessmentSpotlightProvider.notifier).state = true;
       }
     });
@@ -157,6 +164,62 @@ class _KinexNavBar extends StatelessWidget {
   }
 }
 
+// ── EMG REMINDER BANNER ─────────────────────────────────────────────────────
+
+/// Thin full-width banner shown only when EMG pads are not yet calibrated.
+/// Reads [mvcCalibrationProvider]; auto-hides once calibration is complete.
+/// Tapping reopens the hardware-guide.
+class _EmgReminderBanner extends ConsumerWidget {
+  const _EmgReminderBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final skipped = ref.watch(emgInstallSkippedProvider);
+    final cal = ref.watch(mvcCalibrationProvider).value;
+    final calibrated = cal != null && cal.isComplete;
+    // Show whenever the user skipped this run, or there's no complete calibration.
+    if (!skipped && calibrated) return const SizedBox.shrink();
+
+    final w = MediaQuery.sizeOf(context).width;
+    return GestureDetector(
+      onTap: () async {
+        final result = await context.push('/hardware-guide');
+        if (result == true) {
+          ref.read(emgInstallSkippedProvider.notifier).state = false;
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: w * 0.04),
+        padding: EdgeInsets.symmetric(horizontal: w * 0.035, vertical: w * 0.022),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3CD),
+          border: Border.all(color: const Color(0xFFFFB300), width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded,
+                color: Color(0xFFE65100), size: 18),
+            SizedBox(width: w * 0.02),
+            Expanded(
+              child: Text(
+                'ยังไม่ได้ติดตั้งแผ่น EMG — แตะเพื่อติดตั้ง',
+                style: thaiSans(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    color: const Color(0xFFE65100)),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Color(0xFFE65100), size: 13),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── HOME TAB ────────────────────────────────────────────────────────────────
 
 class _HomeTab extends ConsumerStatefulWidget {
@@ -191,10 +254,7 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                   children: [
                     Expanded(child: const _ProfileCard()),
                     SizedBox(width: w * 0.025),
-                    const _TopBarIconButton(
-                      asset: 'assets/images/icon_bluetooth.png',
-                      solidBorderColor: Color(0xFF60A343),
-                    ),
+                    const _BleTopBarButton(),
                     SizedBox(width: w * 0.025),
                     const _TopBarIconButton(
                       asset: 'assets/images/icon_notif.png',
@@ -208,7 +268,9 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                   ],
                 ),
               ),
-              SizedBox(height: h * 0.025),
+              SizedBox(height: h * 0.015),
+              const _EmgReminderBanner(),
+              SizedBox(height: h * 0.01),
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
                 // 35% smaller: 65% width (left-aligned) keeps the card's aspect ratio so the
@@ -399,15 +461,28 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
     _scheduleMeasure();
   }
 
-  // Rebuild once the target card has been laid out so we can read its rect.
+  Offset? _lastTopLeft;
+
+  // Re-measure across frames until the card's global position stops changing.
+  // On first home entry the card (inside Align → FractionallySizedBox) and the
+  // reminder banner above it relayout over a few frames, so a single measurement
+  // reads a stale (too-far-left) X. We keep checking until two consecutive frames
+  // agree, then stop — matching the value seen after re-navigation.
   void _scheduleMeasure() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (widget.targetKey.currentContext == null) {
+      final box =
+          widget.targetKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) {
         _scheduleMeasure();
         return;
       }
-      setState(() {});
+      final topLeft = box.localToGlobal(Offset.zero);
+      if (_lastTopLeft != topLeft) {
+        _lastTopLeft = topLeft;
+        setState(() {});
+        _scheduleMeasure(); // position still moving — keep watching
+      }
     });
   }
 
@@ -502,11 +577,13 @@ class _TopBarIconButton extends StatelessWidget {
   final String asset;
   final Color? solidBorderColor;
   final LinearGradient? gradientBorder;
+  final VoidCallback? onTap;
 
   const _TopBarIconButton({
     required this.asset,
     this.solidBorderColor,
     this.gradientBorder,
+    this.onTap,
   });
 
   @override
@@ -532,8 +609,9 @@ class _TopBarIconButton extends StatelessWidget {
       child: Image.asset(asset, fit: BoxFit.contain),
     );
 
+    final Widget content;
     if (gradientBorder != null) {
-      return Container(
+      content = Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
@@ -553,10 +631,289 @@ class _TopBarIconButton extends StatelessWidget {
           child: Image.asset(asset, fit: BoxFit.contain),
         ),
       );
+    } else {
+      content = inner;
     }
 
-    return inner;
+    if (onTap == null) return content;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: content,
+    );
   }
+}
+
+/// Top-bar Bluetooth button: one-tap connect / disconnect with the ESP32, and a
+/// live icon — the normal Bluetooth glyph when connected, the "disconnected"
+/// glyph otherwise. The full scan/send console lives in the BLE Debug window
+/// (reachable from the profile menu).
+class _BleTopBarButton extends ConsumerWidget {
+  const _BleTopBarButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(bleControllerProvider.select((s) => s.status));
+    final connected = status == BleStatus.connected;
+
+    return _TopBarIconButton(
+      asset: connected
+          ? 'assets/images/icon_bluetooth.png'
+          : 'assets/images/icon_bt_disconnected.png',
+      solidBorderColor:
+          connected ? const Color(0xFF60A343) : const Color(0xFFB0B0B0),
+      // Always open the sheet — it explains the button and drives the whole
+      // connect / searching / connected / disconnect flow with clear feedback.
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) => const _BleConnectSheet(),
+      ),
+    );
+  }
+}
+
+/// Bottom sheet behind the top-bar Bluetooth button. One adaptive surface that
+/// covers every state — intro, searching, connected, not-found, and the
+/// permission-blocked case — so the user always knows what the button is doing.
+class _BleConnectSheet extends ConsumerStatefulWidget {
+  const _BleConnectSheet();
+
+  @override
+  ConsumerState<_BleConnectSheet> createState() => _BleConnectSheetState();
+}
+
+class _BleConnectSheetState extends ConsumerState<_BleConnectSheet> {
+  // True once the user has pressed "search" this sheet session, so we can tell
+  // the first-open intro apart from a finished-but-failed scan.
+  bool _attempted = false;
+
+  void _scan() {
+    setState(() => _attempted = true);
+    ref.read(bleControllerProvider.notifier).quickConnect();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(bleControllerProvider);
+    final r = context.r;
+
+    // Auto-dismiss shortly after a successful connection so the success state
+    // is visible for a beat, then gets out of the way.
+    ref.listen(bleControllerProvider.select((s) => s.status), (prev, next) {
+      if (next == BleStatus.connected && mounted) {
+        final navigator = Navigator.of(context);
+        Future.delayed(const Duration(milliseconds: 950), () {
+          if (mounted && navigator.canPop()) navigator.pop();
+        });
+      }
+    });
+
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(r(24), r(12), r(24), r(24) + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: r(40),
+            height: r(4),
+            margin: EdgeInsets.only(bottom: r(20)),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(r(2)),
+            ),
+          ),
+          _buildBody(state, r),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(BleState state, double Function(double) r) {
+    switch (state.status) {
+      case BleStatus.connected:
+        return _connectedView(state, r);
+      case BleStatus.scanning:
+      case BleStatus.connecting:
+        return _searchingView(r);
+      case BleStatus.idle:
+        if (state.needsSettings) return _permissionView(state, r);
+        if (_attempted) return _notFoundView(state, r);
+        return _introView(r);
+    }
+  }
+
+  // ── Visual building blocks ────────────────────────────────────────────────
+
+  Widget _haloIcon(IconData icon, Color color, double Function(double) r,
+      {Widget? overlay}) {
+    return Container(
+      width: r(76),
+      height: r(76),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withAlpha(26),
+      ),
+      child: overlay ?? Icon(icon, color: color, size: r(38)),
+    );
+  }
+
+  Widget _title(String text, double Function(double) r) => Text(
+        text,
+        textAlign: TextAlign.center,
+        style: thaiSans(
+            size: r(19), weight: FontWeight.w700, color: KColors.navyText),
+      );
+
+  Widget _subtitle(String text, double Function(double) r) => Text(
+        text,
+        textAlign: TextAlign.center,
+        style: thaiSans(size: r(14), color: Colors.grey.shade600),
+      );
+
+  Widget _primaryButton(
+          String label, Color color, VoidCallback onTap, double Function(double) r,
+          {IconData? icon}) =>
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: r(15)),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(r(16))),
+          ),
+          icon: icon == null
+              ? const SizedBox.shrink()
+              : Icon(icon, size: r(20)),
+          label: Text(label,
+              style: thaiSans(
+                  size: r(16), weight: FontWeight.w700, color: Colors.white)),
+          onPressed: onTap,
+        ),
+      );
+
+  Widget _textButton(
+          String label, VoidCallback onTap, double Function(double) r) =>
+      TextButton(
+        onPressed: onTap,
+        child: Text(label,
+            style: thaiSans(
+                size: r(14), weight: FontWeight.w600, color: KColors.teal)),
+      );
+
+  void _openDebug() {
+    Navigator.pop(context);
+    context.push('/ble-debug');
+  }
+
+  // ── States ────────────────────────────────────────────────────────────────
+
+  Widget _introView(double Function(double) r) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _haloIcon(Icons.bluetooth_rounded, KColors.blue, r),
+          SizedBox(height: r(16)),
+          _title('เชื่อมต่ออุปกรณ์ Kinex', r),
+          SizedBox(height: r(8)),
+          _subtitle('ปุ่มนี้ใช้เชื่อมต่อกับกล่องเซนเซอร์ (ESP32) ผ่าน Bluetooth\n'
+              'เปิดเครื่องอุปกรณ์ให้พร้อม แล้วกดค้นหา', r),
+          SizedBox(height: r(22)),
+          _primaryButton('ค้นหาและเชื่อมต่อ', KColors.blue, _scan, r,
+              icon: Icons.bluetooth_searching_rounded),
+          SizedBox(height: r(4)),
+          _textButton('เปิดหน้า BLE Debug', _openDebug, r),
+        ],
+      );
+
+  Widget _searchingView(double Function(double) r) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _haloIcon(
+            Icons.bluetooth_searching_rounded,
+            KColors.blue,
+            r,
+            overlay: Center(
+              child: SizedBox(
+                width: r(34),
+                height: r(34),
+                child: CircularProgressIndicator(
+                    strokeWidth: 3, color: KColors.blue),
+              ),
+            ),
+          ),
+          SizedBox(height: r(16)),
+          _title('กำลังค้นหาอุปกรณ์…', r),
+          SizedBox(height: r(8)),
+          _subtitle('ตรวจสอบว่าเปิดเครื่อง ESP32 และอยู่ใกล้แท็บเล็ต', r),
+          SizedBox(height: r(20)),
+        ],
+      );
+
+  Widget _connectedView(BleState state, double Function(double) r) {
+    final name = state.connectedName ?? state.connectedId ?? 'อุปกรณ์ Kinex';
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _haloIcon(Icons.bluetooth_connected_rounded, KColors.teal, r),
+        SizedBox(height: r(16)),
+        _title('เชื่อมต่อแล้ว', r),
+        SizedBox(height: r(8)),
+        _subtitle(name, r),
+        SizedBox(height: r(22)),
+        _primaryButton('ตัดการเชื่อมต่อ', const Color(0xFFE53935),
+            () => ref.read(bleControllerProvider.notifier).disconnect(), r,
+            icon: Icons.link_off_rounded),
+        SizedBox(height: r(4)),
+        _textButton('เปิดหน้า BLE Debug', _openDebug, r),
+      ],
+    );
+  }
+
+  Widget _notFoundView(BleState state, double Function(double) r) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _haloIcon(Icons.bluetooth_disabled_rounded, KColors.orangeDark, r),
+          SizedBox(height: r(16)),
+          _title('ไม่พบอุปกรณ์ Kinex', r),
+          SizedBox(height: r(8)),
+          _subtitle('ตรวจสอบว่าเปิดเครื่อง ESP32 แล้ว และเปิด Bluetooth '
+              'ของแท็บเล็ตไว้ จากนั้นลองอีกครั้ง', r),
+          SizedBox(height: r(22)),
+          _primaryButton('ลองอีกครั้ง', KColors.blue, _scan, r,
+              icon: Icons.refresh_rounded),
+          SizedBox(height: r(4)),
+          _textButton('เลือกอุปกรณ์เองใน BLE Debug', _openDebug, r),
+        ],
+      );
+
+  Widget _permissionView(BleState state, double Function(double) r) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _haloIcon(Icons.lock_outline_rounded, KColors.orangeDark, r),
+          SizedBox(height: r(16)),
+          _title('ต้องอนุญาต Bluetooth', r),
+          SizedBox(height: r(8)),
+          _subtitle('แอปต้องการสิทธิ์ Bluetooth เพื่อค้นหาและเชื่อมต่ออุปกรณ์\n'
+              'เปิดสิทธิ์ในการตั้งค่าแอป แล้วกลับมาลองใหม่', r),
+          SizedBox(height: r(22)),
+          _primaryButton('เปิดการตั้งค่า', KColors.blue, () => openAppSettings(),
+              r,
+              icon: Icons.settings_rounded),
+          SizedBox(height: r(4)),
+          _textButton('ลองอีกครั้ง', _scan, r),
+        ],
+      );
 }
 
 class _ProfileCard extends ConsumerWidget {
@@ -601,6 +958,7 @@ class _ProfileCard extends ConsumerWidget {
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'settings') context.push('/settings');
+                      if (value == 'debug') context.push('/ble-debug');
                     },
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -616,6 +974,22 @@ class _ProfileCard extends ConsumerWidget {
                                 color: KColors.navyText, size: 20),
                             const SizedBox(width: 10),
                             Text('ตั้งค่า',
+                                style: thaiSans(
+                                    size: 16,
+                                    weight: FontWeight.w600,
+                                    color: KColors.navyText)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'debug',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.bluetooth_searching_rounded,
+                                color: KColors.navyText, size: 20),
+                            const SizedBox(width: 10),
+                            Text('BLE Debug',
                                 style: thaiSans(
                                     size: 16,
                                     weight: FontWeight.w600,

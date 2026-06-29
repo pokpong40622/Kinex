@@ -9,3 +9,8 @@ final homeGuidePendingProvider = StateProvider<bool>((_) => true);
 
 /// True while the home page is dimmed to spotlight the ประเมิน (assessment) card.
 final assessmentSpotlightProvider = StateProvider<bool>((_) => false);
+
+/// True when the user skipped (or dismissed) the EMG hardware-install guide this
+/// run. Drives the home reminder banner directly, so the warning shows even if a
+/// stale calibration is still saved from a previous run. Cleared on finish.
+final emgInstallSkippedProvider = StateProvider<bool>((_) => false);

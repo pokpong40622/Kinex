@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../data/assessment_repository.dart';
 import '../../data/assessment_session.dart';
 import '../../models/assessment_record.dart';
-import '../../models/muscle.dart';
 import '../../models/assessment_test.dart';
 import '../../models/fitness_level.dart';
 import '../../services/fitness_scoring.dart';
@@ -118,29 +117,6 @@ class FinalSummaryPage extends ConsumerWidget {
             value: '${session.tug!.seconds.toStringAsFixed(2)} วินาที',
             badge: FitnessLevelBadge(session.tug!.level),
           ),
-          if (session.mvcCalibration != null) ...[
-            SizedBox(height: context.r(8)),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.r(4),
-                vertical: context.r(4),
-              ),
-              child: Text(
-                'ค่าสูงสุดของกล้ามเนื้อ (MVC)',
-                style: thaiSans(
-                  size: context.r(15),
-                  weight: FontWeight.w800,
-                  color: KColors.tealDark,
-                ),
-              ),
-            ),
-            for (final m in Muscle.values)
-              _ResultRow(
-                label: '${m.code} · ${m.thaiName}',
-                value:
-                    '${session.mvcCalibration!.peakFor(m)?.toStringAsFixed(0) ?? '-'} µV',
-              ),
-          ],
         ],
       ),
       bottom: Column(
