@@ -25,7 +25,11 @@ class ProgressOverviewPage extends ConsumerWidget {
         context.push(
             '/assessment/test/${session.nextIncompleteTestId}/instructions');
       } else {
-        context.push('/assessment/summary');
+        if (session.mvcCalibration == null) {
+          context.push('/assessment/mvc');
+        } else {
+          context.push('/assessment/summary');
+        }
       }
     }
 

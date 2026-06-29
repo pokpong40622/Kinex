@@ -32,7 +32,7 @@ class StartPage extends StatelessWidget {
             right: 0,
             child: Column(
               children: [
-                Text('Welcom to',
+                Text('ยินดีต้อนรับสู่',
                     style: poppins(size: w * 0.07, color: Colors.white)),
                 const SizedBox(height: 8),
                 Image.asset('assets/images/kinex_logo.png', width: w * 0.52),
@@ -66,7 +66,7 @@ class StartPage extends StatelessWidget {
                       Icon(Icons.play_arrow_rounded,
                           color: Colors.white, size: w * 0.08),
                       const SizedBox(width: 8),
-                      Text("Let's Start!",
+                      Text("เริ่มกันเลย!",
                           style: montserrat(
                               size: w * 0.050,
                               weight: FontWeight.w900,

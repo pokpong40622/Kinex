@@ -76,6 +76,36 @@ class MegaDanceStartPage extends ConsumerWidget {
                   ),
                 ),
 
+                // ── Mode badge (under the wordmark): this game = REHAB ──────
+                Align(
+                  alignment: const Alignment(0, 0.22),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: w * 0.05, vertical: w * 0.022),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(64),
+                      borderRadius: BorderRadius.circular(w * 0.08),
+                      border:
+                          Border.all(color: Colors.white.withAlpha(140), width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.healing_rounded,
+                            color: Colors.white, size: w * 0.05),
+                        SizedBox(width: w * 0.025),
+                        Text(
+                          'REHAB · ฟื้นฟูร่างกาย',
+                          style: montserrat(
+                              size: w * 0.04,
+                              weight: FontWeight.w800,
+                              color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 // ── Start button (bottom-centre): green pill ────────────────
                 Align(
                   alignment: const Alignment(0, 0.84),
@@ -99,7 +129,7 @@ class MegaDanceStartPage extends ConsumerWidget {
                         ],
                       ),
                       child: Text(
-                        'Start',
+                        'เริ่ม',
                         style: montserrat(
                             size: w * 0.072,
                             weight: FontWeight.w800,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 class LoginPage extends StatefulWidget {
@@ -43,8 +42,9 @@ class _LoginPageState extends State<LoginPage> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Text('Login',
-                                style: GoogleFonts.poppins(
+                            Text('เข้าสู่ระบบ',
+                                style: TextStyle(
+                                  fontFamily: 'Kanit',
                                   fontSize: w * 0.069,
                                   fontWeight: FontWeight.w900,
                                   foreground: Paint()
@@ -52,7 +52,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ..strokeWidth = 6
                                     ..color = const Color(0xFF5361AF),
                                 )),
-                            Text('Login',
+                            Text('เข้าสู่ระบบ',
                                 style: poppins(
                                     size: w * 0.069,
                                     weight: FontWeight.w900,
@@ -63,22 +63,22 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(height: h * 0.03),
                       _InputField(
                         icon: 'assets/images/icon_user.png',
-                        hint: 'Username',
+                        hint: 'ชื่อผู้ใช้',
                         w: w,
                         h: h,
                       ),
                       SizedBox(height: h * 0.02),
                       _InputField(
                         icon: 'assets/images/icon_padlock.png',
-                        hint: 'Password',
+                        hint: 'รหัสผ่าน',
                         w: w,
                         h: h,
                         obscure: true,
                       ),
                       SizedBox(height: h * 0.02),
                       _InputField(
-                        textIcon: 'AGE',
-                        hint: 'Age',
+                        textIcon: 'อายุ',
+                        hint: 'อายุ',
                         w: w,
                         h: h,
                         keyboardType: TextInputType.number,
@@ -110,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                             alignment: Alignment.center,
-                            child: Text('LOGIN',
+                            child: Text('เข้าสู่ระบบ',
                                 style: montserrat(
                                     size: w * 0.052,
                                     weight: FontWeight.w900,

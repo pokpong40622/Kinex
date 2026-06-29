@@ -8,7 +8,7 @@ class PracticePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Practice')),
+      appBar: AppBar(title: const Text('ฝึกซ้อม')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -19,7 +19,7 @@ class PracticePage extends ConsumerWidget {
                     const Icon(Icons.music_note, size: 36, color: Colors.deepPurple),
                 title: const Text('MEGA DANCE',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Rhythm-based dance rehab'),
+                subtitle: const Text('ฟื้นฟูด้วยการเต้นตามจังหวะ'),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () => context.go('/mega-dance'),
               ),
@@ -30,7 +30,7 @@ class PracticePage extends ConsumerWidget {
                 leading: Icon(Icons.air, size: 36, color: Colors.grey),
                 title: Text('HangGlider',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('Lateral balance training'),
+                subtitle: Text('ฝึกการทรงตัวด้านข้าง'),
                 trailing: Icon(Icons.lock_outline, color: Colors.grey),
               ),
             ),
@@ -40,7 +40,7 @@ class PracticePage extends ConsumerWidget {
                 leading: Icon(Icons.people, size: 36, color: Colors.grey),
                 title: Text('KINEX WORLD',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('Multiplayer duel mode'),
+                subtitle: Text('โหมดดวลหลายผู้เล่น'),
                 trailing: Icon(Icons.lock_outline, color: Colors.grey),
               ),
             ),

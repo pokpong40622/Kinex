@@ -1,17 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../state/home_intro_providers.dart';
+import '../data/assessment_repository.dart';
+import '../models/fitness_level.dart';
+import '../widgets/fitness_level_badge.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Every app entry: show the EMG hardware-install guide, then spotlight the
+    // assessment card on home. Flags are in-memory so they reset each launch.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (ref.read(homeGuidePendingProvider)) {
+        ref.read(homeGuidePendingProvider.notifier).state = false;
+        await context.push('/hardware-guide');
+        if (!mounted) return;
+        ref.read(assessmentSpotlightProvider.notifier).state = true;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +64,7 @@ class _KinexNavBar extends StatelessWidget {
 
   const _KinexNavBar({required this.selected, required this.onTap});
 
-  static const _labels = ['Home', 'Quest', 'Practice', 'Info'];
+  static const _labels = ['หน้าหลัก', 'ภารกิจ', 'ฝึกซ้อม', 'ข้อมูล'];
   static const _icons = [
     'assets/images/nav_home.png',
     'assets/images/nav_quest.png',
@@ -83,9 +103,24 @@ class _KinexNavBar extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Opacity(
-                          opacity: active ? 1.0 : 0.4,
-                          child: Image.asset(_icons[i], width: 42, height: 42),
+                        // Soft glow behind the active tab's icon (premium feel).
+                        Container(
+                          decoration: active
+                              ? BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: KColors.indigo.withAlpha(110),
+                                        blurRadius: 16,
+                                        spreadRadius: 1),
+                                  ],
+                                )
+                              : null,
+                          child: Opacity(
+                            opacity: active ? 1.0 : 0.4,
+                            child:
+                                Image.asset(_icons[i], width: 42, height: 42),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -96,6 +131,17 @@ class _KinexNavBar extends StatelessWidget {
                             color: active
                                 ? KColors.navyText
                                 : KColors.navyText.withAlpha(100),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        // Active underline pill.
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 3,
+                          width: active ? 22 : 0,
+                          decoration: BoxDecoration(
+                            gradient: KColors.blueGradient,
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ],
@@ -113,9 +159,17 @@ class _KinexNavBar extends StatelessWidget {
 
 // ── HOME TAB ────────────────────────────────────────────────────────────────
 
-class _HomeTab extends StatelessWidget {
+class _HomeTab extends ConsumerStatefulWidget {
   final VoidCallback onStartGame;
   const _HomeTab({required this.onStartGame});
+
+  @override
+  ConsumerState<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends ConsumerState<_HomeTab> {
+  // Used to measure the on-screen rect of the ประเมิน card for the spotlight.
+  final GlobalKey _assessmentKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +218,7 @@ class _HomeTab extends StatelessWidget {
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
                     child: _WorldCard(
-                      onTap: onStartGame,
+                      onTap: widget.onStartGame,
                       gradient: KColors.purpleRadial,
                     ),
                   ),
@@ -177,6 +231,7 @@ class _HomeTab extends StatelessWidget {
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
                     child: _AssessmentCard(
+                      cardKey: _assessmentKey,
                       onTap: () => context.push('/assessment'),
                     ),
                   ),
@@ -185,6 +240,13 @@ class _HomeTab extends StatelessWidget {
             ],
           ),
         ),
+        // Spotlight: dim everything except the ประเมิน card until dismissed.
+        if (ref.watch(assessmentSpotlightProvider))
+          _SpotlightOverlay(
+            targetKey: _assessmentKey,
+            onDismiss: () =>
+                ref.read(assessmentSpotlightProvider.notifier).state = false,
+          ),
       ],
     );
   }
@@ -192,17 +254,54 @@ class _HomeTab extends StatelessWidget {
 
 /// Home-tab entry point for the elderly fitness-assessment module.
 /// Styled after [_WorldCard] but in the healthcare (teal→blue) palette.
-class _AssessmentCard extends StatelessWidget {
+class _AssessmentCard extends StatefulWidget {
   final VoidCallback onTap;
-  const _AssessmentCard({required this.onTap});
+  final GlobalKey? cardKey;
+  const _AssessmentCard({required this.onTap, this.cardKey});
+
+  @override
+  State<_AssessmentCard> createState() => _AssessmentCardState();
+}
+
+class _AssessmentCardState extends State<_AssessmentCard>
+    with SingleTickerProviderStateMixin {
+  // Gentle "real game" highlight: a slow teal glow that breathes in and out.
+  late final AnimationController _glow = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1900))
+    ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final h = size.height;
     final cardH = h * 0.145; // ~25% smaller than the old 0.195 (0.127 clipped the content)
-    return GestureDetector(
-      onTap: onTap,
+    return AnimatedBuilder(
+      key: widget.cardKey,
+      animation: _glow,
+      builder: (context, child) {
+        final t = _glow.value; // 0..1
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: KColors.teal.withAlpha((45 + 90 * t).round()),
+                blurRadius: 16 + 16 * t,
+                spreadRadius: 1 + 2 * t,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: GestureDetector(
+      onTap: widget.onTap,
       child: SizedBox(
         height: cardH,
         child: LayoutBuilder(
@@ -277,8 +376,126 @@ class _AssessmentCard extends StatelessWidget {
           },
         ),
       ),
+      ),
     );
   }
+}
+
+/// Full-screen dim with a "hole" cut around the ประเมิน card. Taps in the dark
+/// dismiss the spotlight; taps on the card open the assessment.
+class _SpotlightOverlay extends StatefulWidget {
+  final GlobalKey targetKey;
+  final VoidCallback onDismiss;
+  const _SpotlightOverlay({required this.targetKey, required this.onDismiss});
+
+  @override
+  State<_SpotlightOverlay> createState() => _SpotlightOverlayState();
+}
+
+class _SpotlightOverlayState extends State<_SpotlightOverlay> {
+  @override
+  void initState() {
+    super.initState();
+    _scheduleMeasure();
+  }
+
+  // Rebuild once the target card has been laid out so we can read its rect.
+  void _scheduleMeasure() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.targetKey.currentContext == null) {
+        _scheduleMeasure();
+        return;
+      }
+      setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final box =
+        widget.targetKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      // Fallback: plain dim that just dismisses on tap (no hole yet).
+      return Positioned.fill(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onDismiss,
+          child: Container(color: Colors.black54),
+        ),
+      );
+    }
+
+    final topLeft = box.localToGlobal(Offset.zero);
+    final rect = (topLeft & box.size).inflate(8);
+    final screen = MediaQuery.sizeOf(context);
+
+    // Caption just below the hole, clamped within the screen.
+    final captionTop = (rect.bottom + 12).clamp(0.0, screen.height - 40.0);
+
+    return Stack(
+      children: [
+        // Dim everything except the rounded hole around the card.
+        Positioned.fill(
+          child: CustomPaint(
+            painter: _SpotlightPainter(rect: rect, radius: 24),
+          ),
+        ),
+        // Tapping the dark area dismisses the spotlight.
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onDismiss,
+          ),
+        ),
+        // Hint caption.
+        Positioned(
+          left: 16,
+          right: 16,
+          top: captionTop,
+          child: Text(
+            'แตะที่การ์ดเพื่อเริ่มประเมิน',
+            textAlign: TextAlign.center,
+            style: thaiSans(
+                size: 16, weight: FontWeight.w700, color: Colors.white),
+          ),
+        ),
+        // Tapping the card opens the assessment (on top of the dismiss layer).
+        Positioned(
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              widget.onDismiss();
+              context.push('/assessment');
+            },
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SpotlightPainter extends CustomPainter {
+  final Rect rect;
+  final double radius;
+  const _SpotlightPainter({required this.rect, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..addRect(Offset.zero & size)
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)))
+      ..fillType = PathFillType.evenOdd;
+    canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.6));
+  }
+
+  @override
+  bool shouldRepaint(_SpotlightPainter old) => old.rect != rect;
 }
 
 class _TopBarIconButton extends StatelessWidget {
@@ -342,11 +559,11 @@ class _TopBarIconButton extends StatelessWidget {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
+class _ProfileCard extends ConsumerWidget {
   const _ProfileCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = MediaQuery.sizeOf(context);
     final w = size.width;
     final h = size.height;
@@ -381,24 +598,51 @@ class _ProfileCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(width: avatarR * 0.15),
-                  Container(
-                    width: avatarR * 2,
-                    height: avatarR * 2,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      border:
-                          Border.all(color: const Color(0xFFBEBEBE), width: 3),
-                      boxShadow: const [
-                        BoxShadow(
-                            color: Color(0x25000000),
-                            blurRadius: 6,
-                            offset: Offset(0, 2))
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset('assets/images/app_logo.png',
-                          fit: BoxFit.cover),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'settings') context.push('/settings');
+                    },
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    color: Colors.white,
+                    padding: EdgeInsets.zero,
+                    itemBuilder: (_) => [
+                      PopupMenuItem<String>(
+                        value: 'settings',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.settings_rounded,
+                                color: KColors.navyText, size: 20),
+                            const SizedBox(width: 10),
+                            Text('ตั้งค่า',
+                                style: thaiSans(
+                                    size: 16,
+                                    weight: FontWeight.w600,
+                                    color: KColors.navyText)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      width: avatarR * 2,
+                      height: avatarR * 2,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border:
+                            Border.all(color: const Color(0xFFBEBEBE), width: 3),
+                        boxShadow: const [
+                          BoxShadow(
+                              color: Color(0x25000000),
+                              blurRadius: 6,
+                              offset: Offset(0, 2))
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset('assets/images/app_logo.png',
+                            fit: BoxFit.cover),
+                      ),
                     ),
                   ),
                   SizedBox(width: w * 0.025),
@@ -407,18 +651,11 @@ class _ProfileCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Image.asset('assets/images/icon_award.png',
-                                width: w * 0.065),
-                            SizedBox(width: w * 0.015),
-                            Text('1,436',
-                                style: montserrat(
-                                    size: w * 0.048,
-                                    weight: FontWeight.w900,
-                                    color: KColors.blue)),
-                          ],
-                        ),
+                        ref.watch(latestAssessmentProvider).maybeWhen(
+                              data: (rec) =>
+                                  _ResultPill(level: rec?.overall, w: w),
+                              orElse: () => _ResultPill(level: null, w: w),
+                            ),
                         Text('@ray_lorkasemsan',
                             style: montserrat(
                                 size: w * 0.030,
@@ -431,6 +668,64 @@ class _ProfileCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile-card badge showing the latest ประเมินสมรรถภาพ result on a coloured
+/// background, or a soft "not assessed yet" hint. Taps through to the assessment.
+class _ResultPill extends StatelessWidget {
+  final FitnessLevel? level;
+  final double w;
+  const _ResultPill({required this.level, required this.w});
+
+  @override
+  Widget build(BuildContext context) {
+    final assessed = level != null;
+    final c = assessed ? fitnessLevelColor(level!) : const Color(0xFF9AA3B8);
+    final dark = Color.lerp(c, Colors.black, 0.18)!;
+    return GestureDetector(
+      onTap: () => context.push('/assessment'),
+      behavior: HitTestBehavior.opaque,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.center,
+        child: Container(
+        padding: EdgeInsets.symmetric(horizontal: w * 0.028, vertical: w * 0.014),
+        decoration: BoxDecoration(
+          gradient: assessed
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [c, dark])
+              : null,
+          color: assessed ? null : const Color(0xFFEDEFF5),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: assessed
+              ? [BoxShadow(color: c.withAlpha(140), blurRadius: 12, offset: const Offset(0, 3))]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              assessed ? Icons.monitor_heart_rounded : Icons.assignment_outlined,
+              color: assessed ? Colors.white : const Color(0xFF7A839B),
+              size: w * 0.045,
+            ),
+            SizedBox(width: w * 0.015),
+            Text(
+              assessed ? 'ผลประเมิน: ${level!.thaiLabel}' : 'ยังไม่ได้ประเมิน',
+              style: thaiSans(
+                  size: w * 0.034,
+                  weight: FontWeight.w800,
+                  color: assessed ? Colors.white : const Color(0xFF5B6B86)),
+            ),
+          ],
+        ),
         ),
       ),
     );
@@ -480,7 +775,7 @@ class _WorldCard extends StatelessWidget {
                                 weight: FontWeight.w900,
                                 color: Colors.white)),
                         SizedBox(height: cw * 0.02),
-                        Text('Join the multiplayer world!',
+                        Text('เข้าร่วมโลกหลายผู้เล่น!',
                             style: montserrat(
                                 size: cw * 0.030,
                                 weight: FontWeight.w900,
@@ -497,7 +792,7 @@ class _WorldCard extends StatelessWidget {
                               border: Border.all(
                                   color: Colors.white.withAlpha(115), width: 2),
                             ),
-                            child: Text('Click to Start!',
+                            child: Text('แตะเพื่อเริ่ม',
                                 style: montserrat(
                                     size: cw * 0.040,
                                     weight: FontWeight.w900,
@@ -718,7 +1013,7 @@ class _PracticeTab extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                     w * 0.06, h * 0.025, w * 0.06, h * 0.02),
-                child: Text('Practice',
+                child: Text('ฝึกซ้อม',
                     style: montserrat(
                         size: w * 0.09,
                         weight: FontWeight.w900,
@@ -834,8 +1129,9 @@ class _InfoTab extends StatelessWidget {
                       children: [
                         Stack(
                           children: [
-                            Text('INFO',
-                                style: GoogleFonts.montserrat(
+                            Text('ข้อมูล',
+                                style: TextStyle(
+                                  fontFamily: 'Kanit',
                                   fontSize: w * 0.13,
                                   fontWeight: FontWeight.w600,
                                   foreground: Paint()
@@ -843,19 +1139,19 @@ class _InfoTab extends StatelessWidget {
                                     ..strokeWidth = w * 0.012
                                     ..color = Colors.white,
                                 )),
-                            Text('INFO',
+                            Text('ข้อมูล',
                                 style: montserrat(
                                     size: w * 0.13,
                                     weight: FontWeight.w600,
                                     color: KColors.navyText)),
                           ],
                         ),
-                        Text('Username: ray_lorkasemsan',
+                        Text('ชื่อผู้ใช้: ray_lorkasemsan',
                             style: montserrat(
                                 size: w * 0.035,
                                 weight: FontWeight.w700,
                                 color: KColors.navyText)),
-                        Text('Age: 80',
+                        Text('อายุ: 80',
                             style: montserrat(
                                 size: w * 0.035,
                                 weight: FontWeight.w800,
@@ -907,7 +1203,7 @@ class _InfoTab extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text('Best update',
+                          Text('อัปเดตล่าสุด',
                               style: montserrat(
                                   size: w * 0.038,
                                   weight: FontWeight.w800,
@@ -929,12 +1225,12 @@ class _InfoTab extends StatelessWidget {
                                         size: w * 0.095,
                                         weight: FontWeight.w700,
                                         color: KColors.teal)),
-                                Text('Right Muscle Leg better',
+                                Text('กล้ามเนื้อขาขวาดีขึ้น',
                                     style: montserrat(
                                         size: w * 0.03,
                                         weight: FontWeight.w700,
                                         color: KColors.navyText)),
-                                Text('from last month',
+                                Text('จากเดือนที่แล้ว',
                                     style: montserrat(
                                         size: w * 0.028,
                                         weight: FontWeight.w600,
@@ -947,9 +1243,9 @@ class _InfoTab extends StatelessWidget {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                _MiniBar(fraction: 0.63, label: 'Jan'),
+                                _MiniBar(fraction: 0.63, label: 'ม.ค.'),
                                 SizedBox(width: w * 0.02),
-                                _MiniBar(fraction: 1.0, label: 'Feb', active: true),
+                                _MiniBar(fraction: 1.0, label: 'ก.พ.', active: true),
                               ],
                             ),
                           ),
@@ -975,7 +1271,7 @@ class _InfoTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Recommend Action',
+                      Text('คำแนะนำ',
                           style: montserrat(
                               size: w * 0.045,
                               weight: FontWeight.w800,
@@ -1008,12 +1304,12 @@ class _InfoTab extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Improve',
+                              Text('พัฒนา',
                                   style: montserrat(
                                       size: w * 0.04,
                                       weight: FontWeight.w700,
                                       color: KColors.navyText)),
-                              Text('Left Leg',
+                              Text('ขาซ้าย',
                                   style: montserrat(
                                       size: w * 0.075,
                                       weight: FontWeight.w700,
@@ -1029,7 +1325,7 @@ class _InfoTab extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text('Put more weight on your right leg.',
+                            child: Text('ลงน้ำหนักที่ขาขวาให้มากขึ้นนะครับ',
                                 style: montserrat(
                                     size: w * 0.033,
                                     weight: FontWeight.w700,
@@ -1043,13 +1339,9 @@ class _InfoTab extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: h * 0.02),
-                Row(
-                  children: [
-                    Expanded(child: _MuscleStatCard()),
-                    SizedBox(width: w * 0.04),
-                    Expanded(child: _PostureStatCard()),
-                  ],
-                ),
+                const _EmgCard(),
+                SizedBox(height: h * 0.02),
+                const _PostureStatCard(),
                 SizedBox(height: h * 0.02),
                 Container(
                   width: double.infinity,
@@ -1076,7 +1368,7 @@ class _InfoTab extends StatelessWidget {
                               color: KColors.indigo,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text('Last 6 months',
+                            child: Text('6 เดือนล่าสุด',
                                 style: montserrat(
                                     size: w * 0.032,
                                     weight: FontWeight.w800,
@@ -1127,46 +1419,152 @@ class _ArrowCircleButton extends StatelessWidget {
   }
 }
 
-// Muscles (EMG) stat card — "Right Leg" label with robot icon placeholder.
-class _MuscleStatCard extends StatelessWidget {
-  const _MuscleStatCard();
+// Muscles (EMG) — full-width card with two graphs (left/right side) + a locked
+// button gated behind a 6-digit code. Sample data for now (no live EMG feed).
+class _EmgCard extends StatelessWidget {
+  const _EmgCard();
+
+  static const _left = [0.40, 0.55, 0.48, 0.63, 0.58, 0.71];
+  static const _right = [0.50, 0.46, 0.60, 0.55, 0.69, 0.74];
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
+    final w = MediaQuery.sizeOf(context).width;
     return Container(
-      padding: EdgeInsets.all(w * 0.04),
+      width: double.infinity,
+      padding: EdgeInsets.all(w * 0.045),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F2FB),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF6F5FE), Color(0xFFECEAFB)],
+        ),
         borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: KColors.indigo.withAlpha(30), width: 1.5),
         boxShadow: const [
-          BoxShadow(color: Color(0x30000000), blurRadius: 10, offset: Offset(0, 4))
+          BoxShadow(color: Color(0x22000000), blurRadius: 16, offset: Offset(0, 6))
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Muscles (EMG)',
-              style: montserrat(
-                  size: w * 0.035,
-                  weight: FontWeight.w800,
-                  color: KColors.indigo)),
-          SizedBox(height: w * 0.03),
           Row(
             children: [
-              Icon(Icons.smart_toy_rounded,
-                  size: w * 0.14, color: KColors.indigo.withAlpha(180)),
-              SizedBox(width: w * 0.03),
-              Text('Right\nLeg',
+              Icon(Icons.monitor_heart_rounded,
+                  size: w * 0.055, color: KColors.indigo),
+              SizedBox(width: w * 0.02),
+              Text('กล้ามเนื้อ (EMG)',
                   style: montserrat(
-                      size: w * 0.045,
+                      size: w * 0.042,
                       weight: FontWeight.w800,
-                      color: KColors.navyText)),
+                      color: KColors.indigo)),
             ],
+          ),
+          SizedBox(height: w * 0.04),
+          Row(
+            children: [
+              Expanded(
+                  child: _EmgGraph(
+                      label: 'ซ้าย', points: _left, color: KColors.indigo)),
+              SizedBox(width: w * 0.04),
+              Expanded(
+                  child: _EmgGraph(
+                      label: 'ขวา', points: _right, color: KColors.teal)),
+            ],
+          ),
+          SizedBox(height: w * 0.045),
+          GestureDetector(
+            onTap: () => context.push('/emg/pin'),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: w * 0.035),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [KColors.indigo, KColors.blue],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                      color: KColors.indigo.withAlpha(90),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_rounded, color: Colors.white, size: w * 0.045),
+                  SizedBox(width: w * 0.02),
+                  Text('ดูข้อมูล EMG เชิงลึก',
+                      style: thaiSans(
+                          size: w * 0.038,
+                          weight: FontWeight.w800,
+                          color: Colors.white)),
+                ],
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+// One labelled EMG line graph (reuses the home-page line painter).
+class _EmgGraph extends StatelessWidget {
+  final String label;
+  final List<double> points;
+  final Color color;
+  const _EmgGraph(
+      {required this.label, required this.points, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: w * 0.025,
+              height: w * 0.025,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            SizedBox(width: w * 0.015),
+            Text(label,
+                style: thaiSans(
+                    size: w * 0.032,
+                    weight: FontWeight.w700,
+                    color: KColors.navyText)),
+          ],
+        ),
+        SizedBox(height: w * 0.02),
+        Container(
+          height: w * 0.22,
+          padding: EdgeInsets.all(w * 0.02),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))
+            ],
+          ),
+          child: CustomPaint(
+            painter: _LineChartPainter(
+              points: points,
+              lineColor: color,
+              dotColor: color,
+              activeDotColor: color,
+            ),
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1191,7 +1589,7 @@ class _PostureStatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Posture\n(Pose Estimation)',
+          Text('ท่าทาง\n(Pose Estimation)',
               style: montserrat(
                   size: w * 0.035,
                   weight: FontWeight.w800,
@@ -1202,7 +1600,7 @@ class _PostureStatCard extends StatelessWidget {
                   size: w * 0.12,
                   weight: FontWeight.w900,
                   color: KColors.indigo.withAlpha(80))),
-          Text('Excellent\nStability',
+          Text('ทรงตัว\nยอดเยี่ยม',
               style: montserrat(
                   size: w * 0.038,
                   weight: FontWeight.w800,
@@ -1218,7 +1616,7 @@ class _LineChart extends StatelessWidget {
   const _LineChart();
 
   static const _points = [0.58, 0.63, 0.66, 0.68, 0.70, 0.85];
-  static const _labels = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+  static const _labels = ['ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.'];
   static const _yLabels = ['100%', '75%', '50%', '25%', '0%'];
 
   @override

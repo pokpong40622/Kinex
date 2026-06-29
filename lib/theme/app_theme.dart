@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class KColors {
   static const blue = Color(0xFF2766EF);
@@ -59,14 +58,19 @@ class KColors {
   );
 }
 
+// The whole app now uses Kanit (Cadson Demak), bundled in assets/fonts so it works offline.
+// Kanit covers both Thai and Latin, so every text helper routes to it — keeping the names/signatures
+// so no call sites need to change. Weights map to the bundled .ttf files declared in pubspec.yaml.
+const String _kanit = 'Kanit';
+
 TextStyle montserrat({
   double size = 16,
   FontWeight weight = FontWeight.w700,
   Color color = KColors.navyText,
   FontStyle style = FontStyle.normal,
 }) =>
-    GoogleFonts.montserrat(
-        fontSize: size, fontWeight: weight, color: color, fontStyle: style);
+    TextStyle(
+        fontFamily: _kanit, fontSize: size, fontWeight: weight, color: color, fontStyle: style);
 
 TextStyle nunito({
   double size = 16,
@@ -74,24 +78,23 @@ TextStyle nunito({
   Color color = Colors.white,
   FontStyle style = FontStyle.normal,
 }) =>
-    GoogleFonts.nunito(
-        fontSize: size, fontWeight: weight, color: color, fontStyle: style);
+    TextStyle(
+        fontFamily: _kanit, fontSize: size, fontWeight: weight, color: color, fontStyle: style);
 
 TextStyle poppins({
   double size = 16,
   FontWeight weight = FontWeight.w400,
   Color color = Colors.white,
 }) =>
-    GoogleFonts.poppins(fontSize: size, fontWeight: weight, color: color);
+    TextStyle(fontFamily: _kanit, fontSize: size, fontWeight: weight, color: color);
 
-/// Thai-capable font for the fitness-assessment module. The display fonts
-/// (Montserrat/Nunito/Poppins) lack Thai glyphs, so Thai UI text uses this.
+/// Thai text helper — now Kanit (was Noto Sans Thai). Kept for the assessment module call sites.
 TextStyle thaiSans({
   double size = 16,
   FontWeight weight = FontWeight.w700,
   Color color = KColors.navyText,
 }) =>
-    GoogleFonts.notoSansThai(fontSize: size, fontWeight: weight, color: color);
+    TextStyle(fontFamily: _kanit, fontSize: size, fontWeight: weight, color: color);
 
 BoxDecoration cardDecoration({double radius = 25, Color color = KColors.cardBg}) =>
     BoxDecoration(

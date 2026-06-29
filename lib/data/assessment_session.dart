@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/emg_metrics.dart';
 import '../models/person_info.dart';
 import '../models/test_results.dart';
 
@@ -17,6 +18,7 @@ class AssessmentSession {
   final RepCountResult? chairStand;
   final RepCountResult? stepTest;
   final TimedResult? tug;
+  final MvcCalibration? mvcCalibration;
 
   const AssessmentSession({
     this.person,
@@ -29,6 +31,7 @@ class AssessmentSession {
     this.chairStand,
     this.stepTest,
     this.tug,
+    this.mvcCalibration,
   });
 
   static const empty = AssessmentSession();
@@ -75,6 +78,7 @@ class AssessmentSession {
     RepCountResult? chairStand,
     RepCountResult? stepTest,
     TimedResult? tug,
+    MvcCalibration? mvcCalibration,
   }) =>
       AssessmentSession(
         person: person ?? this.person,
@@ -87,6 +91,7 @@ class AssessmentSession {
         chairStand: chairStand ?? this.chairStand,
         stepTest: stepTest ?? this.stepTest,
         tug: tug ?? this.tug,
+        mvcCalibration: mvcCalibration ?? this.mvcCalibration,
       );
 }
 
@@ -106,6 +111,8 @@ class AssessmentSessionNotifier extends Notifier<AssessmentSession> {
   void setChairStand(RepCountResult r) => state = state.copyWith(chairStand: r);
   void setStepTest(RepCountResult r) => state = state.copyWith(stepTest: r);
   void setTug(TimedResult r) => state = state.copyWith(tug: r);
+  void setMvcCalibration(MvcCalibration c) =>
+      state = state.copyWith(mvcCalibration: c);
 
   /// Store a movement-test result by id (used by the generic per-test flow).
   void setMovementResult(String testId, Object result) {

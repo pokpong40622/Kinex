@@ -49,12 +49,17 @@ class TestResultPage extends ConsumerWidget {
     }
 
     final level = (result as dynamic).level as FitnessLevel;
-    final valueText = switch (test.method) {
-      TestMethod.camera => '${(result as dynamic).reps} ครั้ง',
-      TestMethod.manualStopwatch =>
-        '${((result as dynamic).seconds as double).toStringAsFixed(2)} วินาที',
-      TestMethod.manualChoice => null,
-    };
+    // TUG always records a TimedResult (stopwatch) even though its method is
+    // camera — mirror the special-case used in ManualEntryPage so we read
+    // .seconds, not .reps.
+    final valueText = testId == 'tug'
+        ? '${((result as dynamic).seconds as double).toStringAsFixed(2)} วินาที'
+        : switch (test.method) {
+            TestMethod.camera => '${(result as dynamic).reps} ครั้ง',
+            TestMethod.manualStopwatch =>
+              '${((result as dynamic).seconds as double).toStringAsFixed(2)} วินาที',
+            TestMethod.manualChoice => null,
+          };
 
     return AssessmentScaffold(
       title: test.thaiName,

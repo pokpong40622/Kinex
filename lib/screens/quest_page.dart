@@ -7,7 +7,7 @@ class QuestPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Quests')),
+      appBar: AppBar(title: const Text('ภารกิจ')),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: 3,
@@ -23,12 +23,12 @@ class QuestPage extends ConsumerWidget {
                     children: [
                       const Icon(Icons.flag, color: Colors.deepPurple),
                       const SizedBox(width: 8),
-                      Text('Quest ${i + 1}',
+                      Text('ภารกิจ ${i + 1}',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text('Complete 5 MEGA DANCE sessions'),
+                  const Text('เล่น MEGA DANCE ให้ครบ 5 ครั้ง'),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(
                     value: (i + 1) * 0.3,
@@ -36,7 +36,7 @@ class QuestPage extends ConsumerWidget {
                     color: Colors.deepPurple,
                   ),
                   const SizedBox(height: 4),
-                  Text('${((i + 1) * 30).toStringAsFixed(0)}% complete',
+                  Text('สำเร็จ ${((i + 1) * 30).toStringAsFixed(0)}%',
                       style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),

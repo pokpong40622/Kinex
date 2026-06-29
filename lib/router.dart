@@ -7,6 +7,7 @@ import 'screens/home_page.dart';
 import 'screens/practice_page.dart';
 import 'screens/quest_page.dart';
 import 'screens/info_page.dart';
+import 'screens/settings_page.dart';
 import 'screens/mega_dance_start.dart';
 import 'screens/mega_dance_game.dart';
 import 'screens/assessment/assessment_landing_page.dart';
@@ -22,6 +23,7 @@ import 'screens/assessment/live_assessment_page.dart';
 import 'screens/assessment/manual_entry_page.dart';
 import 'screens/assessment/test_result_page.dart';
 import 'screens/assessment/final_summary_page.dart';
+import 'screens/assessment/mvc_calibration_page.dart';
 import 'screens/assessment/history_list_page.dart';
 import 'screens/assessment/history_detail_page.dart';
 import 'screens/world/world_hero_page.dart';
@@ -29,6 +31,9 @@ import 'screens/world/world_game_screen.dart';
 import 'screens/world/world_result_page.dart';
 import 'screens/world/world_history_page.dart';
 import 'screens/world/world_history_detail_page.dart';
+import 'screens/emg/emg_pin_page.dart';
+import 'screens/emg/emg_detail_page.dart';
+import 'screens/onboarding/hardware_guide_page.dart';
 import 'models/world_session_record.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
@@ -36,6 +41,13 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, _) => const StartPage()),
         GoRoute(path: '/login', builder: (context, _) => const LoginPage()),
+        // EMG detail behind a 6-digit gate (full-screen, outside the nav shell).
+        GoRoute(path: '/emg/pin', builder: (context, _) => const EmgPinPage()),
+        GoRoute(path: '/emg/detail', builder: (context, _) => const EmgDetailPage()),
+        // EMG hardware-install guide popup (full-screen, shown on every app entry).
+        GoRoute(
+            path: '/hardware-guide',
+            builder: (context, _) => const HardwareGuidePage()),
         ShellRoute(
           builder: (context, state, child) => RootShell(child: child),
           routes: [
@@ -43,6 +55,8 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(path: '/practice', builder: (context, _) => const PracticePage()),
             GoRoute(path: '/quest', builder: (context, _) => const QuestPage()),
             GoRoute(path: '/info', builder: (context, _) => const InfoPage()),
+            GoRoute(
+                path: '/settings', builder: (context, _) => const SettingsPage()),
             GoRoute(
                 path: '/mega-dance',
                 builder: (context, _) => const MegaDanceStartPage()),
@@ -92,6 +106,9 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
                 path: '/assessment/test/:testId/result',
                 builder: (context, state) =>
                     TestResultPage(testId: state.pathParameters['testId']!)),
+            GoRoute(
+                path: '/assessment/mvc',
+                builder: (context, _) => const MvcCalibrationPage()),
             GoRoute(
                 path: '/assessment/summary',
                 builder: (context, _) => const FinalSummaryPage()),
