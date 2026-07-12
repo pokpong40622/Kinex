@@ -10,7 +10,7 @@ import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/bmi_band_badge.dart';
-import '../../widgets/fitness_level_badge.dart';
+import '../../widgets/fall_risk_cards.dart';
 
 /// Read-only breakdown of a single saved [AssessmentRecord], with a delete
 /// action.
@@ -105,34 +105,52 @@ class _DetailBody extends StatelessWidget {
       person.gender.thaiLabel,
     ].join(' · ');
 
+    final gaitValue = record.gait.unable
+        ? 'เดินไม่ได้'
+        : '${record.gait.seconds.toStringAsFixed(1)} วิ';
+    final chairValue = record.chairStand.preTestPassed
+        ? '${record.chairStand.seconds.toStringAsFixed(1)} วิ'
+        : 'ทำไม่ได้';
+    final balanceHeld = [
+      record.balance.sideBySideSec,
+      record.balance.semiTandemSec,
+      record.balance.tandemSec,
+    ].where((s) => s >= 10.0).length;
+
     return ListView(
       padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
       children: [
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: context.r(24), horizontal: context.r(16)),
+          padding: EdgeInsets.symmetric(vertical: context.r(16), horizontal: context.r(16)),
           decoration: cardDecoration(),
           child: Column(
             children: [
               Text(dateLabel, style: thaiSans(size: context.r(14), weight: FontWeight.w600)),
               SizedBox(height: context.r(4)),
               Text(personLabel, style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
-              SizedBox(height: context.r(16)),
-              Text('ผลการประเมินโดยรวม',
-                  style: thaiSans(size: context.r(18), weight: FontWeight.w800)),
-              SizedBox(height: context.r(12)),
-              FitnessLevelBadge(record.overall, fontSize: context.r(28)),
-              SizedBox(height: context.r(8)),
-              Text(
-                'เกณฑ์รวมของ Kinex (ไม่ใช่จากคู่มือ)',
-                textAlign: TextAlign.center,
-                style: thaiSans(
-                    size: context.r(13), weight: FontWeight.w600, color: KColors.navyText.withAlpha(160)),
-              ),
             ],
           ),
         ),
         SizedBox(height: context.r(16)),
+        FallRiskHero(total: record.totalScore, risk: record.risk),
+        SizedBox(height: context.r(16)),
+        _ResultRow(
+          label: assessmentTestById('balance').thaiName,
+          value: 'ผ่าน $balanceHeld ท่า',
+          badge: _PointsChip(record.balance.points),
+        ),
+        _ResultRow(
+          label: assessmentTestById('gait_speed').thaiName,
+          value: gaitValue,
+          badge: _PointsChip(record.gait.points),
+        ),
+        _ResultRow(
+          label: assessmentTestById('chair_stand').thaiName,
+          value: chairValue,
+          badge: _PointsChip(record.chairStand.points),
+        ),
+        SizedBox(height: context.r(8)),
         _ResultRow(label: 'น้ำหนัก', value: '${record.weight.value} กก.'),
         _ResultRow(label: 'ส่วนสูง', value: '${record.height.value} ซม.'),
         _ResultRow(
@@ -140,37 +158,31 @@ class _DetailBody extends StatelessWidget {
           value: record.bmi.value.toStringAsFixed(1),
           badge: BmiBandBadge(record.bmi.band),
         ),
-        _ResultRow(
-          label: assessmentTestById('back_scratch').thaiName,
-          value: '',
-          badge: FitnessLevelBadge(record.backScratch.level),
-        ),
-        _ResultRow(
-          label: assessmentTestById('sit_reach').thaiName,
-          value: '',
-          badge: FitnessLevelBadge(record.sitAndReach.level),
-        ),
-        _ResultRow(
-          label: assessmentTestById('arm_curl').thaiName,
-          value: '${record.armCurl.reps} ครั้ง',
-          badge: FitnessLevelBadge(record.armCurl.level),
-        ),
-        _ResultRow(
-          label: assessmentTestById('chair_stand').thaiName,
-          value: '${record.chairStand.reps} ครั้ง',
-          badge: FitnessLevelBadge(record.chairStand.level),
-        ),
-        _ResultRow(
-          label: assessmentTestById('step_test').thaiName,
-          value: '${record.stepTest.reps} ครั้ง',
-          badge: FitnessLevelBadge(record.stepTest.level),
-        ),
-        _ResultRow(
-          label: assessmentTestById('tug').thaiName,
-          value: '${record.tug.seconds.toStringAsFixed(2)} วินาที',
-          badge: FitnessLevelBadge(record.tug.level),
-        ),
       ],
+    );
+  }
+}
+
+/// Small "X/4" points chip used per SPPB domain.
+class _PointsChip extends StatelessWidget {
+  final int points;
+  const _PointsChip(this.points);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: context.r(12), vertical: context.r(6)),
+      decoration: BoxDecoration(
+        color: KColors.teal.withAlpha(28),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: KColors.teal, width: 1.4),
+      ),
+      child: Text('$points/4',
+          style: thaiSans(
+              size: context.r(15),
+              weight: FontWeight.w900,
+              color: KColors.tealDark)),
     );
   }
 }

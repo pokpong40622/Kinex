@@ -50,8 +50,10 @@ class _LegCapture {
 /// ~3 seconds, then computes the real min/mean/max — the max becomes that
 /// muscle/leg's MVC reference (EMGPeak), saved to phone storage.
 ///
-/// Sensor values are mock (random on the ESP32) until the real EMG analogRead is
-/// wired in, but the whole 2-device path — command, stream, stats — is live.
+/// The ESP32 reads the real EMG sensor mapped to each muscle (the app sends the
+/// channel with `START:leg:ch`), so the min/mean/max stats are real values.
+/// Left-leg sensors don't exist yet — until they do, the L side reads the same
+/// right-leg pins.
 class HardwareGuidePage extends ConsumerStatefulWidget {
   const HardwareGuidePage({super.key});
 
@@ -200,7 +202,10 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
       final v = _parseSample(line, leg);
       if (v != null) _buffer.add(v);
     });
-    ctl.send('START:${leg.code}');
+    // Tell the ESP which muscle's sensor to read — channel = pad order
+    // (0=VL, 1=BF, 2=TA, 3=GCM), matching the firmware's EMG_PINS[].
+    final channel = _padMuscles.indexOf(m);
+    ctl.send('START:${leg.code}:$channel');
 
     _bar.forward(from: 0);
   }

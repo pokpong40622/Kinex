@@ -13,10 +13,11 @@ import 'package:kinex_app/screens/assessment/progress_overview_page.dart';
 import 'package:kinex_app/screens/assessment/final_summary_page.dart';
 
 /// These pump the pure-Flutter screens to catch runtime build errors that
-/// static analysis misses (e.g. the dynamic `.level` casts, layout asserts).
+/// static analysis misses (layout asserts, null result casts).
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
+  /// A complete SPPB session: balance 3/4, gait 3/4, chair 4/4 → total 10 (Low).
   ProviderContainer seededContainer() {
     final c = ProviderContainer();
     final n = c.read(assessmentSessionProvider.notifier);
@@ -24,12 +25,15 @@ void main() {
     n.setHeight(const MeasurementResult(170, 'cm'));
     n.setWeight(const MeasurementResult(70, 'kg'));
     n.setBmi(const BmiResult(24.2, BmiBand.namnakKoen));
-    n.setBackScratch(const BestOfTwoResult(FitnessLevel.di));
-    n.setSitAndReach(const BestOfTwoResult(FitnessLevel.dimak));
-    n.setArmCurl(const RepCountResult(13, FitnessLevel.dimak));
-    n.setChairStand(const RepCountResult(9, FitnessLevel.dimak));
-    n.setStepTest(const RepCountResult(70, FitnessLevel.dimak));
-    n.setTug(const TimedResult(10.5, FitnessLevel.dimak));
+    n.setBalance(const BalanceResult(
+      sideBySideSec: 10,
+      semiTandemSec: 10,
+      tandemSec: 5, // 3–9.99s → +1  ⇒ 1+1+1 = 3
+      points: 3,
+    ));
+    n.setGait(const GaitResult(seconds: 5.5, unable: false, points: 3));
+    n.setChairStand(
+        const ChairStandResult(preTestPassed: true, seconds: 10.0, points: 4));
     return c;
   }
 
@@ -69,11 +73,13 @@ void main() {
     expect(find.text('ดูสรุปผล'), findsOneWidget);
   });
 
-  testWidgets('Final summary computes overall and renders all results',
+  testWidgets('Final summary shows the SPPB total and risk verdict',
       (tester) async {
     final c = seededContainer();
     addTearDown(c.dispose);
     await pump(tester, c, const FinalSummaryPage());
     expect(find.text('บันทึกผล'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget); // 3 + 3 + 4 = 10
+    expect(find.text('Low Risk'), findsWidgets); // hero + highlighted card
   });
 }

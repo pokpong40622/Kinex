@@ -44,6 +44,7 @@ dependencies:
   flutter_screen_recording: ^2.0.25
   gal: ^2.3.2
   flutter_blue_plus: ^2.3.9
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +68,7 @@ flutter:
     - assets/images/
     - assets/images/assessment/
     - assets/images/hardware_guide/
+    - assets/images/info/
 
   fonts:
     - family: Kanit

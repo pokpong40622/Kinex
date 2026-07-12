@@ -4,16 +4,15 @@ import 'package:go_router/go_router.dart';
 import '../../data/assessment_session.dart';
 import '../../models/assessment_stage.dart';
 import '../../models/assessment_test.dart';
-import '../../models/fitness_level.dart';
+import '../../models/test_results.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
-import '../../widgets/fitness_level_badge.dart';
 
-/// Shows the result of a single movement test: the raw measurement (if any)
-/// plus its [FitnessLevel] badge, with options to continue or repeat.
+/// Shows the result of a single SPPB test: the raw measurement plus the domain
+/// points earned (0–4), with options to continue or repeat.
 class TestResultPage extends ConsumerWidget {
   final String testId;
   const TestResultPage({super.key, required this.testId});
@@ -39,7 +38,8 @@ class TestResultPage extends ConsumerWidget {
                 SizedBox(height: context.r(24)),
                 AssessmentButton(
                   label: 'กลับไปทำแบบทดสอบ',
-                  onTap: () => context.go('/assessment/test/$testId/instructions'),
+                  onTap: () =>
+                      context.go('/assessment/test/$testId/instructions'),
                 ),
               ],
             ),
@@ -48,18 +48,7 @@ class TestResultPage extends ConsumerWidget {
       );
     }
 
-    final level = (result as dynamic).level as FitnessLevel;
-    // TUG always records a TimedResult (stopwatch) even though its method is
-    // camera — mirror the special-case used in ManualEntryPage so we read
-    // .seconds, not .reps.
-    final valueText = testId == 'tug'
-        ? '${((result as dynamic).seconds as double).toStringAsFixed(2)} วินาที'
-        : switch (test.method) {
-            TestMethod.camera => '${(result as dynamic).reps} ครั้ง',
-            TestMethod.manualStopwatch =>
-              '${((result as dynamic).seconds as double).toStringAsFixed(2)} วินาที',
-            TestMethod.manualChoice => null,
-          };
+    final (points, valueText) = _describe(result);
 
     return AssessmentScaffold(
       title: test.thaiName,
@@ -73,11 +62,11 @@ class TestResultPage extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (valueText != null) ...[
-                Text(valueText, style: thaiSans(size: context.r(64), weight: FontWeight.w900)),
-                SizedBox(height: context.r(16)),
-              ],
-              FitnessLevelBadge(level, fontSize: context.r(28)),
+              Text(valueText,
+                  textAlign: TextAlign.center,
+                  style: thaiSans(size: context.r(30), weight: FontWeight.w800)),
+              SizedBox(height: context.r(20)),
+              _PointsBadge(points: points),
             ],
           ),
         ),
@@ -97,6 +86,54 @@ class TestResultPage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// (points, human-readable measurement) for the given SPPB result.
+  (int, String) _describe(Object result) {
+    switch (result) {
+      case BalanceResult r:
+        final held = [r.sideBySideSec, r.semiTandemSec, r.tandemSec]
+            .where((s) => s >= 10.0)
+            .length;
+        return (r.points, 'ยืนทรงตัวผ่าน $held ท่า');
+      case GaitResult r:
+        return (
+          r.points,
+          r.unable ? 'เดินไม่ได้' : '${r.seconds.toStringAsFixed(1)} วินาที'
+        );
+      case ChairStandResult r:
+        return (
+          r.points,
+          !r.preTestPassed
+              ? 'ลุกยืนไม่ได้'
+              : '${r.seconds.toStringAsFixed(1)} วินาที (5 ครั้ง)'
+        );
+      default:
+        return (0, '');
+    }
+  }
+}
+
+class _PointsBadge extends StatelessWidget {
+  final int points;
+  const _PointsBadge({required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: context.r(24), vertical: context.r(12)),
+      decoration: BoxDecoration(
+        color: KColors.teal.withAlpha(28),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: KColors.teal, width: 2),
+      ),
+      child: Text('$points / 4 คะแนน',
+          style: thaiSans(
+              size: context.r(26),
+              weight: FontWeight.w900,
+              color: KColors.tealDark)),
     );
   }
 }

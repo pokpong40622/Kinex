@@ -34,6 +34,30 @@ class WorldHeroPage extends StatelessWidget {
         size: context.r(80),
         color: Colors.white.withAlpha(180),
       ),
+      badge: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: context.r(14), vertical: context.r(7)),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(38),
+          borderRadius: BorderRadius.circular(context.r(20)),
+          border: Border.all(color: Colors.white.withAlpha(80)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.fitness_center_rounded,
+                color: Colors.white, size: context.r(16)),
+            SizedBox(width: context.r(8)),
+            Text(
+              'EXERCISE · ออกกำลังกาย',
+              style: montserrat(
+                  size: context.r(13),
+                  weight: FontWeight.w800,
+                  color: Colors.white),
+            ),
+          ],
+        ),
+      ),
       tipText: 'ยืนห่างจอ ~1.5 ม. ให้กล้องเห็นทั้งตัว  •  แสงสว่างเพียงพอ',
       startLabel: 'เริ่ม / START',
       onStart: () => context.go('/world/game/$_routineId'),

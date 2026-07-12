@@ -4,11 +4,9 @@
  * BLE link between the Kinex Flutter app and the ESP32, used by the EMG
  * installation / MVC-calibration step.
  *
- * MOCK DATA: sends fake per-channel values over BLE (no analogRead) so the app,
- * the realtime graph and the MVC capture can be tested WITHOUT sensors wired.
- * The REAL-sensor build is saved alongside in
- * firmware/kinex_emg_esp32c3_realsensor/ — flash THAT one for real readings.
- * Every value is still sent over BLE AND printed to Serial.
+ * REAL DATA: reads 4 EMG sensors on the RIGHT leg via the ESP32 ADC (12-bit,
+ * 0-4095). Left-leg sensors come later (they'll reuse the same code path). Every
+ * value is sent over BLE AND printed to Serial so you can confirm both ends match.
  *
  * ── Sensor wiring (RIGHT leg, 4 channels) ───────────────────────────────────
  *   ADC pins {7, 6, 5, 4}  ->  muscles {VL, BF, TA, GCM}
@@ -85,16 +83,11 @@ void notifyApp(const String& line) {
   txChar->notify();
 }
 
-// ── EMG read (MOCK) ──────────────────────────────────────────────────────────
-// Fake per-channel value: baseline + noise, so the 4 traces look distinct and
-// the min/mean/max come out sensible. NO analogRead here — this is the mock
-// build. The real build (firmware/kinex_emg_esp32c3_realsensor/) does
-// `return analogRead(EMG_PINS[channel]);` instead. Channel 0..3 = VL,BF,TA,GCM.
+// ── Real EMG read ────────────────────────────────────────────────────────────
+// Raw ADC (0-4095) of one channel. analogRead is configured 12-bit / 11 dB in
+// setup(). Channel index 0..3 maps to EMG_PINS[] (VL, BF, TA, GCM).
 int readEmg(int channel) {
-  static const int base[4] = {280, 340, 220, 380};  // VL, BF, TA, GCM baselines
-  int v = base[channel] + random(-90, 130);
-  if (v < 0) v = 0;
-  return v;
+  return analogRead(EMG_PINS[channel]);
 }
 
 // ── Measurement control ──────────────────────────────────────────────────────
@@ -183,11 +176,10 @@ void setup() {
   delay(200);
   Serial.println("\nKinex EMG bridge (ESP32-C3) starting…");
 
-  // ADC config kept (harmless) so switching to the real-sensor build is trivial.
+  // ADC: 12-bit (0-4095), full 0-3.3V range, matching the sensor reference code.
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
   for (int i = 0; i < 4; i++) pinMode(EMG_PINS[i], INPUT);
-  randomSeed(esp_random());   // distinct mock streams per boot
 
   BLEDevice::init(DEVICE_NAME);
   BLEDevice::setMTU(80);   // allow the ~24-byte "EMG4:..." notify to fit in one packet

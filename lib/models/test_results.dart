@@ -1,7 +1,7 @@
 import 'fitness_level.dart';
 
-/// Per-test result value objects. Each carries the raw measurement plus (where
-/// applicable) its [FitnessLevel] classification, and JSON round-trips.
+/// Per-test result value objects for the SPPB assessment. Each carries the raw
+/// measurement plus its SPPB point score (0–4), and JSON round-trips.
 
 /// Weight / Height — raw value only, no classification.
 class MeasurementResult {
@@ -14,7 +14,8 @@ class MeasurementResult {
       MeasurementResult((j['value'] as num).toDouble(), j['unit'] as String);
 }
 
-/// BMI — value + 5-band classification.
+/// BMI — value + 5-band classification. Reported on its own scale, separate
+/// from the SPPB fall-risk score.
 class BmiResult {
   final double value;
   final BmiBand band;
@@ -27,38 +28,69 @@ class BmiResult {
       );
 }
 
-/// Back Scratch / Sit & Reach — helper directly observes the level.
-class BestOfTwoResult {
-  final FitnessLevel level;
-  const BestOfTwoResult(this.level);
+/// Balance test — seconds held for each of the three stances + domain points (0–4).
+/// A stance skipped by SPPB gating is stored as 0 seconds.
+class BalanceResult {
+  final double sideBySideSec;
+  final double semiTandemSec;
+  final double tandemSec;
+  final int points;
+  const BalanceResult({
+    required this.sideBySideSec,
+    required this.semiTandemSec,
+    required this.tandemSec,
+    required this.points,
+  });
 
-  Map<String, dynamic> toJson() => {'level': level.token};
-  factory BestOfTwoResult.fromJson(Map<String, dynamic> j) =>
-      BestOfTwoResult(FitnessLevel.fromToken(j['level'] as String));
-}
-
-/// Arm Curl / Chair Stand / 2-min Step — rep count + level.
-class RepCountResult {
-  final int reps;
-  final FitnessLevel level;
-  const RepCountResult(this.reps, this.level);
-
-  Map<String, dynamic> toJson() => {'reps': reps, 'level': level.token};
-  factory RepCountResult.fromJson(Map<String, dynamic> j) => RepCountResult(
-        j['reps'] as int,
-        FitnessLevel.fromToken(j['level'] as String),
+  Map<String, dynamic> toJson() => {
+        'sideBySideSec': sideBySideSec,
+        'semiTandemSec': semiTandemSec,
+        'tandemSec': tandemSec,
+        'points': points,
+      };
+  factory BalanceResult.fromJson(Map<String, dynamic> j) => BalanceResult(
+        sideBySideSec: (j['sideBySideSec'] as num).toDouble(),
+        semiTandemSec: (j['semiTandemSec'] as num).toDouble(),
+        tandemSec: (j['tandemSec'] as num).toDouble(),
+        points: j['points'] as int,
       );
 }
 
-/// TUG — elapsed seconds + level.
-class TimedResult {
+/// Gait speed test — best 4 m walk time (seconds) + points (0–4). [unable] marks
+/// a participant who could not walk it (0 points).
+class GaitResult {
   final double seconds;
-  final FitnessLevel level;
-  const TimedResult(this.seconds, this.level);
+  final bool unable;
+  final int points;
+  const GaitResult(
+      {required this.seconds, required this.unable, required this.points});
 
-  Map<String, dynamic> toJson() => {'seconds': seconds, 'level': level.token};
-  factory TimedResult.fromJson(Map<String, dynamic> j) => TimedResult(
-        (j['seconds'] as num).toDouble(),
-        FitnessLevel.fromToken(j['level'] as String),
+  Map<String, dynamic> toJson() =>
+      {'seconds': seconds, 'unable': unable, 'points': points};
+  factory GaitResult.fromJson(Map<String, dynamic> j) => GaitResult(
+        seconds: (j['seconds'] as num).toDouble(),
+        unable: j['unable'] as bool? ?? false,
+        points: j['points'] as int,
+      );
+}
+
+/// Chair stand test — time (seconds) to complete five rises + points (0–4).
+/// [preTestPassed] is false when the participant could not stand once unaided
+/// (scores 0, five-rep timing skipped).
+class ChairStandResult {
+  final bool preTestPassed;
+  final double seconds;
+  final int points;
+  const ChairStandResult(
+      {required this.preTestPassed,
+      required this.seconds,
+      required this.points});
+
+  Map<String, dynamic> toJson() =>
+      {'preTestPassed': preTestPassed, 'seconds': seconds, 'points': points};
+  factory ChairStandResult.fromJson(Map<String, dynamic> j) => ChairStandResult(
+        preTestPassed: j['preTestPassed'] as bool? ?? true,
+        seconds: (j['seconds'] as num).toDouble(),
+        points: j['points'] as int,
       );
 }

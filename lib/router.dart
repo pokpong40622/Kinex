@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'widgets/root_shell.dart';
@@ -18,9 +19,9 @@ import 'screens/assessment/weight_input_page.dart';
 import 'screens/assessment/bmi_result_page.dart';
 import 'screens/assessment/progress_overview_page.dart';
 import 'screens/assessment/test_instruction_page.dart';
-import 'screens/assessment/camera_calibration_page.dart';
-import 'screens/assessment/live_assessment_page.dart';
-import 'screens/assessment/manual_entry_page.dart';
+import 'screens/assessment/balance_test_page.dart';
+import 'screens/assessment/gait_speed_page.dart';
+import 'screens/assessment/chair_stand_page.dart';
 import 'screens/assessment/test_result_page.dart';
 import 'screens/assessment/final_summary_page.dart';
 import 'screens/assessment/history_list_page.dart';
@@ -33,6 +34,7 @@ import 'screens/world/world_history_detail_page.dart';
 import 'screens/emg/emg_pin_page.dart';
 import 'screens/emg/emg_detail_page.dart';
 import 'screens/onboarding/hardware_guide_page.dart';
+import 'screens/onboarding/connect_device_page.dart';
 import 'screens/debug/ble_debug_page.dart';
 import 'models/world_session_record.dart';
 
@@ -44,6 +46,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
         // EMG detail behind a 6-digit gate (full-screen, outside the nav shell).
         GoRoute(path: '/emg/pin', builder: (context, _) => const EmgPinPage()),
         GoRoute(path: '/emg/detail', builder: (context, _) => const EmgDetailPage()),
+        // BLE connect-device landing (full-screen, shown before hardware guide).
+        GoRoute(
+            path: '/connect-device',
+            builder: (context, _) => const ConnectDevicePage()),
         // EMG hardware-install guide popup (full-screen, shown on every app entry).
         GoRoute(
             path: '/hardware-guide',
@@ -93,18 +99,11 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
                 path: '/assessment/test/:testId/instructions',
                 builder: (context, state) => TestInstructionPage(
                     testId: state.pathParameters['testId']!)),
+            // Each SPPB test has its own dedicated run screen.
             GoRoute(
-                path: '/assessment/test/:testId/calibrate',
-                builder: (context, state) => CameraCalibrationPage(
-                    testId: state.pathParameters['testId']!)),
-            GoRoute(
-                path: '/assessment/test/:testId/live',
+                path: '/assessment/test/:testId/run',
                 builder: (context, state) =>
-                    LiveAssessmentPage(testId: state.pathParameters['testId']!)),
-            GoRoute(
-                path: '/assessment/test/:testId/manual',
-                builder: (context, state) =>
-                    ManualEntryPage(testId: state.pathParameters['testId']!)),
+                    _runPageFor(state.pathParameters['testId']!)),
             GoRoute(
                 path: '/assessment/test/:testId/result',
                 builder: (context, state) =>
@@ -142,3 +141,11 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
         ),
       ],
     ));
+
+/// The dedicated run screen for each SPPB test id.
+Widget _runPageFor(String testId) => switch (testId) {
+      'balance' => const BalanceTestPage(),
+      'gait_speed' => const GaitSpeedPage(),
+      'chair_stand' => const ChairStandPage(),
+      _ => const BalanceTestPage(),
+    };

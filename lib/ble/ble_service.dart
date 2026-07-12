@@ -153,14 +153,31 @@ class BleController extends Notifier<BleState> {
     return false;
   }
 
+  // ─── Adapter helper ───────────────────────────────────────────────────────
+
+  /// On a cold launch [FlutterBluePlus.adapterStateNow] returns
+  /// [BluetoothAdapterState.unknown] until the first adapterState event fires.
+  /// Waiting for the first non-unknown value (with a 2 s safety timeout)
+  /// avoids the false "BT is off" bail that required toggling Bluetooth.
+  Future<BluetoothAdapterState> _ensureAdapterReady() async {
+    var s = FlutterBluePlus.adapterStateNow;
+    if (s == BluetoothAdapterState.unknown) {
+      s = await FlutterBluePlus.adapterState
+          .firstWhere((v) => v != BluetoothAdapterState.unknown)
+          .timeout(const Duration(seconds: 2),
+              onTimeout: () => FlutterBluePlus.adapterStateNow);
+    }
+    return s;
+  }
+
   // ─── Scan ─────────────────────────────────────────────────────────────────
 
   Future<void> startScan() async {
     try {
       if (!await _requestPermissions()) return;
 
-      // Check adapter state synchronously (populated after first adapterState query)
-      if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) {
+      final adapter = await _ensureAdapterReady();
+      if (adapter != BluetoothAdapterState.on) {
         _log(BleLogKind.sys, 'Bluetooth is off — please turn it on');
         try {
           await FlutterBluePlus.turnOn(); // Android only; no-op / throws on others
@@ -257,7 +274,8 @@ class BleController extends Notifier<BleState> {
       }
       if (!await _requestPermissions()) return;
 
-      if (FlutterBluePlus.adapterStateNow != BluetoothAdapterState.on) {
+      final adapter = await _ensureAdapterReady();
+      if (adapter != BluetoothAdapterState.on) {
         _log(BleLogKind.sys, 'Bluetooth is off — please turn it on');
         try {
           await FlutterBluePlus.turnOn();
@@ -347,6 +365,12 @@ class BleController extends Notifier<BleState> {
       );
 
       final services = await device.discoverServices();
+
+      // Bump MTU so the ~24-byte EMG4: line fits in one notification
+      // (default BLE payload is 20 bytes). Best-effort — not fatal if refused.
+      try {
+        await device.requestMtu(64);
+      } catch (_) {}
 
       // ── Service/characteristic discovery ────────────────────────────────
 

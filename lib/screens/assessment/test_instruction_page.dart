@@ -167,24 +167,9 @@ class TestInstructionPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AssessmentButton(
-            label: 'เริ่มทดสอบ',
-            onTap: () => context.push(test.method == TestMethod.camera
-                ? '/assessment/test/$testId/live'
-                : '/assessment/test/$testId/manual'),
-          ),
-          if (test.method == TestMethod.camera) ...[
-            SizedBox(height: context.r(12)),
-            AssessmentButton(
-              label: 'ป้อนผลด้วยตนเอง',
-              primary: false,
-              onTap: () => context.push('/assessment/test/$testId/manual'),
-            ),
-          ],
-        ],
+      bottom: AssessmentButton(
+        label: 'เริ่มทดสอบ',
+        onTap: () => context.push('/assessment/test/$testId/run'),
       ),
     );
   }

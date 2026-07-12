@@ -13,7 +13,8 @@ class AssessmentRepository {
     final raw = prefs.getStringList(_key) ?? const [];
     final records = raw
         .map((s) =>
-            AssessmentRecord.fromJson(jsonDecode(s) as Map<String, dynamic>))
+            AssessmentRecord.tryFromJson(jsonDecode(s) as Map<String, dynamic>))
+        .whereType<AssessmentRecord>() // drop incompatible legacy (SFT) records
         .toList();
     records.sort((a, b) => b.dateTime.compareTo(a.dateTime)); // newest first
     return records;

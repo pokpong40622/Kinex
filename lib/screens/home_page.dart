@@ -5,11 +5,12 @@ import '../theme/app_theme.dart';
 import '../state/home_intro_providers.dart';
 import '../data/assessment_repository.dart';
 import '../data/emg_repository.dart';
-import '../models/fitness_level.dart';
-import '../widgets/fitness_level_badge.dart';
+import '../models/fall_risk.dart';
+import '../widgets/fall_risk_cards.dart';
 import '../ble/ble_service.dart';
 import '../theme/responsive.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'info_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -20,6 +21,14 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _tab = 0;
+  int _homePage = 0;
+  final PageController _homeCtrl = PageController();
+
+  @override
+  void dispose() {
+    _homeCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -28,6 +37,19 @@ class _HomePageState extends ConsumerState<HomePage> {
     // assessment card on home. Flags are in-memory so they reset each launch.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+
+      // Step 1: BLE connect-device landing (shown once per launch, skipped if
+      // the device is already connected from a previous session or quick-connect).
+      if (ref.read(deviceConnectPendingProvider) &&
+          ref.read(bleControllerProvider).status != BleStatus.connected) {
+        ref.read(deviceConnectPendingProvider.notifier).state = false;
+        await context.push('/connect-device');
+        if (!mounted) return;
+      } else {
+        ref.read(deviceConnectPendingProvider.notifier).state = false;
+      }
+
+      // Step 2: EMG hardware-install guide (existing flow).
       if (ref.read(homeGuidePendingProvider)) {
         ref.read(homeGuidePendingProvider.notifier).state = false;
         final result = await context.push('/hardware-guide');
@@ -47,17 +69,75 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: IndexedStack(
         index: _tab,
         children: [
-          // Home "World" card now launches Kinex World (the exercise class).
-          // MEGA DANCE stays reachable from the Practice tab.
-          _HomeTab(onStartGame: () => context.go('/world')),
+          // Home tab: swipeable between original Home and Character dashboard.
+          PageView(
+            controller: _homeCtrl,
+            onPageChanged: (i) => setState(() => _homePage = i),
+            children: [
+              _HomeTab(onStartGame: () => context.go('/world')),
+              CharacterHomeTab(onSeeMore: () => setState(() => _tab = 3)),
+            ],
+          ),
           const _QuestTab(),
           _PracticeTab(onStartGame: () => context.go('/mega-dance')),
           const _InfoTab(),
         ],
       ),
-      bottomNavigationBar: _KinexNavBar(
-        selected: _tab,
-        onTap: (i) => setState(() => _tab = i),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_tab == 0)
+            _HomePageDots(
+              index: _homePage,
+              onTap: (i) => _homeCtrl.animateToPage(
+                i,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOut,
+              ),
+            ),
+          _KinexNavBar(
+            selected: _tab,
+            onTap: (i) => setState(() => _tab = i),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Home page indicator dots ─────────────────────────────────────────────────
+
+class _HomePageDots extends StatelessWidget {
+  final int index;
+  final ValueChanged<int> onTap;
+  const _HomePageDots({required this.index, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(2, (i) {
+          final active = i == index;
+          return GestureDetector(
+            onTap: () => onTap(i),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: active ? 22 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  gradient: active ? KColors.blueGradient : null,
+                  color: active ? null : Colors.black26,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -310,6 +390,428 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                 ref.read(assessmentSpotlightProvider.notifier).state = false,
           ),
       ],
+    );
+  }
+}
+
+// ── CHARACTER HOME (second home page) ────────────────────────────────────────
+// Reuses the SAME room background + top bar (profile / BLE / notif / EMG banner)
+// as [_HomeTab]; the World and ประเมิน cards are replaced by ONE white rounded
+// card holding the character with progress data below it. All stats derive from
+// worldHistoryProvider (see state/progress_providers.dart) — no new storage.
+
+class CharacterHomeTab extends ConsumerWidget {
+  final VoidCallback? onSeeMore;
+  const CharacterHomeTab({super.key, this.onSeeMore});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final size = MediaQuery.sizeOf(context);
+    final w = size.width;
+    final h = size.height;
+
+    // DEMO: hardcoded placeholder stats for presentation. Swap these back to the
+    // ref.watch(...Provider) values in state/progress_providers.dart to drive the
+    // dashboard from real Kinex World session history.
+    const dStreak = 5;
+    const dMins = 48;
+    const dScore = 82;
+    const dImprove = 9;
+    const happy = true;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset('assets/images/bg_room.png', fit: BoxFit.cover),
+        SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Identical top bar to _HomeTab.
+              Padding(
+                padding: EdgeInsets.fromLTRB(w * 0.04, h * 0.035, w * 0.04, 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: const _ProfileCard()),
+                    SizedBox(width: w * 0.025),
+                    const _BleTopBarButton(),
+                    SizedBox(width: w * 0.025),
+                    const _TopBarIconButton(
+                      asset: 'assets/images/icon_notif.png',
+                      gradientBorder: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        stops: [0.26, 0.67],
+                        colors: [Color(0xFFFFC107), Color(0xFFF44336)],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: h * 0.015),
+              const _EmgReminderBanner(),
+              SizedBox(height: h * 0.01),
+              // White progress card fills the remaining space (replaces the two cards).
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: cardDecoration(radius: 28, color: Colors.white),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: context.r(18), vertical: context.r(18)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'ความก้าวหน้าของฉัน',
+                                style: thaiSans(
+                                  size: context.r(18),
+                                  weight: FontWeight.w800,
+                                  color: KColors.navyText,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (dStreak > 0) _StreakChip(streak: dStreak),
+                            ],
+                          ),
+                          SizedBox(height: context.r(8)),
+                          _CharacterHero(exercisedToday: happy),
+                          SizedBox(height: context.r(14)),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _StatRing(
+                                  value: dStreak,
+                                  label: 'วัน',
+                                  color: KColors.orange,
+                                  maxValue: 7,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatRing(
+                                  value: dMins,
+                                  label: 'นาที',
+                                  color: KColors.teal,
+                                  maxValue: 60,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatRing(
+                                  value: dScore,
+                                  label: 'คะแนน',
+                                  color: KColors.blue,
+                                  maxValue: 100,
+                                  suffix: '%',
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: context.r(16)),
+                          _ImprovementBanner(improvement: dImprove),
+                          SizedBox(height: context.r(14)),
+                          _SeeMoreButton(onTap: onSeeMore),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Streak chip ───────────────────────────────────────────────────────────────
+
+class _StreakChip extends StatelessWidget {
+  final int streak;
+  const _StreakChip({required this.streak});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: context.r(10), vertical: context.r(4)),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF8C00), Color(0xFFFF5722)],
+        ),
+        borderRadius: BorderRadius.circular(context.r(20)),
+      ),
+      child: Text(
+        '🔥 $streak วัน',
+        style: thaiSans(
+            size: context.r(13), weight: FontWeight.w800, color: Colors.white),
+      ),
+    );
+  }
+}
+
+// ── Character hero (single image + streak-driven mood overlay) ────────────────
+
+class _CharacterHero extends StatefulWidget {
+  final bool exercisedToday;
+  const _CharacterHero({required this.exercisedToday});
+
+  @override
+  State<_CharacterHero> createState() => _CharacterHeroState();
+}
+
+class _CharacterHeroState extends State<_CharacterHero>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bob;
+  late final Animation<double> _bobAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _bob = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+    _bobAnim = Tween<double>(begin: -6, end: 6).animate(
+      CurvedAnimation(parent: _bob, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _bob.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imgH = context.r(180);
+    final awake = widget.exercisedToday;
+    return SizedBox(
+      height: imgH + context.r(20),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Soft glow plinth under the feet.
+          Positioned(
+            bottom: context.r(6),
+            child: Container(
+              width: context.r(150),
+              height: context.r(30),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(context.r(80)),
+                boxShadow: [
+                  BoxShadow(
+                    color: (awake ? KColors.blue : Colors.grey).withAlpha(70),
+                    blurRadius: context.r(34),
+                    spreadRadius: context.r(6),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedBuilder(
+            animation: _bobAnim,
+            builder: (ctx, child) => Transform.translate(
+              offset: awake ? Offset(0, _bobAnim.value) : Offset.zero,
+              child: child,
+            ),
+            // Character stays in full colour in both moods; the badge conveys
+            // happy vs. resting (only the gentle bob differs).
+            child: Image.asset(
+              'assets/images/character_kid.png',
+              height: imgH,
+              fit: BoxFit.contain,
+            ),
+          ),
+          // Mood status badge — top-right, close to the character's head.
+          Align(
+            alignment: const Alignment(0.52, -0.82),
+            child: Container(
+              padding: EdgeInsets.all(context.r(6)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: awake ? KColors.teal : Colors.grey.shade400,
+                  width: context.r(2.5),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(28),
+                    blurRadius: context.r(8),
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                awake ? '😊' : '😴',
+                style: TextStyle(fontSize: context.r(24)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Stat ring ─────────────────────────────────────────────────────────────────
+
+class _StatRing extends StatelessWidget {
+  final int? value;
+  final String label;
+  final Color color;
+  final int maxValue;
+  final String suffix;
+
+  const _StatRing({
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.maxValue,
+    this.suffix = '',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = context.r(104);
+    final progress = (value == null || maxValue == 0)
+        ? 0.0
+        : (value! / maxValue).clamp(0.0, 1.0);
+    final displayText = value == null ? '—' : '${value!}$suffix';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: progress,
+                strokeWidth: context.r(14),
+                backgroundColor: const Color(0xFFEDEDF3),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+              Text(
+                displayText,
+                style: montserrat(
+                  size: context.r(value == null ? 20 : 22),
+                  weight: FontWeight.w900,
+                  color: KColors.navyText,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: context.r(8)),
+        Text(
+          label,
+          style: thaiSans(
+            size: context.r(13),
+            weight: FontWeight.w600,
+            color: KColors.navyText.withAlpha(140),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Improvement banner ────────────────────────────────────────────────────────
+
+class _ImprovementBanner extends StatelessWidget {
+  final int? improvement;
+  const _ImprovementBanner({this.improvement});
+
+  @override
+  Widget build(BuildContext context) {
+    final IconData icon;
+    final Color accent;
+    final String text;
+
+    if (improvement == null || improvement == 0) {
+      icon = Icons.trending_flat_rounded;
+      accent = Colors.grey.shade600;
+      text = improvement == 0
+          ? 'ทรงตัว สัปดาห์นี้'
+          : 'ฝึกต่อเนื่องเพื่อดูพัฒนาการ';
+    } else if (improvement! > 0) {
+      icon = Icons.trending_up_rounded;
+      accent = KColors.tealDark;
+      text = 'ดีขึ้น $improvement% สัปดาห์นี้';
+    } else {
+      icon = Icons.trending_down_rounded;
+      accent = KColors.orangeDark;
+      text = 'ลดลง ${improvement!.abs()}% สัปดาห์นี้';
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: context.r(16), vertical: context.r(12)),
+      decoration: BoxDecoration(
+        color: accent.withAlpha(22),
+        borderRadius: BorderRadius.circular(context.r(16)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: accent, size: context.r(22)),
+          SizedBox(width: context.r(10)),
+          Text(
+            text,
+            style: thaiSans(
+                size: context.r(14), weight: FontWeight.w700, color: accent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── CTA card ──────────────────────────────────────────────────────────────────
+
+// "See more" button on the character dashboard → jumps to the Info tab.
+class _SeeMoreButton extends StatelessWidget {
+  final VoidCallback? onTap;
+  const _SeeMoreButton({this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: context.r(14)),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: KColors.blue.withAlpha(18),
+          borderRadius: BorderRadius.circular(context.r(16)),
+          border: Border.all(color: KColors.blue.withAlpha(70), width: 1.4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'ดูเพิ่มเติม',
+              style: thaiSans(
+                  size: context.r(16),
+                  weight: FontWeight.w800,
+                  color: KColors.blue),
+            ),
+            SizedBox(width: context.r(6)),
+            Icon(Icons.arrow_forward_rounded,
+                color: KColors.blue, size: context.r(20)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1027,8 +1529,8 @@ class _ProfileCard extends ConsumerWidget {
                       children: [
                         ref.watch(latestAssessmentProvider).maybeWhen(
                               data: (rec) =>
-                                  _ResultPill(level: rec?.overall, w: w),
-                              orElse: () => _ResultPill(level: null, w: w),
+                                  _ResultPill(risk: rec?.risk, w: w),
+                              orElse: () => _ResultPill(risk: null, w: w),
                             ),
                         Text('@ray_lorkasemsan',
                             style: montserrat(
@@ -1051,14 +1553,14 @@ class _ProfileCard extends ConsumerWidget {
 /// Profile-card badge showing the latest ประเมินสมรรถภาพ result on a coloured
 /// background, or a soft "not assessed yet" hint. Taps through to the assessment.
 class _ResultPill extends StatelessWidget {
-  final FitnessLevel? level;
+  final FallRisk? risk;
   final double w;
-  const _ResultPill({required this.level, required this.w});
+  const _ResultPill({required this.risk, required this.w});
 
   @override
   Widget build(BuildContext context) {
-    final assessed = level != null;
-    final c = assessed ? fitnessLevelColor(level!) : const Color(0xFF9AA3B8);
+    final assessed = risk != null;
+    final c = assessed ? fallRiskColor(risk!) : const Color(0xFF9AA3B8);
     final dark = Color.lerp(c, Colors.black, 0.18)!;
     return GestureDetector(
       onTap: () => context.push('/assessment'),
@@ -1092,7 +1594,7 @@ class _ResultPill extends StatelessWidget {
             ),
             SizedBox(width: w * 0.015),
             Text(
-              assessed ? 'ผลประเมิน: ${level!.thaiLabel}' : 'ยังไม่ได้ประเมิน',
+              assessed ? 'ผลประเมิน: ${risk!.thaiShort}' : 'ยังไม่ได้ประเมิน',
               style: thaiSans(
                   size: w * 0.034,
                   weight: FontWeight.w800,
@@ -1398,6 +1900,12 @@ class _PracticeTab extends StatelessWidget {
                   padding: EdgeInsets.symmetric(
                       horizontal: w * 0.04, vertical: h * 0.01),
                   children: [
+                    // ── REHAB section: Handglider + MEGA DANCE ───────────────
+                    _SectionHeader(
+                      icon: Icons.healing_rounded,
+                      label: 'ฟื้นฟูร่างกาย · REHAB',
+                      color: KColors.teal,
+                    ),
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card1.png',
                       aspectRatio: 1780 / 536,
@@ -1409,7 +1917,13 @@ class _PracticeTab extends StatelessWidget {
                       aspectRatio: 1772 / 638,
                       onTap: onStartGame,
                     ),
-                    SizedBox(height: h * 0.025),
+                    SizedBox(height: h * 0.035),
+                    // ── EXERCISE section: Kinex World ────────────────────────
+                    _SectionHeader(
+                      icon: Icons.fitness_center_rounded,
+                      label: 'ออกกำลังกาย · EXERCISE',
+                      color: KColors.purple,
+                    ),
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card3.png',
                       aspectRatio: 1762 / 650,
@@ -1466,682 +1980,69 @@ class _PracticeCard extends StatelessWidget {
   }
 }
 
+// ── SECTION HEADER ───────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _SectionHeader(
+      {required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: context.r(4), bottom: context.r(14)),
+      child: Row(
+        children: [
+          // White rounded pill so the label reads clearly over the room bg.
+          Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(12), vertical: context.r(8)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(context.r(16)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(22),
+                  blurRadius: context.r(8),
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.r(7)),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(38),
+                    borderRadius: BorderRadius.circular(context.r(10)),
+                  ),
+                  child: Icon(icon, color: Colors.black, size: context.r(22)),
+                ),
+                SizedBox(width: context.r(10)),
+                Text(
+                  label,
+                  style: thaiSans(
+                      size: context.r(19),
+                      weight: FontWeight.w800,
+                      color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── INFO TAB ────────────────────────────────────────────────────────────────
 
 class _InfoTab extends StatelessWidget {
   const _InfoTab();
 
   @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    final h = size.height;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.white, Color(0xFF999999)],
-            ),
-          ),
-        ),
-        SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-                horizontal: w * 0.05, vertical: h * 0.02),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Stack(
-                          children: [
-                            Text('ข้อมูล',
-                                style: TextStyle(
-                                  fontFamily: 'Kanit',
-                                  fontSize: w * 0.13,
-                                  fontWeight: FontWeight.w600,
-                                  foreground: Paint()
-                                    ..style = PaintingStyle.stroke
-                                    ..strokeWidth = w * 0.012
-                                    ..color = Colors.white,
-                                )),
-                            Text('ข้อมูล',
-                                style: montserrat(
-                                    size: w * 0.13,
-                                    weight: FontWeight.w600,
-                                    color: KColors.navyText)),
-                          ],
-                        ),
-                        Text('ชื่อผู้ใช้: ray_lorkasemsan',
-                            style: montserrat(
-                                size: w * 0.035,
-                                weight: FontWeight.w700,
-                                color: KColors.navyText)),
-                        Text('อายุ: 80',
-                            style: montserrat(
-                                size: w * 0.035,
-                                weight: FontWeight.w800,
-                                color: KColors.navyText)),
-                      ],
-                    ),
-                    const Spacer(),
-                    Container(
-                      height: h * 0.22,
-                      width: w * 0.3,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFE8E0FF), Color(0xFFD0C4FF)],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [
-                          BoxShadow(
-                              color: Color(0x20000000),
-                              blurRadius: 12,
-                              offset: Offset(0, 6))
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset('assets/images/char_main.png',
-                            fit: BoxFit.cover),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: h * 0.02),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(w * 0.05),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEBF1FA),
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x30000000),
-                          blurRadius: 10,
-                          offset: Offset(0, 4))
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text('อัปเดตล่าสุด',
-                              style: montserrat(
-                                  size: w * 0.038,
-                                  weight: FontWeight.w800,
-                                  color: KColors.indigo)),
-                          const Spacer(),
-                          _ArrowCircleButton(),
-                        ],
-                      ),
-                      SizedBox(height: h * 0.01),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('15%',
-                                    style: montserrat(
-                                        size: w * 0.095,
-                                        weight: FontWeight.w700,
-                                        color: KColors.teal)),
-                                Text('กล้ามเนื้อขาขวาดีขึ้น',
-                                    style: montserrat(
-                                        size: w * 0.03,
-                                        weight: FontWeight.w700,
-                                        color: KColors.navyText)),
-                                Text('จากเดือนที่แล้ว',
-                                    style: montserrat(
-                                        size: w * 0.028,
-                                        weight: FontWeight.w600,
-                                        color: KColors.navyText.withAlpha(140))),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(bottom: h * 0.005),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                _MiniBar(fraction: 0.63, label: 'ม.ค.'),
-                                SizedBox(width: w * 0.02),
-                                _MiniBar(fraction: 1.0, label: 'ก.พ.', active: true),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: h * 0.02),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(w * 0.05),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F2FB),
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x30000000),
-                          blurRadius: 10,
-                          offset: Offset(0, 4))
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('คำแนะนำ',
-                          style: montserrat(
-                              size: w * 0.045,
-                              weight: FontWeight.w800,
-                              color: KColors.indigo)),
-                      SizedBox(height: h * 0.015),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: w * 0.13,
-                            height: w * 0.13,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [Color(0xFF6349F1), Color(0xFF2766EF)],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: Color(0x40000000),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 4))
-                              ],
-                            ),
-                            child: Icon(Icons.workspace_premium_rounded,
-                                color: Colors.white, size: w * 0.07),
-                          ),
-                          SizedBox(width: w * 0.04),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('พัฒนา',
-                                  style: montserrat(
-                                      size: w * 0.04,
-                                      weight: FontWeight.w700,
-                                      color: KColors.navyText)),
-                              Text('ขาซ้าย',
-                                  style: montserrat(
-                                      size: w * 0.075,
-                                      weight: FontWeight.w700,
-                                      color: const Color(0xFFD2812D))),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Divider(
-                          color: KColors.indigo.withAlpha(40),
-                          height: h * 0.028,
-                          thickness: 1.5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text('ลงน้ำหนักที่ขาขวาให้มากขึ้นนะครับ',
-                                style: montserrat(
-                                    size: w * 0.033,
-                                    weight: FontWeight.w700,
-                                    color: KColors.indigo.withAlpha(200))),
-                          ),
-                          SizedBox(width: w * 0.03),
-                          _ArrowCircleButton(),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: h * 0.02),
-                const _EmgCard(),
-                SizedBox(height: h * 0.02),
-                const _PostureStatCard(),
-                SizedBox(height: h * 0.02),
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F2FB),
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x30000000),
-                          blurRadius: 10,
-                          offset: Offset(0, 4))
-                    ],
-                  ),
-                  padding: EdgeInsets.all(w * 0.04),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: w * 0.04, vertical: h * 0.008),
-                            decoration: BoxDecoration(
-                              color: KColors.indigo,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('6 เดือนล่าสุด',
-                                style: montserrat(
-                                    size: w * 0.032,
-                                    weight: FontWeight.w800,
-                                    color: Colors.white)),
-                          ),
-                          const Spacer(),
-                          _ArrowCircleButton(),
-                        ],
-                      ),
-                      SizedBox(height: h * 0.02),
-                      SizedBox(
-                        height: h * 0.20,
-                        child: _LineChart(),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: h * 0.03),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => const InfoPage();
 }
-
-// A small circle button with a right-arrow icon, matching Figma's arrow pill.
-class _ArrowCircleButton extends StatelessWidget {
-  const _ArrowCircleButton();
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    final size = w * 0.09;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: KColors.indigo,
-        boxShadow: const [
-          BoxShadow(color: Color(0x30000000), blurRadius: 6, offset: Offset(0, 3))
-        ],
-      ),
-      child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: size * 0.55),
-    );
-  }
-}
-
-// Muscles (EMG) — full-width card with two graphs (left/right side) + a locked
-// button gated behind a 6-digit code. Sample data for now (no live EMG feed).
-class _EmgCard extends StatelessWidget {
-  const _EmgCard();
-
-  static const _left = [0.40, 0.55, 0.48, 0.63, 0.58, 0.71];
-  static const _right = [0.50, 0.46, 0.60, 0.55, 0.69, 0.74];
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(w * 0.045),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF6F5FE), Color(0xFFECEAFB)],
-        ),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: KColors.indigo.withAlpha(30), width: 1.5),
-        boxShadow: const [
-          BoxShadow(color: Color(0x22000000), blurRadius: 16, offset: Offset(0, 6))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.monitor_heart_rounded,
-                  size: w * 0.055, color: KColors.indigo),
-              SizedBox(width: w * 0.02),
-              Text('กล้ามเนื้อ (EMG)',
-                  style: montserrat(
-                      size: w * 0.042,
-                      weight: FontWeight.w800,
-                      color: KColors.indigo)),
-            ],
-          ),
-          SizedBox(height: w * 0.04),
-          Row(
-            children: [
-              Expanded(
-                  child: _EmgGraph(
-                      label: 'ซ้าย', points: _left, color: KColors.indigo)),
-              SizedBox(width: w * 0.04),
-              Expanded(
-                  child: _EmgGraph(
-                      label: 'ขวา', points: _right, color: KColors.teal)),
-            ],
-          ),
-          SizedBox(height: w * 0.045),
-          GestureDetector(
-            onTap: () => context.push('/emg/pin'),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: w * 0.035),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [KColors.indigo, KColors.blue],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                      color: KColors.indigo.withAlpha(90),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4))
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock_rounded, color: Colors.white, size: w * 0.045),
-                  SizedBox(width: w * 0.02),
-                  Text('ดูข้อมูล EMG เชิงลึก',
-                      style: thaiSans(
-                          size: w * 0.038,
-                          weight: FontWeight.w800,
-                          color: Colors.white)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// One labelled EMG line graph (reuses the home-page line painter).
-class _EmgGraph extends StatelessWidget {
-  final String label;
-  final List<double> points;
-  final Color color;
-  const _EmgGraph(
-      {required this.label, required this.points, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: w * 0.025,
-              height: w * 0.025,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            SizedBox(width: w * 0.015),
-            Text(label,
-                style: thaiSans(
-                    size: w * 0.032,
-                    weight: FontWeight.w700,
-                    color: KColors.navyText)),
-          ],
-        ),
-        SizedBox(height: w * 0.02),
-        Container(
-          height: w * 0.22,
-          padding: EdgeInsets.all(w * 0.02),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(
-                  color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))
-            ],
-          ),
-          child: CustomPaint(
-            painter: _LineChartPainter(
-              points: points,
-              lineColor: color,
-              dotColor: color,
-              activeDotColor: color,
-            ),
-            child: const SizedBox.expand(),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// Posture (Pose Estimation) stat card — "/" separator with "Excellent Stability".
-class _PostureStatCard extends StatelessWidget {
-  const _PostureStatCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    return Container(
-      padding: EdgeInsets.all(w * 0.04),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F2FB),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: const [
-          BoxShadow(color: Color(0x30000000), blurRadius: 10, offset: Offset(0, 4))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('ท่าทาง\n(Pose Estimation)',
-              style: montserrat(
-                  size: w * 0.035,
-                  weight: FontWeight.w800,
-                  color: KColors.indigo)),
-          SizedBox(height: w * 0.02),
-          Text('/',
-              style: montserrat(
-                  size: w * 0.12,
-                  weight: FontWeight.w900,
-                  color: KColors.indigo.withAlpha(80))),
-          Text('ทรงตัว\nยอดเยี่ยม',
-              style: montserrat(
-                  size: w * 0.038,
-                  weight: FontWeight.w800,
-                  color: KColors.teal)),
-        ],
-      ),
-    );
-  }
-}
-
-// Line chart for "Last 6 months" — Sep 58% → Oct 63% → Nov 66% → Dec 68% → Jan 70% → Feb 85%.
-class _LineChart extends StatelessWidget {
-  const _LineChart();
-
-  static const _points = [0.58, 0.63, 0.66, 0.68, 0.70, 0.85];
-  static const _labels = ['ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.'];
-  static const _yLabels = ['100%', '75%', '50%', '25%', '0%'];
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    return Row(
-      children: [
-        // Y-axis labels
-        Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: _yLabels
-              .map((l) => Text(l,
-                  style: montserrat(
-                      size: w * 0.022,
-                      weight: FontWeight.w600,
-                      color: KColors.navyText.withAlpha(140))))
-              .toList(),
-        ),
-        SizedBox(width: w * 0.02),
-        // Chart area
-        Expanded(
-          child: Column(
-            children: [
-              Expanded(
-                child: CustomPaint(
-                  painter: _LineChartPainter(
-                    points: _points,
-                    lineColor: KColors.indigo,
-                    dotColor: const Color(0xFF6F51F5),
-                    activeDotColor: const Color(0xFF6F51F5),
-                  ),
-                  child: const SizedBox.expand(),
-                ),
-              ),
-              const SizedBox(height: 6),
-              // X-axis labels
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: _labels
-                    .map((l) => Text(l,
-                        style: montserrat(
-                            size: w * 0.022,
-                            weight: FontWeight.w600,
-                            color: KColors.navyText.withAlpha(140))))
-                    .toList(),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LineChartPainter extends CustomPainter {
-  final List<double> points;
-  final Color lineColor;
-  final Color dotColor;
-  final Color activeDotColor;
-
-  const _LineChartPainter({
-    required this.points,
-    required this.lineColor,
-    required this.dotColor,
-    required this.activeDotColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final n = points.length;
-    if (n < 2) return;
-
-    final dx = size.width / (n - 1);
-    List<Offset> offsets = [];
-    for (int i = 0; i < n; i++) {
-      offsets.add(Offset(i * dx, size.height * (1.0 - points[i])));
-    }
-
-    // Grid lines at 0%, 25%, 50%, 75%, 100%
-    final gridPaint = Paint()
-      ..color = KColors.navyText.withAlpha(25)
-      ..strokeWidth = 1;
-    for (final frac in [0.0, 0.25, 0.50, 0.75, 1.0]) {
-      final y = size.height * frac;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    // Line
-    final linePaint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeJoin = StrokeJoin.round;
-    final path = Path()..moveTo(offsets[0].dx, offsets[0].dy);
-    for (int i = 1; i < offsets.length; i++) {
-      path.lineTo(offsets[i].dx, offsets[i].dy);
-    }
-    canvas.drawPath(path, linePaint);
-
-    // Dots
-    for (int i = 0; i < offsets.length; i++) {
-      final isLast = i == offsets.length - 1;
-      final dotPaint = Paint()
-        ..color = isLast ? activeDotColor : dotColor
-        ..style = PaintingStyle.fill;
-      final outerPaint = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(offsets[i], isLast ? 7.0 : 5.0, outerPaint);
-      canvas.drawCircle(offsets[i], isLast ? 5.0 : 3.5, dotPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_LineChartPainter old) => false;
-}
-
-class _MiniBar extends StatelessWidget {
-  final double fraction;
-  final String label;
-  final bool active;
-
-  const _MiniBar({required this.fraction, required this.label, this.active = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    final h = size.height;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          width: w * 0.055,
-          height: h * 0.07 * fraction,
-          decoration: BoxDecoration(
-            color: active ? const Color(0xFF6F51F5) : const Color(0xFFC0C0CB),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-        ),
-        SizedBox(height: 3),
-        Text(label,
-            style: montserrat(
-                size: w * 0.022,
-                weight: FontWeight.w600,
-                color: active ? const Color(0xFF6F51F5) : KColors.navyText.withAlpha(140))),
-      ],
-    );
-  }
-}
-
-

@@ -8,7 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
-import '../../widgets/fitness_level_badge.dart';
+import '../../widgets/fall_risk_cards.dart';
 
 /// List of past assessments, newest first. Tapping a card opens its detail.
 class HistoryListPage extends ConsumerWidget {
@@ -100,7 +100,16 @@ class _HistoryCard extends StatelessWidget {
                 ],
               ),
             ),
-            FitnessLevelBadge(record.overall, fontSize: context.r(16)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('${record.totalScore}/12',
+                    style:
+                        thaiSans(size: context.r(16), weight: FontWeight.w900)),
+                SizedBox(height: context.r(4)),
+                FallRiskBadge(record.risk, fontSize: context.r(13)),
+              ],
+            ),
           ],
         ),
       ),

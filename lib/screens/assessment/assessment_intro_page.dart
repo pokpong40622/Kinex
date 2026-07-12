@@ -14,9 +14,9 @@ class AssessmentIntroPage extends ConsumerWidget {
   const AssessmentIntroPage({super.key});
 
   static const _prep = [
-    (Icons.event_seat_rounded, 'เก้าอี้มั่นคง'),
-    (Icons.straighten_rounded, 'พื้นที่ ~3 เมตร'),
-    (Icons.fitness_center_rounded, 'ดัมเบล/ขวดน้ำ'),
+    (Icons.event_seat_rounded, 'เก้าอี้มั่นคง ไม่มีที่วางแขน'),
+    (Icons.straighten_rounded, 'ทางเดิน 4 เมตร'),
+    (Icons.people_alt_rounded, 'มีผู้ดูแลคอยประคอง'),
     (Icons.wb_sunny_rounded, 'แสงสว่างพอ'),
   ];
 
@@ -28,7 +28,7 @@ class AssessmentIntroPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
         children: [
-          Text('5 ขั้นตอน ใช้เวลาประมาณ 20–30 นาที',
+          Text('แบบประเมินการหกล้ม (SPPB) · 4 ขั้นตอน ใช้เวลาประมาณ 10 นาที',
               style: thaiSans(
                   size: 15,
                   weight: FontWeight.w600,
@@ -60,7 +60,7 @@ class AssessmentIntroPage extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'หากเวียนศีรษะหรือเหนื่อยมาก ให้หยุดพักทันที',
+                    'ควรมีผู้ดูแลอยู่ข้าง ๆ คอยประคองตลอดการทดสอบ · หากเวียนศีรษะหรือเสียการทรงตัว ให้หยุดพักทันที',
                     style: thaiSans(
                         size: 13.5,
                         weight: FontWeight.w600,
