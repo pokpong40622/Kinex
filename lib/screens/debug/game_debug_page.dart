@@ -77,6 +77,14 @@ class GameDebugPage extends StatelessWidget {
             r: r,
             onTap: () => context.go('/mirror-game'),
           ),
+          SizedBox(height: r(12)),
+          _GameCard(
+            icon: Icons.travel_explore_rounded,
+            titleTh: 'ล่าสมบัติวิหารโบราณ',
+            subtitleEn: 'Temple Treasure Hunt',
+            r: r,
+            onTap: () => context.go('/temple-hunt'),
+          ),
           SizedBox(height: r(20)),
           Center(
             child: Text(

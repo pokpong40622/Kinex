@@ -15,6 +15,7 @@ import 'screens/fruit_game_screen.dart';
 import 'screens/balance_quest_screen.dart';
 import 'screens/battle_game_screen.dart';
 import 'screens/mirror_game_screen.dart';
+import 'screens/temple_hunt_screen.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -98,6 +99,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/mirror-game',
                 builder: (context, _) => const MirrorGameScreen()),
+            // Real embedded Unity game (Temple Hunt — ล่าสมบัติวิหารโบราณ).
+            GoRoute(
+                path: '/temple-hunt',
+                builder: (context, _) => const TempleHuntScreen()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',
