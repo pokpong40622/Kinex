@@ -1,0 +1,718 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
+import '../state/shop_providers.dart';
+
+// ── Mock catalog ──────────────────────────────────────────────────────────
+// Presentation-only data; ids match the entries stored in the *Provider sets
+// in state/shop_providers.dart. No persistence — see that file's header.
+
+class _ThemeItem {
+  final String id;
+  final String title;
+  final Gradient gradient;
+  final int price;
+  const _ThemeItem(this.id, this.title, this.gradient, this.price);
+}
+
+const _themes = [
+  _ThemeItem(
+    'golden_morning',
+    'สวนผลไม้\nGolden Morning',
+    LinearGradient(colors: [Color(0xFFFFD54F), Color(0xFFFF8A65)]),
+    0,
+  ),
+  _ThemeItem(
+    'neon_dusk',
+    'Neon Dusk',
+    LinearGradient(colors: [Color(0xFFEC4899), Color(0xFF6366F1)]),
+    400,
+  ),
+  _ThemeItem('fantasy_meadow', 'Fantasy Meadow', KColors.tealGradient, 300),
+];
+
+class _CharacterItem {
+  final String id;
+  final String name;
+  final String asset;
+  final int price;
+  const _CharacterItem(this.id, this.name, this.asset, this.price);
+}
+
+const _characters = [
+  _CharacterItem(
+      'character_kid', 'น้องคิเน็กซ์', 'assets/images/character_kid.png', 0),
+  _CharacterItem(
+      'fox_char', 'จิ้งจอกน้อย', 'assets/images/fox_char.png', 500),
+  _CharacterItem('char_main', 'ฮีโร่หลัก', 'assets/images/char_main.png', 800),
+];
+
+class _GameUnlock {
+  final String id;
+  final String titleTh;
+  final String subtitleEn;
+  final IconData icon;
+  final int price;
+  const _GameUnlock(
+      this.id, this.titleTh, this.subtitleEn, this.icon, this.price);
+}
+
+const _gameUnlock = _GameUnlock('guardian_of_balance', 'ผู้พิทักษ์สวนสมดุล',
+    'Guardian of Balance', Icons.shield_rounded, 1000);
+
+// ── Shop tab ──────────────────────────────────────────────────────────────
+
+class ShopTab extends ConsumerWidget {
+  const ShopTab({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final size = MediaQuery.sizeOf(context);
+    final w = size.width;
+    final h = size.height;
+    final r = context.r;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const _ShopBackground(),
+        SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding:
+                    EdgeInsets.fromLTRB(w * 0.06, h * 0.025, w * 0.06, h * 0.02),
+                child: Row(
+                  children: [
+                    Text('ร้านค้า',
+                        style: montserrat(
+                            size: w * 0.09,
+                            weight: FontWeight.w900,
+                            color: Colors.white)),
+                    const Spacer(),
+                    const _CoinPill(),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: w * 0.04, vertical: h * 0.01),
+                  children: [
+                    const _ShopSectionHeader(
+                        icon: Icons.palette_rounded,
+                        label: 'ธีมเกม',
+                        color: KColors.purple),
+                    SizedBox(
+                      height: r(170),
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _themes.length,
+                        separatorBuilder: (_, i) => SizedBox(width: r(12)),
+                        itemBuilder: (_, i) => _ThemeCard(item: _themes[i]),
+                      ),
+                    ),
+                    SizedBox(height: h * 0.03),
+                    const _ShopSectionHeader(
+                        icon: Icons.person_rounded,
+                        label: 'ตัวละคร',
+                        color: KColors.blue),
+                    SizedBox(
+                      height: r(160),
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _characters.length,
+                        separatorBuilder: (_, i) => SizedBox(width: r(12)),
+                        itemBuilder: (_, i) =>
+                            _CharacterCard(item: _characters[i]),
+                      ),
+                    ),
+                    SizedBox(height: h * 0.03),
+                    const _ShopSectionHeader(
+                        icon: Icons.lock_open_rounded,
+                        label: 'ปลดล็อกเกม',
+                        color: KColors.teal),
+                    const _GameUnlockCard(item: _gameUnlock),
+                    SizedBox(height: r(12)),
+                    const _ComingSoonCard(),
+                    SizedBox(height: h * 0.02),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Shop background ───────────────────────────────────────────────────────
+// The shop deliberately does NOT use bg_room.png like the other tabs — it is
+// its own "night market" space: deep indigo→purple gradient, soft glow orbs
+// and scattered gold sparkles, all in brand colors so it still reads Kinex.
+
+class _ShopBackground extends StatelessWidget {
+  const _ShopBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1D1440), Color(0xFF3A1F6E), Color(0xFF6F1BC8)],
+          stops: [0.0, 0.55, 1.0],
+        ),
+      ),
+      child: const CustomPaint(painter: _SparklePainter(), size: Size.infinite),
+    );
+  }
+}
+
+class _SparklePainter extends CustomPainter {
+  const _SparklePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Two big soft glow orbs framing the content (blurred radial accents).
+    final glow = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
+    glow.color = const Color(0xFFFFC107).withAlpha(34); // warm gold, top-right
+    canvas.drawCircle(Offset(size.width * 0.92, size.height * 0.10), 90, glow);
+    glow.color = const Color(0xFF11C18E).withAlpha(26); // teal, bottom-left
+    canvas.drawCircle(Offset(size.width * 0.06, size.height * 0.85), 110, glow);
+
+    // Deterministic sparkle field: mostly gold, a few white/teal, varied size.
+    final rng = math.Random(7);
+    final dot = Paint();
+    for (var i = 0; i < 34; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      final radius = 1.0 + rng.nextDouble() * 2.4;
+      final roll = rng.nextDouble();
+      dot.color = (roll < 0.6
+              ? const Color(0xFFFFD54F)
+              : roll < 0.85
+                  ? Colors.white
+                  : const Color(0xFF7BE8D0))
+          .withAlpha(40 + rng.nextInt(90));
+      canvas.drawCircle(Offset(x, y), radius, dot);
+    }
+
+    // A few faint oversized coin outlines drifting behind the cards.
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = const Color(0xFFFFD54F).withAlpha(22);
+    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.22), 46, ring);
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.55), 62, ring);
+    canvas.drawCircle(Offset(size.width * 0.30, size.height * 0.78), 38, ring);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklePainter oldDelegate) => false;
+}
+
+// ── Coin pill ─────────────────────────────────────────────────────────────
+
+class _CoinPill extends ConsumerWidget {
+  const _CoinPill();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final r = context.r;
+    final coins = ref.watch(coinsProvider);
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: r(14), vertical: r(8)),
+      decoration: BoxDecoration(
+        gradient: KColors.orangeGradient,
+        borderRadius: BorderRadius.circular(r(20)),
+        border: Border.all(color: Colors.white.withAlpha(140), width: 1.5),
+        boxShadow: const [
+          BoxShadow(color: Color(0x40000000), blurRadius: 8, offset: Offset(0, 3))
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.monetization_on_rounded, color: Colors.white, size: r(20)),
+          SizedBox(width: r(6)),
+          Text(
+            _formatCoins(coins),
+            style: montserrat(size: r(16), weight: FontWeight.w900, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "1,250" thousands-separator formatting — one call site, no intl package needed.
+String _formatCoins(int n) {
+  final s = n.toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
+}
+
+// ── Section header ────────────────────────────────────────────────────────
+// Same white-pill pattern as _SectionHeader in home_page.dart (kept private
+// there), reproduced here for the shop's own sections.
+
+class _ShopSectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _ShopSectionHeader(
+      {required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Padding(
+      padding: EdgeInsets.only(top: r(4), bottom: r(14)),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: r(12), vertical: r(8)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(r(16)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(22),
+                  blurRadius: r(8),
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(r(7)),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(38),
+                    borderRadius: BorderRadius.circular(r(10)),
+                  ),
+                  child: Icon(icon, color: Colors.black, size: r(22)),
+                ),
+                SizedBox(width: r(10)),
+                Text(
+                  label,
+                  style: thaiSans(
+                      size: r(19), weight: FontWeight.w800, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Badges / price chips ──────────────────────────────────────────────────
+
+class _Badge extends StatelessWidget {
+  final String text;
+  final Color color;
+  const _Badge({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: r(8), vertical: r(4)),
+      decoration:
+          BoxDecoration(color: color, borderRadius: BorderRadius.circular(r(12))),
+      child: Text(text,
+          style: thaiSans(size: r(11), weight: FontWeight.w800, color: Colors.white)),
+    );
+  }
+}
+
+/// Price chip for use over a photo/gradient card (dark translucent backing).
+class _PriceChip extends StatelessWidget {
+  final int price;
+  const _PriceChip({required this.price});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: r(8), vertical: r(4)),
+      decoration: BoxDecoration(
+          color: Colors.black.withAlpha(140),
+          borderRadius: BorderRadius.circular(r(12))),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.monetization_on_rounded, color: KColors.orange, size: r(13)),
+          SizedBox(width: r(3)),
+          Text('$price',
+              style: montserrat(size: r(12), weight: FontWeight.w800, color: Colors.white)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Price chip for use on a plain white card background.
+class _PriceChipLight extends StatelessWidget {
+  final int price;
+  const _PriceChipLight({required this.price});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: r(10), vertical: r(6)),
+      decoration: BoxDecoration(
+          color: KColors.orange.withAlpha(35),
+          borderRadius: BorderRadius.circular(r(14))),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.monetization_on_rounded, color: KColors.orangeDark, size: r(15)),
+          SizedBox(width: r(4)),
+          Text('$price',
+              style:
+                  montserrat(size: r(13), weight: FontWeight.w800, color: KColors.orangeDark)),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Theme card ────────────────────────────────────────────────────────────
+
+class _ThemeCard extends ConsumerWidget {
+  final _ThemeItem item;
+  const _ThemeCard({required this.item});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final r = context.r;
+    final unlocked = ref.watch(unlockedThemesProvider).contains(item.id);
+    final active = ref.watch(activeThemeProvider) == item.id;
+
+    return GestureDetector(
+      onTap: () {
+        if (!unlocked) {
+          _confirmBuy(
+            context,
+            ref,
+            name: item.title.replaceAll('\n', ' '),
+            price: item.price,
+            onConfirm: () {
+              ref.read(unlockedThemesProvider.notifier).update((s) => {...s, item.id});
+              ref.read(activeThemeProvider.notifier).state = item.id;
+            },
+          );
+        } else if (!active) {
+          ref.read(activeThemeProvider.notifier).state = item.id;
+        }
+      },
+      child: Container(
+        width: r(140),
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+          gradient: item.gradient,
+          borderRadius: BorderRadius.circular(r(20)),
+          boxShadow: const [
+            BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 4))
+          ],
+        ),
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(r(10)),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Text(item.title,
+                    style: thaiSans(
+                        size: r(14), weight: FontWeight.w800, color: Colors.white)),
+              ),
+            ),
+            if (!unlocked)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withAlpha(90),
+                  alignment: Alignment.center,
+                  child: Image.asset('assets/images/icon_padlock.png', width: r(36)),
+                ),
+              ),
+            Positioned(
+              top: r(8),
+              right: r(8),
+              child: active
+                  ? const _Badge(text: 'ใช้งานอยู่', color: KColors.teal)
+                  : (unlocked ? const SizedBox.shrink() : _PriceChip(price: item.price)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Character card ────────────────────────────────────────────────────────
+
+class _CharacterCard extends ConsumerWidget {
+  final _CharacterItem item;
+  const _CharacterCard({required this.item});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final r = context.r;
+    final unlocked = ref.watch(unlockedCharactersProvider).contains(item.id);
+    final active = ref.watch(activeCharacterProvider) == item.id;
+
+    final avatar = Image.asset(item.asset, height: r(70), fit: BoxFit.contain);
+
+    return GestureDetector(
+      onTap: () {
+        if (!unlocked) {
+          _confirmBuy(
+            context,
+            ref,
+            name: item.name,
+            price: item.price,
+            onConfirm: () {
+              ref.read(unlockedCharactersProvider.notifier).update((s) => {...s, item.id});
+              ref.read(activeCharacterProvider.notifier).state = item.id;
+            },
+          );
+        } else if (!active) {
+          ref.read(activeCharacterProvider.notifier).state = item.id;
+        }
+      },
+      child: Container(
+        width: r(110),
+        padding: EdgeInsets.all(r(10)),
+        decoration: cardDecoration(radius: r(18)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: r(70),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  unlocked
+                      ? avatar
+                      : ColorFiltered(
+                          colorFilter: const ColorFilter.matrix(<double>[
+                            0.2126, 0.7152, 0.0722, 0, 0, //
+                            0.2126, 0.7152, 0.0722, 0, 0, //
+                            0.2126, 0.7152, 0.0722, 0, 0, //
+                            0, 0, 0, 1, 0, //
+                          ]),
+                          child: Opacity(opacity: 0.6, child: avatar),
+                        ),
+                  if (!unlocked)
+                    Image.asset('assets/images/icon_padlock.png', width: r(28)),
+                ],
+              ),
+            ),
+            SizedBox(height: r(6)),
+            Text(
+              item.name,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: thaiSans(size: r(12), weight: FontWeight.w700, color: KColors.navyText),
+            ),
+            SizedBox(height: r(4)),
+            active
+                ? const _Badge(text: 'ใช้งานอยู่', color: KColors.teal)
+                : (unlocked ? const SizedBox.shrink() : _PriceChipLight(price: item.price)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Game unlock card (list style, mirrors debug/game_debug_page.dart _GameCard) ──
+
+class _GameUnlockCard extends ConsumerWidget {
+  final _GameUnlock item;
+  const _GameUnlockCard({required this.item});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final r = context.r;
+    final unlocked = ref.watch(unlockedGamesProvider).contains(item.id);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(r(18)),
+        onTap: unlocked
+            ? null
+            : () => _confirmBuy(
+                  context,
+                  ref,
+                  name: item.titleTh,
+                  price: item.price,
+                  onConfirm: () {
+                    ref
+                        .read(unlockedGamesProvider.notifier)
+                        .update((s) => {...s, item.id});
+                  },
+                ),
+        child: Container(
+          decoration: cardDecoration(radius: r(18)),
+          padding: EdgeInsets.symmetric(horizontal: r(16), vertical: r(16)),
+          child: Row(
+            children: [
+              Container(
+                width: r(48),
+                height: r(48),
+                decoration:
+                    BoxDecoration(color: KColors.teal.withAlpha(26), shape: BoxShape.circle),
+                child: Icon(item.icon, color: KColors.teal, size: r(26)),
+              ),
+              SizedBox(width: r(14)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.titleTh,
+                        style: thaiSans(
+                            size: r(16), weight: FontWeight.w700, color: KColors.navyText)),
+                    SizedBox(height: r(2)),
+                    Text(item.subtitleEn,
+                        style: montserrat(size: r(12), weight: FontWeight.w500, color: Colors.grey)),
+                  ],
+                ),
+              ),
+              unlocked
+                  ? Icon(Icons.check_circle_rounded, color: KColors.teal, size: r(24))
+                  : _PriceChipLight(price: item.price),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Coming-soon (disabled) card ───────────────────────────────────────────
+
+class _ComingSoonCard extends StatelessWidget {
+  const _ComingSoonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Opacity(
+      opacity: 0.55,
+      child: Container(
+        decoration: cardDecoration(radius: r(18)),
+        padding: EdgeInsets.symmetric(horizontal: r(16), vertical: r(16)),
+        child: Row(
+          children: [
+            Container(
+              width: r(48),
+              height: r(48),
+              decoration: BoxDecoration(color: Colors.grey.withAlpha(60), shape: BoxShape.circle),
+              child: Icon(Icons.hourglass_empty_rounded, color: Colors.grey.shade700, size: r(26)),
+            ),
+            SizedBox(width: r(14)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('โหมดพิเศษ',
+                      style: thaiSans(size: r(16), weight: FontWeight.w700, color: KColors.navyText)),
+                  SizedBox(height: r(2)),
+                  Text('Special Mode',
+                      style: montserrat(size: r(12), weight: FontWeight.w500, color: Colors.grey)),
+                ],
+              ),
+            ),
+            Text('เร็วๆ นี้',
+                style: thaiSans(size: r(13), weight: FontWeight.w700, color: Colors.grey.shade700)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Buy confirmation dialog ────────────────────────────────────────────────
+// Follows the same AlertDialog shape used elsewhere (e.g. onboarding/
+// hardware_guide_page.dart's skip-confirm dialog); the confirm action is
+// styled like WorldButton (filled, rounded, bold) since the dialog itself
+// sits on a white surface rather than WorldButton's usual purple background.
+
+void _confirmBuy(
+  BuildContext context,
+  WidgetRef ref, {
+  required String name,
+  required int price,
+  required VoidCallback onConfirm,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text('ปลดล็อก $name?',
+          style: thaiSans(size: 18, weight: FontWeight.w700, color: KColors.navyText)),
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.monetization_on_rounded, color: KColors.orangeDark, size: 20),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text('ใช้ $price เหรียญเพื่อปลดล็อกรายการนี้',
+                style: thaiSans(size: 15, color: const Color(0xFF5A6685))),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text('ยกเลิก', style: thaiSans(size: 15, color: KColors.navyText)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: KColors.blue,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          ),
+          onPressed: () {
+            Navigator.pop(dialogContext);
+            final coins = ref.read(coinsProvider);
+            if (coins < price) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(
+                  content: Text('เหรียญไม่พอ', style: thaiSans(size: 14, color: Colors.white)),
+                  backgroundColor: KColors.navyText,
+                  behavior: SnackBarBehavior.floating,
+                ));
+              return;
+            }
+            ref.read(coinsProvider.notifier).state = coins - price;
+            onConfirm();
+          },
+          child: Text('ยืนยัน', style: thaiSans(size: 15, weight: FontWeight.w700, color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}

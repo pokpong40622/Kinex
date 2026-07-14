@@ -11,6 +11,10 @@ import 'screens/info_page.dart';
 import 'screens/settings_page.dart';
 import 'screens/mega_dance_start.dart';
 import 'screens/mega_dance_game.dart';
+import 'screens/fruit_game_screen.dart';
+import 'screens/balance_quest_screen.dart';
+import 'screens/battle_game_screen.dart';
+import 'screens/mirror_game_screen.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -36,6 +40,7 @@ import 'screens/emg/emg_detail_page.dart';
 import 'screens/onboarding/hardware_guide_page.dart';
 import 'screens/onboarding/connect_device_page.dart';
 import 'screens/debug/ble_debug_page.dart';
+import 'screens/debug/game_debug_page.dart';
 import 'models/world_session_record.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
@@ -57,6 +62,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
         // BLE debug console (connect / send / receive with the ESP32).
         GoRoute(
             path: '/ble-debug', builder: (context, _) => const BleDebugPage()),
+        // Game debug menu (launch any Unity game host screen directly).
+        GoRoute(
+            path: '/game-debug',
+            builder: (context, _) => const GameDebugPage()),
         ShellRoute(
           builder: (context, state, child) => RootShell(child: child),
           routes: [
@@ -73,6 +82,22 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/mega-dance/game',
                 builder: (context, _) => const MegaDanceGameScreen()),
+            // Real embedded Unity game (Fruit Header — สวนผลไม้).
+            GoRoute(
+                path: '/fruit-game',
+                builder: (context, _) => const FruitGameScreen()),
+            // Real embedded Unity game (Balance Quest — เส้นทางนักสมดุล).
+            GoRoute(
+                path: '/balance-quest',
+                builder: (context, _) => const BalanceQuestScreen()),
+            // Real embedded Unity game (Guardian of Balance — ผู้พิทักษ์สวนสมดุล).
+            GoRoute(
+                path: '/battle-game',
+                builder: (context, _) => const BattleGameScreen()),
+            // Real embedded Unity game (Magic Mirror — กระจกวิเศษ).
+            GoRoute(
+                path: '/mirror-game',
+                builder: (context, _) => const MirrorGameScreen()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',

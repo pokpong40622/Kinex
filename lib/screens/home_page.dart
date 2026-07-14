@@ -11,6 +11,7 @@ import '../ble/ble_service.dart';
 import '../theme/responsive.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'info_page.dart';
+import 'shop_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -81,6 +82,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           const _QuestTab(),
           _PracticeTab(onStartGame: () => context.go('/mega-dance')),
           const _InfoTab(),
+          const ShopTab(),
         ],
       ),
       bottomNavigationBar: Column(
@@ -151,12 +153,13 @@ class _KinexNavBar extends StatelessWidget {
 
   const _KinexNavBar({required this.selected, required this.onTap});
 
-  static const _labels = ['หน้าหลัก', 'ภารกิจ', 'ฝึกซ้อม', 'ข้อมูล'];
+  static const _labels = ['หน้าหลัก', 'ภารกิจ', 'ฝึกซ้อม', 'ข้อมูล', 'ร้านค้า'];
   static const _icons = [
     'assets/images/nav_home.png',
     'assets/images/nav_quest.png',
     'assets/images/nav_practice.png',
     'assets/images/nav_info.png',
+    'assets/images/nav_shop.png',
   ];
 
   @override
@@ -182,7 +185,7 @@ class _KinexNavBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(4, (i) {
+                children: List.generate(5, (i) {
                   final active = i == selected;
                   return GestureDetector(
                     onTap: () => onTap(i),
@@ -1461,6 +1464,7 @@ class _ProfileCard extends ConsumerWidget {
                     onSelected: (value) {
                       if (value == 'settings') context.push('/settings');
                       if (value == 'debug') context.push('/ble-debug');
+                      if (value == 'games') context.push('/game-debug');
                     },
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -1492,6 +1496,22 @@ class _ProfileCard extends ConsumerWidget {
                                 color: KColors.navyText, size: 20),
                             const SizedBox(width: 10),
                             Text('BLE Debug',
+                                style: thaiSans(
+                                    size: 16,
+                                    weight: FontWeight.w600,
+                                    color: KColors.navyText)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'games',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.sports_esports_rounded,
+                                color: KColors.navyText, size: 20),
+                            const SizedBox(width: 10),
+                            Text('Game Debug',
                                 style: thaiSans(
                                     size: 16,
                                     weight: FontWeight.w600,
