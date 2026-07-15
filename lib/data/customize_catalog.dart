@@ -41,7 +41,6 @@ class CharacterItem {
 const kCharacterCatalog = <CharacterItem>[
   CharacterItem(
       'character_kid', 'น้องคิเน็กซ์', 'assets/images/character_kid.png', 0),
-  CharacterItem('fox_char', 'จิ้งจอกน้อย', 'assets/images/fox_char.png', 500),
   CharacterItem('char_main', 'ฮีโร่หลัก', 'assets/images/char_main.png', 800),
 ];
 

@@ -21,8 +21,8 @@ class _GameUnlock {
       this.id, this.titleTh, this.subtitleEn, this.icon, this.price);
 }
 
-const _gameUnlock = _GameUnlock('guardian_of_balance', 'ผู้พิทักษ์สวนสมดุล',
-    'Guardian of Balance', Icons.shield_rounded, 1000);
+const _gameUnlock = _GameUnlock(
+    'kinex_world', 'KINEX World', 'KINEX World', Icons.self_improvement_rounded, 1000);
 
 // ── Shop tab ──────────────────────────────────────────────────────────────
 
@@ -65,18 +65,10 @@ class ShopTab extends ConsumerWidget {
                       horizontal: w * 0.04, vertical: h * 0.01),
                   children: [
                     const _ShopSectionHeader(
-                        icon: Icons.palette_rounded,
-                        label: 'ธีมเกม',
-                        color: KColors.purple),
-                    SizedBox(
-                      height: r(170),
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: kThemeCatalog.length,
-                        separatorBuilder: (_, i) => SizedBox(width: r(12)),
-                        itemBuilder: (_, i) => _ThemeCard(item: kThemeCatalog[i]),
-                      ),
-                    ),
+                        icon: Icons.lock_open_rounded,
+                        label: 'ปลดล็อกเกม',
+                        color: KColors.teal),
+                    const _GameUnlockCard(item: _gameUnlock),
                     SizedBox(height: h * 0.03),
                     const _ShopSectionHeader(
                         icon: Icons.person_rounded,
@@ -94,12 +86,10 @@ class ShopTab extends ConsumerWidget {
                     ),
                     SizedBox(height: h * 0.03),
                     const _ShopSectionHeader(
-                        icon: Icons.lock_open_rounded,
-                        label: 'ปลดล็อกเกม',
-                        color: KColors.teal),
-                    const _GameUnlockCard(item: _gameUnlock),
-                    SizedBox(height: r(12)),
-                    const _ComingSoonCard(),
+                        icon: Icons.palette_rounded,
+                        label: 'ธีมเกม',
+                        color: KColors.purple),
+                    const _ComingSoonCard(titleTh: 'ธีมเกม', subtitleEn: 'Themes'),
                     SizedBox(height: h * 0.02),
                   ],
                 ),
@@ -301,32 +291,6 @@ class _Badge extends StatelessWidget {
   }
 }
 
-/// Price chip for use over a photo/gradient card (dark translucent backing).
-class _PriceChip extends StatelessWidget {
-  final int price;
-  const _PriceChip({required this.price});
-
-  @override
-  Widget build(BuildContext context) {
-    final r = context.r;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: r(8), vertical: r(4)),
-      decoration: BoxDecoration(
-          color: Colors.black.withAlpha(140),
-          borderRadius: BorderRadius.circular(r(12))),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.monetization_on_rounded, color: KColors.orange, size: r(13)),
-          SizedBox(width: r(3)),
-          Text('$price',
-              style: montserrat(size: r(12), weight: FontWeight.w800, color: Colors.white)),
-        ],
-      ),
-    );
-  }
-}
-
 /// Price chip for use on a plain white card background.
 class _PriceChipLight extends StatelessWidget {
   final int price;
@@ -349,78 +313,6 @@ class _PriceChipLight extends StatelessWidget {
               style:
                   montserrat(size: r(13), weight: FontWeight.w800, color: KColors.orangeDark)),
         ],
-      ),
-    );
-  }
-}
-
-// ── Theme card ────────────────────────────────────────────────────────────
-
-class _ThemeCard extends ConsumerWidget {
-  final ThemeItem item;
-  const _ThemeCard({required this.item});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final r = context.r;
-    final unlocked = ref.watch(unlockedThemesProvider).contains(item.id);
-    final active = ref.watch(activeThemeProvider) == item.id;
-
-    return GestureDetector(
-      onTap: () {
-        if (!unlocked) {
-          _confirmBuy(
-            context,
-            ref,
-            name: item.title.replaceAll('\n', ' '),
-            price: item.price,
-            onConfirm: () {
-              ref.read(unlockedThemesProvider.notifier).update((s) => {...s, item.id});
-              ref.read(activeThemeProvider.notifier).state = item.id;
-            },
-          );
-        } else if (!active) {
-          ref.read(activeThemeProvider.notifier).state = item.id;
-        }
-      },
-      child: Container(
-        width: r(140),
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          gradient: item.gradient,
-          borderRadius: BorderRadius.circular(r(20)),
-          boxShadow: const [
-            BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 4))
-          ],
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(r(10)),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(item.title,
-                    style: thaiSans(
-                        size: r(14), weight: FontWeight.w800, color: Colors.white)),
-              ),
-            ),
-            if (!unlocked)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withAlpha(90),
-                  alignment: Alignment.center,
-                  child: Image.asset('assets/images/icon_padlock.png', width: r(36)),
-                ),
-              ),
-            Positioned(
-              top: r(8),
-              right: r(8),
-              child: active
-                  ? const _Badge(text: 'ใช้งานอยู่', color: KColors.teal)
-                  : (unlocked ? const SizedBox.shrink() : _PriceChip(price: item.price)),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -572,7 +464,9 @@ class _GameUnlockCard extends ConsumerWidget {
 // ── Coming-soon (disabled) card ───────────────────────────────────────────
 
 class _ComingSoonCard extends StatelessWidget {
-  const _ComingSoonCard();
+  final String titleTh;
+  final String subtitleEn;
+  const _ComingSoonCard({this.titleTh = 'โหมดพิเศษ', this.subtitleEn = 'Special Mode'});
 
   @override
   Widget build(BuildContext context) {
@@ -595,10 +489,10 @@ class _ComingSoonCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('โหมดพิเศษ',
+                  Text(titleTh,
                       style: thaiSans(size: r(16), weight: FontWeight.w700, color: KColors.navyText)),
                   SizedBox(height: r(2)),
-                  Text('Special Mode',
+                  Text(subtitleEn,
                       style: montserrat(size: r(12), weight: FontWeight.w500, color: Colors.grey)),
                 ],
               ),

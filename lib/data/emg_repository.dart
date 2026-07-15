@@ -59,9 +59,9 @@ final mockBalanceReportProvider = Provider<BalanceReport>((ref) {
       );
   return BalanceReport([
     knee(LegSide.left, 0),
-    knee(LegSide.right, 4),
+    knee(LegSide.right, 6),
     ankle(LegSide.left, 0),
-    ankle(LegSide.right, -3),
+    ankle(LegSide.right, -1),
   ]);
 });
 

@@ -26,8 +26,6 @@ class _MockGame {
   final int minutes;
   final int score;
   final String iconAsset; // real game art, assets/images/game_icons/
-  final List<Color> iconGradient; // sparkline + accent colour
-  final List<double> spark; // recent scores, oldest → newest
 
   const _MockGame({
     required this.name,
@@ -35,8 +33,6 @@ class _MockGame {
     required this.minutes,
     required this.score,
     required this.iconAsset,
-    required this.iconGradient,
-    required this.spark,
   });
 }
 
@@ -47,8 +43,6 @@ const _mockGames = [
     minutes: 10,
     score: 88,
     iconAsset: 'assets/images/game_icons/megadance.png',
-    iconGradient: [Color(0xFFB83FF4), Color(0xFF6F1BC8)],
-    spark: [40, 52, 48, 66, 74, 88],
   ),
   _MockGame(
     name: 'KINEX WORLD',
@@ -56,26 +50,6 @@ const _mockGames = [
     minutes: 15,
     score: 76,
     iconAsset: 'assets/images/game_icons/world.png',
-    iconGradient: [Color(0xFF11C18E), Color(0xFF2766EF)],
-    spark: [45, 42, 58, 55, 70, 76],
-  ),
-  _MockGame(
-    name: 'FRUIT GAME',
-    dateLabel: '12 ก.ค.',
-    minutes: 8,
-    score: 64,
-    iconAsset: 'assets/images/game_icons/fruitgame.png',
-    iconGradient: [Color(0xFFFFC107), Color(0xFFFA7F00)],
-    spark: [30, 42, 40, 50, 56, 64],
-  ),
-  _MockGame(
-    name: 'BALANCE QUEST',
-    dateLabel: '11 ก.ค.',
-    minutes: 12,
-    score: 52,
-    iconAsset: 'assets/images/game_icons/balancequest.png',
-    iconGradient: [Color(0xFF8BFA48), Color(0xFF5EC832)],
-    spark: [22, 30, 28, 38, 44, 52],
   ),
   _MockGame(
     name: 'MEGA DANCE',
@@ -83,8 +57,13 @@ const _mockGames = [
     minutes: 10,
     score: 47,
     iconAsset: 'assets/images/game_icons/megadance.png',
-    iconGradient: [Color(0xFFB83FF4), Color(0xFF6F1BC8)],
-    spark: [50, 38, 45, 33, 40, 47],
+  ),
+  _MockGame(
+    name: 'KINEX WORLD',
+    dateLabel: '9 ก.ค.',
+    minutes: 12,
+    score: 68,
+    iconAsset: 'assets/images/game_icons/world.png',
   ),
 ];
 
@@ -418,9 +397,9 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
           ),
           SizedBox(height: context.r(5)),
           ClipRRect(
-            borderRadius: BorderRadius.circular(context.r(12)),
+            borderRadius: BorderRadius.circular(context.r(16)),
             child: SizedBox(
-              height: context.r(34),
+              height: context.r(52),
               child: Row(
                 children: [
                   Expanded(
@@ -436,12 +415,12 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
                       ),
                       child: Text('${leftShare.round()}%',
                           style: montserrat(
-                              size: context.r(15),
+                              size: context.r(22),
                               weight: FontWeight.w900,
                               color: Colors.white)),
                     ),
                   ),
-                  Container(width: context.r(3), color: Colors.white),
+                  Container(width: context.r(4), color: Colors.white),
                   Expanded(
                     flex: rightShare.round().clamp(1, 99),
                     child: Container(
@@ -455,7 +434,7 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
                       ),
                       child: Text('${rightShare.round()}%',
                           style: montserrat(
-                              size: context.r(15),
+                              size: context.r(22),
                               weight: FontWeight.w900,
                               color: Colors.white)),
                     ),
@@ -735,18 +714,6 @@ class _GameRow extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(
-            width: context.r(60),
-            height: context.r(24),
-            child: CustomPaint(
-              painter: _SparklinePainter(
-                values: game.spark,
-                color: game.iconGradient.first,
-                strokeWidth: context.r(2.4),
-              ),
-            ),
-          ),
-          SizedBox(width: context.r(10)),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -774,46 +741,6 @@ class _GameRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SparklinePainter extends CustomPainter {
-  final List<double> values; // 0..100
-  final Color color;
-  final double strokeWidth;
-
-  const _SparklinePainter({
-    required this.values,
-    required this.color,
-    required this.strokeWidth,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.length < 2) return;
-    final dx = size.width / (values.length - 1);
-    Offset at(int i) =>
-        Offset(i * dx, size.height * (1 - values[i] / 100));
-
-    final path = Path()..moveTo(at(0).dx, at(0).dy);
-    for (var i = 1; i < values.length; i++) {
-      path.lineTo(at(i).dx, at(i).dy);
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..color = color,
-    );
-    canvas.drawCircle(at(values.length - 1), strokeWidth + 0.6,
-        Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_SparklinePainter old) =>
-      old.values != values || old.color != color;
 }
 
 // ─── Action buttons ─────────────────────────────────────────────────────────
