@@ -85,6 +85,14 @@ class GameDebugPage extends StatelessWidget {
             r: r,
             onTap: () => context.go('/temple-hunt'),
           ),
+          SizedBox(height: r(12)),
+          _GameCard(
+            icon: Icons.star_rounded,
+            titleTh: 'เวทีซุปตาร์',
+            subtitleEn: 'SUPERSTAR STAGE — เต้นตามโค้ช',
+            r: r,
+            onTap: () => context.go('/dance-star'),
+          ),
           SizedBox(height: r(20)),
           Center(
             child: Text(

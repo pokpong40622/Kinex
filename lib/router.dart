@@ -9,6 +9,7 @@ import 'screens/practice_page.dart';
 import 'screens/quest_page.dart';
 import 'screens/info_page.dart';
 import 'screens/settings_page.dart';
+import 'screens/customize_page.dart';
 import 'screens/mega_dance_start.dart';
 import 'screens/mega_dance_game.dart';
 import 'screens/fruit_game_screen.dart';
@@ -16,6 +17,7 @@ import 'screens/balance_quest_screen.dart';
 import 'screens/battle_game_screen.dart';
 import 'screens/mirror_game_screen.dart';
 import 'screens/temple_hunt_screen.dart';
+import 'screens/dance_star_screen.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -76,6 +78,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(path: '/info', builder: (context, _) => const InfoPage()),
             GoRoute(
                 path: '/settings', builder: (context, _) => const SettingsPage()),
+            // Profile customization: display name + equipped character/theme.
+            GoRoute(
+                path: '/customize',
+                builder: (context, _) => const CustomizePage()),
             GoRoute(
                 path: '/mega-dance',
                 builder: (context, _) => const MegaDanceStartPage()),
@@ -103,6 +109,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/temple-hunt',
                 builder: (context, _) => const TempleHuntScreen()),
+            // Real embedded Unity game (SUPERSTAR STAGE — เวทีซุปตาร์).
+            GoRoute(
+                path: '/dance-star',
+                builder: (context, _) => const DanceStarScreen()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',

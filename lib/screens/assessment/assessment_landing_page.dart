@@ -35,10 +35,42 @@ class AssessmentLandingPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: thaiSans(size: context.r(20), weight: FontWeight.w800),
             ),
+            SizedBox(height: context.r(10)),
+            // Instrument reference badge — professional credibility line.
+            Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.r(14), vertical: context.r(8)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF8F5),
+                borderRadius: BorderRadius.circular(context.r(14)),
+                border: Border.all(
+                    color: KColors.tealDark.withAlpha(90),
+                    width: context.r(1.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified_rounded,
+                      size: context.r(18), color: KColors.tealDark),
+                  SizedBox(width: context.r(8)),
+                  Flexible(
+                    child: Text(
+                      'อ้างอิงแบบประเมินมาตรฐานสากล\n'
+                      'Short Physical Performance Battery (SPPB)',
+                      textAlign: TextAlign.center,
+                      style: thaiSans(
+                          size: context.r(12.5),
+                          weight: FontWeight.w700,
+                          color: KColors.tealDark),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(height: context.r(12)),
             Text(
-              'แบบทดสอบ 9 รายการ ใช้เวลาประมาณ 20–30 นาที '
-              'วัดความแข็งแรง ความยืดหยุ่น การทรงตัว และความอดทนของหัวใจ',
+              'การทดสอบ SPPB 3 รายการ (การทรงตัว · ความเร็วการเดิน · '
+              'ลุก-นั่งเก้าอี้) พร้อมวัดค่า BMI ใช้เวลาประมาณ 10 นาที',
               textAlign: TextAlign.center,
               style: thaiSans(
                   size: context.r(15),

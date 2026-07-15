@@ -13,6 +13,68 @@ class PracticePage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Flagship game — hero card, deliberately bigger than the list below.
+            Material(
+              borderRadius: BorderRadius.circular(18),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => context.go('/dance-star'),
+                child: Ink(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF2B1B54), Color(0xFF6C2BD9)],
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.asset(
+                          'assets/images/game_icons/dancestar.png',
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.star_rounded,
+                                    color: Color(0xFFFFD155), size: 22),
+                                const SizedBox(width: 4),
+                                Text('เกมแนะนำ',
+                                    style: TextStyle(
+                                        color: Colors.amber.shade200,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            const Text('เวทีซุปตาร์',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold)),
+                            const Text('เต้นตามโค้ชบนเวทีคอนเสิร์ต',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios,
+                          color: Colors.white70, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Card(
               child: ListTile(
                 leading:

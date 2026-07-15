@@ -5,50 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 import '../state/shop_providers.dart';
+import '../data/customize_catalog.dart';
 
-// ── Mock catalog ──────────────────────────────────────────────────────────
-// Presentation-only data; ids match the entries stored in the *Provider sets
-// in state/shop_providers.dart. No persistence — see that file's header.
-
-class _ThemeItem {
-  final String id;
-  final String title;
-  final Gradient gradient;
-  final int price;
-  const _ThemeItem(this.id, this.title, this.gradient, this.price);
-}
-
-const _themes = [
-  _ThemeItem(
-    'golden_morning',
-    'สวนผลไม้\nGolden Morning',
-    LinearGradient(colors: [Color(0xFFFFD54F), Color(0xFFFF8A65)]),
-    0,
-  ),
-  _ThemeItem(
-    'neon_dusk',
-    'Neon Dusk',
-    LinearGradient(colors: [Color(0xFFEC4899), Color(0xFF6366F1)]),
-    400,
-  ),
-  _ThemeItem('fantasy_meadow', 'Fantasy Meadow', KColors.tealGradient, 300),
-];
-
-class _CharacterItem {
-  final String id;
-  final String name;
-  final String asset;
-  final int price;
-  const _CharacterItem(this.id, this.name, this.asset, this.price);
-}
-
-const _characters = [
-  _CharacterItem(
-      'character_kid', 'น้องคิเน็กซ์', 'assets/images/character_kid.png', 0),
-  _CharacterItem(
-      'fox_char', 'จิ้งจอกน้อย', 'assets/images/fox_char.png', 500),
-  _CharacterItem('char_main', 'ฮีโร่หลัก', 'assets/images/char_main.png', 800),
-];
+// Theme/character catalog now lives in data/customize_catalog.dart (shared
+// with the customize page). Ids match the entries stored in the *Provider
+// sets in state/shop_providers.dart, persisted via ShopRepository.
 
 class _GameUnlock {
   final String id;
@@ -111,9 +72,9 @@ class ShopTab extends ConsumerWidget {
                       height: r(170),
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _themes.length,
+                        itemCount: kThemeCatalog.length,
                         separatorBuilder: (_, i) => SizedBox(width: r(12)),
-                        itemBuilder: (_, i) => _ThemeCard(item: _themes[i]),
+                        itemBuilder: (_, i) => _ThemeCard(item: kThemeCatalog[i]),
                       ),
                     ),
                     SizedBox(height: h * 0.03),
@@ -125,10 +86,10 @@ class ShopTab extends ConsumerWidget {
                       height: r(160),
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _characters.length,
+                        itemCount: kCharacterCatalog.length,
                         separatorBuilder: (_, i) => SizedBox(width: r(12)),
                         itemBuilder: (_, i) =>
-                            _CharacterCard(item: _characters[i]),
+                            _CharacterCard(item: kCharacterCatalog[i]),
                       ),
                     ),
                     SizedBox(height: h * 0.03),
@@ -396,7 +357,7 @@ class _PriceChipLight extends StatelessWidget {
 // ── Theme card ────────────────────────────────────────────────────────────
 
 class _ThemeCard extends ConsumerWidget {
-  final _ThemeItem item;
+  final ThemeItem item;
   const _ThemeCard({required this.item});
 
   @override
@@ -468,7 +429,7 @@ class _ThemeCard extends ConsumerWidget {
 // ── Character card ────────────────────────────────────────────────────────
 
 class _CharacterCard extends ConsumerWidget {
-  final _CharacterItem item;
+  final CharacterItem item;
   const _CharacterCard({required this.item});
 
   @override

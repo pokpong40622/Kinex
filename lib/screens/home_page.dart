@@ -10,6 +10,8 @@ import '../widgets/fall_risk_cards.dart';
 import '../ble/ble_service.dart';
 import '../theme/responsive.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../data/customize_catalog.dart';
+import '../state/shop_providers.dart';
 import 'info_page.dart';
 import 'shop_page.dart';
 
@@ -483,7 +485,12 @@ class CharacterHomeTab extends ConsumerWidget {
                             ],
                           ),
                           SizedBox(height: context.r(8)),
-                          _CharacterHero(exercisedToday: happy),
+                          _CharacterHero(
+                            exercisedToday: happy,
+                            asset: characterById(
+                                    ref.watch(activeCharacterProvider))
+                                .asset,
+                          ),
                           SizedBox(height: context.r(14)),
                           Row(
                             children: [
@@ -562,7 +569,8 @@ class _StreakChip extends StatelessWidget {
 
 class _CharacterHero extends StatefulWidget {
   final bool exercisedToday;
-  const _CharacterHero({required this.exercisedToday});
+  final String asset;
+  const _CharacterHero({required this.exercisedToday, required this.asset});
 
   @override
   State<_CharacterHero> createState() => _CharacterHeroState();
@@ -627,7 +635,7 @@ class _CharacterHeroState extends State<_CharacterHero>
             // Character stays in full colour in both moods; the badge conveys
             // happy vs. resting (only the gentle bob differs).
             child: Image.asset(
-              'assets/images/character_kid.png',
+              widget.asset,
               height: imgH,
               fit: BoxFit.contain,
             ),

@@ -66,6 +66,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/game_icons/
     - assets/images/assessment/
     - assets/images/hardware_guide/
     - assets/images/info/

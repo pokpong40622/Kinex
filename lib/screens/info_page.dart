@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../data/emg_repository.dart';
+import '../models/emg_metrics.dart';
+import '../models/muscle.dart';
+import '../state/shop_providers.dart';
+import '../data/customize_catalog.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 
 // ─── Mock data ─────────────────────────────────────────────────────────────
-// Everything on this page is mock while the EMG pipeline + game history wiring
-// land. Left/right values are each leg's SHARE of total EMG effort (sum = 100).
+// The history list below is still mock while game-history wiring lands. The
+// L/R balance card reads real data from balanceReportProvider (emg_repository.dart).
 
-const _leftShare = 57.0;
-const _rightShare = 43.0;
 const _weekImprovement = 15; // % better than last week
 const _monthImprovement = 22; // % better than last month
 
@@ -21,8 +25,8 @@ class _MockGame {
   final String dateLabel;
   final int minutes;
   final int score;
-  final IconData icon;
-  final List<Color> iconGradient;
+  final String iconAsset; // real game art, assets/images/game_icons/
+  final List<Color> iconGradient; // sparkline + accent colour
   final List<double> spark; // recent scores, oldest → newest
 
   const _MockGame({
@@ -30,7 +34,7 @@ class _MockGame {
     required this.dateLabel,
     required this.minutes,
     required this.score,
-    required this.icon,
+    required this.iconAsset,
     required this.iconGradient,
     required this.spark,
   });
@@ -42,7 +46,7 @@ const _mockGames = [
     dateLabel: 'วันนี้',
     minutes: 10,
     score: 88,
-    icon: Icons.music_note_rounded,
+    iconAsset: 'assets/images/game_icons/megadance.png',
     iconGradient: [Color(0xFFB83FF4), Color(0xFF6F1BC8)],
     spark: [40, 52, 48, 66, 74, 88],
   ),
@@ -51,7 +55,7 @@ const _mockGames = [
     dateLabel: 'เมื่อวาน',
     minutes: 15,
     score: 76,
-    icon: Icons.public_rounded,
+    iconAsset: 'assets/images/game_icons/world.png',
     iconGradient: [Color(0xFF11C18E), Color(0xFF2766EF)],
     spark: [45, 42, 58, 55, 70, 76],
   ),
@@ -60,7 +64,7 @@ const _mockGames = [
     dateLabel: '12 ก.ค.',
     minutes: 8,
     score: 64,
-    icon: Icons.apple,
+    iconAsset: 'assets/images/game_icons/fruitgame.png',
     iconGradient: [Color(0xFFFFC107), Color(0xFFFA7F00)],
     spark: [30, 42, 40, 50, 56, 64],
   ),
@@ -69,7 +73,7 @@ const _mockGames = [
     dateLabel: '11 ก.ค.',
     minutes: 12,
     score: 52,
-    icon: Icons.balance_rounded,
+    iconAsset: 'assets/images/game_icons/balancequest.png',
     iconGradient: [Color(0xFF8BFA48), Color(0xFF5EC832)],
     spark: [22, 30, 28, 38, 44, 52],
   ),
@@ -78,25 +82,36 @@ const _mockGames = [
     dateLabel: '10 ก.ค.',
     minutes: 10,
     score: 47,
-    icon: Icons.music_note_rounded,
+    iconAsset: 'assets/images/game_icons/megadance.png',
     iconGradient: [Color(0xFFB83FF4), Color(0xFF6F1BC8)],
     spark: [50, 38, 45, 33, 40, 47],
   ),
 ];
 
-// ─── Traffic-light status per leg ───────────────────────────────────────────
-// Status comes from the leg's share of total effort: the weaker leg carries
-// the signal (≥45 fine, 35–44 needs attention, <35 needs training).
+// ─── Balance status strip ───────────────────────────────────────────────────
+// Driven by the GAP between the two legs' share (|left% - right%|), not by
+// either leg alone — a small gap is fine even if both legs are individually
+// low-effort; a big gap is the clinically interesting signal.
 
-class _LegStatus {
+class _BalanceStatus {
   final String label;
   final Color color;
-  const _LegStatus(this.label, this.color);
+  final IconData icon;
+  const _BalanceStatus(this.label, this.color, this.icon);
 
-  static _LegStatus of(double share) {
-    if (share >= 45) return const _LegStatus('ดี', Color(0xFF11C18E));
-    if (share >= 35) return const _LegStatus('พอใช้', Color(0xFFF5A623));
-    return const _LegStatus('ควรฝึกเพิ่ม', Color(0xFFFD4C86));
+  static _BalanceStatus of(double gap) {
+    if (gap <= 10) {
+      return const _BalanceStatus(
+          'สมดุลดี', Color(0xFF11C18E), Icons.check_circle_rounded);
+    }
+    if (gap <= 20) {
+      return const _BalanceStatus('ควรฝึกข้างที่อ่อนเพิ่ม',
+          Color(0xFFF5A623), Icons.warning_rounded);
+    }
+    return const _BalanceStatus(
+        'ความไม่สมดุลสูง — แนะนำปรึกษาแพทย์หรือนักกายภาพ',
+        Color(0xFFFD4C86),
+        Icons.local_hospital_rounded);
   }
 }
 
@@ -169,11 +184,14 @@ class InfoPage extends StatelessWidget {
 
 // ─── Header banner ──────────────────────────────────────────────────────────
 
-class _HeaderBanner extends StatelessWidget {
+class _HeaderBanner extends ConsumerWidget {
   const _HeaderBanner();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userName = ref.watch(userNameProvider);
+    final character = characterById(ref.watch(activeCharacterProvider));
+
     return Container(
       padding: EdgeInsets.fromLTRB(
           context.r(22), context.r(18), context.r(22), context.r(18)),
@@ -190,53 +208,116 @@ class _HeaderBanner extends StatelessWidget {
               color: Color(0x596F6ADE), blurRadius: 22, offset: Offset(0, 10)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Stack(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Text(
+                      'INFO',
+                      style: TextStyle(
+                        fontFamily: 'Kanit',
+                        fontSize: context.r(52),
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                        foreground: Paint()
+                          ..style = PaintingStyle.stroke
+                          ..strokeWidth = context.r(4)
+                          ..color = Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'INFO',
+                      style: montserrat(
+                        size: context.r(52),
+                        weight: FontWeight.w900,
+                        color: const Color(0xFF262626),
+                      ).copyWith(height: 1.05),
+                    ),
+                  ],
+                ),
+                SizedBox(height: context.r(6)),
+                Text(
+                  'ชื่อ: $userName',
+                  style: montserrat(
+                      size: context.r(17),
+                      weight: FontWeight.w600,
+                      color: Colors.white),
+                ),
+                Text(
+                  'อายุ: 80',
+                  style: montserrat(
+                      size: context.r(17),
+                      weight: FontWeight.w600,
+                      color: Colors.white),
+                ),
+                SizedBox(height: context.r(2)),
+                Text(
+                  'อัปเดตล่าสุด: วันนี้ 09:41 น.',
+                  style: montserrat(
+                    size: context.r(12),
+                    weight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: context.r(10)),
+          // Active character + customize shortcut
+          Column(
             children: [
-              Text(
-                'INFO',
-                style: TextStyle(
-                  fontFamily: 'Kanit',
-                  fontSize: context.r(52),
-                  fontWeight: FontWeight.w900,
-                  height: 1.05,
-                  foreground: Paint()
-                    ..style = PaintingStyle.stroke
-                    ..strokeWidth = context.r(4)
-                    ..color = Colors.white,
+              Container(
+                padding: EdgeInsets.all(context.r(8)),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      width: context.r(2)),
+                ),
+                child: Image.asset(
+                  character.asset,
+                  height: context.r(74),
+                  width: context.r(74),
+                  fit: BoxFit.contain,
                 ),
               ),
-              Text(
-                'INFO',
-                style: montserrat(
-                  size: context.r(52),
-                  weight: FontWeight.w900,
-                  color: const Color(0xFF262626),
-                ).copyWith(height: 1.05),
+              SizedBox(height: context.r(8)),
+              GestureDetector(
+                onTap: () => context.push('/customize'),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: context.r(14), vertical: context.r(6)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 8,
+                          offset: Offset(0, 3)),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.brush_rounded,
+                          color: KColors.indigo, size: context.r(15)),
+                      SizedBox(width: context.r(4)),
+                      Text('ปรับแต่ง',
+                          style: montserrat(
+                              size: context.r(13),
+                              weight: FontWeight.w900,
+                              color: KColors.indigo)),
+                    ],
+                  ),
+                ),
               ),
             ],
-          ),
-          SizedBox(height: context.r(6)),
-          Text(
-            'ชื่อ: ณัฐธัญ กาวาฮารา',
-            style: montserrat(
-                size: context.r(17), weight: FontWeight.w600, color: Colors.white),
-          ),
-          Text(
-            'อายุ: 80',
-            style: montserrat(
-                size: context.r(17), weight: FontWeight.w600, color: Colors.white),
-          ),
-          SizedBox(height: context.r(2)),
-          Text(
-            'อัปเดตล่าสุด: วันนี้ 09:41 น.',
-            style: montserrat(
-              size: context.r(12),
-              weight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
           ),
         ],
       ),
@@ -246,21 +327,46 @@ class _HeaderBanner extends StatelessWidget {
 
 // ─── Balance card (EMG L/R) ─────────────────────────────────────────────────
 
-class _BalanceCard extends StatefulWidget {
+/// Sums each muscle reading's %MVC per leg from the balance report and
+/// normalizes to a left/right SHARE of total effort (sums to 100). This is
+/// the same "share of effort" concept the old mock consts modeled, now
+/// derived from real per-muscle %MVC data.
+(double left, double right) _legShares(BalanceReport report) {
+  double totalFor(LegSide side) {
+    var total = 0.0;
+    for (final j in report.joints) {
+      if (j.side != side) continue;
+      total += j.agonist.percentMvc + j.antagonist.percentMvc;
+    }
+    return total;
+  }
+
+  final left = totalFor(LegSide.left);
+  final right = totalFor(LegSide.right);
+  final sum = left + right;
+  if (sum <= 0) return (50.0, 50.0);
+  return (left / sum * 100, right / sum * 100);
+}
+
+class _BalanceCard extends ConsumerStatefulWidget {
   const _BalanceCard();
 
   @override
-  State<_BalanceCard> createState() => _BalanceCardState();
+  ConsumerState<_BalanceCard> createState() => _BalanceCardState();
 }
 
-class _BalanceCardState extends State<_BalanceCard> {
+class _BalanceCardState extends ConsumerState<_BalanceCard> {
   bool _weekly = true;
 
   @override
   Widget build(BuildContext context) {
+    final report = ref.watch(balanceReportProvider);
+    final (leftShare, rightShare) = _legShares(report);
+    final gap = (leftShare - rightShare).abs();
+    final status = _BalanceStatus.of(gap);
     final balanceScore =
-        (2 * (_leftShare < _rightShare ? _leftShare : _rightShare) /
-                (_leftShare + _rightShare) *
+        (2 * (leftShare < rightShare ? leftShare : rightShare) /
+                (leftShare + rightShare) *
                 100)
             .round();
 
@@ -285,23 +391,14 @@ class _BalanceCardState extends State<_BalanceCard> {
               style: montserrat(size: context.r(19), weight: FontWeight.w900)),
           SizedBox(height: context.r(2)),
           Text(
-            'สัดส่วนการออกแรงของขาทั้งสองข้างขณะเล่นเกม',
+            '% การใช้กล้ามเนื้อจาก EMG ขณะทำท่าที่ลงน้ำหนัก 2 ข้างเท่ากัน '
+            '(เช่น ยืนสองเท้า หรือเทียบยืนขาเดียวซ้าย-ขวา)',
             style: montserrat(
-                size: context.r(12.5),
+                size: context.r(12),
                 weight: FontWeight.w500,
                 color: const Color(0xFF6D78A8)),
           ),
           SizedBox(height: context.r(12)),
-
-          // Per-leg gauges
-          Row(
-            children: const [
-              Expanded(child: _LegGauge(label: 'ขาซ้าย', share: _leftShare)),
-              SizedBox(width: 12),
-              Expanded(child: _LegGauge(label: 'ขาขวา', share: _rightShare)),
-            ],
-          ),
-          SizedBox(height: context.r(14)),
 
           // Split bar
           Row(
@@ -327,7 +424,7 @@ class _BalanceCardState extends State<_BalanceCard> {
               child: Row(
                 children: [
                   Expanded(
-                    flex: _leftShare.round(),
+                    flex: leftShare.round().clamp(1, 99),
                     child: Container(
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(
@@ -337,7 +434,7 @@ class _BalanceCardState extends State<_BalanceCard> {
                           colors: [Color(0xFF8B7BFF), KColors.indigo],
                         ),
                       ),
-                      child: Text('${_leftShare.round()}%',
+                      child: Text('${leftShare.round()}%',
                           style: montserrat(
                               size: context.r(15),
                               weight: FontWeight.w900,
@@ -346,7 +443,7 @@ class _BalanceCardState extends State<_BalanceCard> {
                   ),
                   Container(width: context.r(3), color: Colors.white),
                   Expanded(
-                    flex: _rightShare.round(),
+                    flex: rightShare.round().clamp(1, 99),
                     child: Container(
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(
@@ -356,7 +453,7 @@ class _BalanceCardState extends State<_BalanceCard> {
                           colors: [Color(0xFFFFB365), Color(0xFFFA7F00)],
                         ),
                       ),
-                      child: Text('${_rightShare.round()}%',
+                      child: Text('${rightShare.round()}%',
                           style: montserrat(
                               size: context.r(15),
                               weight: FontWeight.w900,
@@ -366,6 +463,41 @@ class _BalanceCardState extends State<_BalanceCard> {
                 ],
               ),
             ),
+          ),
+          SizedBox(height: context.r(10)),
+
+          // Status strip — driven by |left% - right%| gap
+          Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(12), vertical: context.r(10)),
+            decoration: BoxDecoration(
+              color: status.color.withValues(alpha: 0.12),
+              border: Border.all(color: status.color, width: context.r(1.5)),
+              borderRadius: BorderRadius.circular(context.r(14)),
+            ),
+            child: Row(
+              children: [
+                Icon(status.icon, color: status.color, size: context.r(20)),
+                SizedBox(width: context.r(8)),
+                Expanded(
+                  child: Text(
+                    status.label,
+                    style: montserrat(
+                        size: context.r(13.5),
+                        weight: FontWeight.w800,
+                        color: status.color),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: context.r(5)),
+          Text(
+            'ค่าแนะนำเบื้องต้น ไม่ใช่การวินิจฉัยทางการแพทย์',
+            style: montserrat(
+                size: context.r(10.5),
+                weight: FontWeight.w500,
+                color: const Color(0xFF9099BC)),
           ),
           SizedBox(height: context.r(12)),
 
@@ -426,19 +558,6 @@ class _BalanceCardState extends State<_BalanceCard> {
               ],
             ),
           ),
-          SizedBox(height: context.r(12)),
-
-          // Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              _LegendDot(color: Color(0xFF11C18E), label: 'ดี'),
-              SizedBox(width: 14),
-              _LegendDot(color: Color(0xFFF5A623), label: 'พอใช้'),
-              SizedBox(width: 14),
-              _LegendDot(color: Color(0xFFFD4C86), label: 'ควรฝึกเพิ่ม'),
-            ],
-          ),
         ],
       ),
     );
@@ -490,144 +609,6 @@ class _RangeToggle extends StatelessWidget {
       ),
     );
   }
-}
-
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _LegendDot({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: context.r(9),
-          height: context.r(9),
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        SizedBox(width: context.r(5)),
-        Text(label,
-            style: montserrat(
-                size: context.r(11.5),
-                weight: FontWeight.w600,
-                color: const Color(0xFF4B5788))),
-      ],
-    );
-  }
-}
-
-// ─── Leg gauge ──────────────────────────────────────────────────────────────
-
-class _LegGauge extends StatelessWidget {
-  final String label;
-  final double share;
-  const _LegGauge({required this.label, required this.share});
-
-  @override
-  Widget build(BuildContext context) {
-    final status = _LegStatus.of(share);
-    final size = context.r(112);
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: context.r(12)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(context.r(20)),
-      ),
-      child: Column(
-        children: [
-          Text(label,
-              style: montserrat(
-                  size: context.r(16),
-                  weight: FontWeight.w900,
-                  color: KColors.indigo)),
-          SizedBox(height: context.r(8)),
-          SizedBox(
-            width: size,
-            height: size,
-            child: CustomPaint(
-              painter: _RingPainter(
-                fraction: share / 100,
-                color: status.color,
-                trackColor: const Color(0xFFE7E4F8),
-                strokeWidth: context.r(11),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('${share.round()}%',
-                        style: montserrat(
-                            size: context.r(25),
-                            weight: FontWeight.w900,
-                            color: status.color)),
-                    Text('สัดส่วนการออกแรง',
-                        style: montserrat(
-                            size: context.r(9),
-                            weight: FontWeight.w500,
-                            color: const Color(0xFF6D78A8))),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: context.r(8)),
-          Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: context.r(14), vertical: context.r(3)),
-            decoration: BoxDecoration(
-              color: status.color,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(status.label,
-                style: montserrat(
-                    size: context.r(13.5),
-                    weight: FontWeight.w900,
-                    color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  final double fraction; // 0..1
-  final Color color;
-  final Color trackColor;
-  final double strokeWidth;
-
-  const _RingPainter({
-    required this.fraction,
-    required this.color,
-    required this.trackColor,
-    required this.strokeWidth,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = (size.shortestSide - strokeWidth) / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..color = trackColor;
-    canvas.drawCircle(center, radius, track);
-
-    final arc = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-    canvas.drawArc(rect, -1.5708, 6.2832 * fraction, false, arc);
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.fraction != fraction || old.color != color;
 }
 
 // ─── History card ───────────────────────────────────────────────────────────
@@ -729,18 +710,14 @@ class _GameRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: context.r(44),
-            height: context.r(44),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: game.iconGradient,
-              ),
-              borderRadius: BorderRadius.circular(context.r(13)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(context.r(13)),
+            child: Image.asset(
+              game.iconAsset,
+              width: context.r(44),
+              height: context.r(44),
+              fit: BoxFit.cover,
             ),
-            child: Icon(game.icon, color: Colors.white, size: context.r(24)),
           ),
           SizedBox(width: context.r(11)),
           Expanded(
