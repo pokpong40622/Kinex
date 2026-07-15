@@ -93,6 +93,22 @@ class GameDebugPage extends StatelessWidget {
             r: r,
             onTap: () => context.go('/dance-star'),
           ),
+          SizedBox(height: r(12)),
+          _GameCard(
+            icon: Icons.science_rounded,
+            titleTh: 'ห้องทดลองท่าทาง',
+            subtitleEn: 'Motion Lab (camera test)',
+            r: r,
+            onTap: () => context.go('/motion-lab'),
+          ),
+          SizedBox(height: r(12)),
+          _GameCard(
+            icon: Icons.rocket_launch_rounded,
+            titleTh: 'แอสโทรสแตนซ์',
+            subtitleEn: 'AstroStance • เกมอวกาศ 3 เลน',
+            r: r,
+            onTap: () => context.go('/astro-stance'),
+          ),
           SizedBox(height: r(20)),
           Center(
             child: Text(

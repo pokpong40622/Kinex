@@ -18,6 +18,8 @@ import 'screens/battle_game_screen.dart';
 import 'screens/mirror_game_screen.dart';
 import 'screens/temple_hunt_screen.dart';
 import 'screens/dance_star_screen.dart';
+import 'screens/motion_lab_screen.dart';
+import 'screens/astro_stance_screen.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -113,6 +115,14 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/dance-star',
                 builder: (context, _) => const DanceStarScreen()),
+            // Real embedded Unity page (Motion Lab — ห้องทดลองท่าทาง, camera test).
+            GoRoute(
+                path: '/motion-lab',
+                builder: (context, _) => const MotionLabScreen()),
+            // Real embedded Unity game (AstroStance — นักบินอวกาศ 3 เลน).
+            GoRoute(
+                path: '/astro-stance',
+                builder: (context, _) => const AstroStanceScreen()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',
