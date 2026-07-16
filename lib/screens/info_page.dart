@@ -52,11 +52,11 @@ const _mockGames = [
     iconAsset: 'assets/images/game_icons/world.png',
   ),
   _MockGame(
-    name: 'ASTRO STANCE',
+    name: 'THE DASHER',
     dateLabel: 'เมื่อวาน',
     minutes: 9,
     score: 72,
-    iconAsset: 'assets/images/game_icons/astrostance.png',
+    iconAsset: 'assets/images/game_icons/thedasher.png',
   ),
   _MockGame(
     name: 'MEGA DANCE',

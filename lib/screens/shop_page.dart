@@ -21,8 +21,8 @@ class _GameUnlock {
 
 const _gameUnlock = _GameUnlock(
     'kinex_world', 'KINEX World', 'KINEX World', Icons.self_improvement_rounded, 1000);
-const _gameUnlockAstro = _GameUnlock(
-    'astrostance', 'ASTRO STANCE', 'Astro Stance', Icons.rocket_launch_rounded, 800);
+const _gameUnlockDasher = _GameUnlock(
+    'thedasher', 'THE DASHER', 'The Dasher', Icons.rocket_launch_rounded, 800);
 
 // ── Shop tab ──────────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ class ShopTab extends ConsumerWidget {
                         color: KColors.purple),
                     const _GameUnlockCard(item: _gameUnlock),
                     SizedBox(height: h * 0.015),
-                    const _GameUnlockCard(item: _gameUnlockAstro),
+                    const _GameUnlockCard(item: _gameUnlockDasher),
                     SizedBox(height: h * 0.03),
                     const _ShopSectionHeader(
                         icon: Icons.person_rounded,

@@ -5,7 +5,6 @@ import 'widgets/root_shell.dart';
 import 'screens/start_page.dart';
 import 'screens/login_page.dart';
 import 'screens/home_page.dart';
-import 'screens/practice_page.dart';
 import 'screens/quest_page.dart';
 import 'screens/info_page.dart';
 import 'screens/settings_page.dart';
@@ -15,7 +14,7 @@ import 'screens/mega_dance_game.dart';
 import 'screens/temple_hunt_screen.dart';
 import 'screens/dance_star_screen.dart';
 import 'screens/motion_lab_screen.dart';
-import 'screens/astro_stance_screen.dart';
+import 'screens/the_dasher_game_screen.dart';
 import 'screens/the_dasher_intro_page.dart';
 import 'screens/the_dasher_start_page.dart';
 import 'screens/assessment/assessment_landing_page.dart';
@@ -75,7 +74,6 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
           builder: (context, state, child) => RootShell(child: child),
           routes: [
             GoRoute(path: '/home', builder: (context, _) => const HomePage()),
-            GoRoute(path: '/practice', builder: (context, _) => const PracticePage()),
             GoRoute(path: '/quest', builder: (context, _) => const QuestPage()),
             GoRoute(path: '/info', builder: (context, _) => const InfoPage()),
             GoRoute(
@@ -103,11 +101,11 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/motion-lab',
                 builder: (context, _) => const MotionLabScreen()),
-            // Real embedded Unity game (AstroStance — นักบินอวกาศ 3 เลน).
+            // Real embedded Unity game (The Dasher — 3-lane rehab game).
             GoRoute(
-                path: '/astro-stance',
-                builder: (context, _) => const AstroStanceScreen()),
-            // Tutorial popups shown before The Dasher (astrostance) game launches.
+                path: '/the-dasher',
+                builder: (context, _) => const TheDasherGameScreen()),
+            // Tutorial popups shown before The Dasher game launches.
             GoRoute(
                 path: '/the-dasher-intro',
                 builder: (context, _) => const TheDasherIntroPage()),

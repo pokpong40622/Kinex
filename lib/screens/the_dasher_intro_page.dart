@@ -1,4 +1,4 @@
-// Tutorial popups for "The Dasher" (Unity scene id stays "astrostance" — UI
+// Tutorial popups for "The Dasher" (Unity scene id "thedasher" — UI
 // name only). Shown once before the game screen so the player sees the 3
 // pre-designed instruction graphics before launching Unity.
 import 'package:flutter/material.dart';

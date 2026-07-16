@@ -73,9 +73,9 @@ class GameDebugPage extends StatelessWidget {
           _GameCard(
             icon: Icons.rocket_launch_rounded,
             titleTh: 'แอสโทรสแตนซ์',
-            subtitleEn: 'AstroStance • เกมอวกาศ 3 เลน',
+            subtitleEn: 'The Dasher • เกมวิ่งเก็บสมบัติ 3 เลน',
             r: r,
-            onTap: () => context.go('/astro-stance'),
+            onTap: () => context.go('/the-dasher'),
           ),
           SizedBox(height: r(20)),
           Center(

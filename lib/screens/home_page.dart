@@ -1961,6 +1961,15 @@ class _PracticeTab extends StatelessWidget {
                       aspectRatio: 1772 / 638,
                       onTap: onStartGame,
                     ),
+                    SizedBox(height: h * 0.025),
+                    // The Dasher (Unity scene id "thedasher") — the card opens the
+                    // mission/start page; the tutorial pop-ups now appear as an
+                    // overlay ON the game after เริ่มภารกิจ (normal game flow).
+                    _PracticeCard(
+                      imagePath: 'assets/images/the_dasher/card.png',
+                      aspectRatio: 855 / 367,
+                      onTap: () => context.push('/the-dasher-start'),
+                    ),
                     SizedBox(height: h * 0.035),
                     // ── EXERCISE section: Kinex World ────────────────────────
                     _SectionHeader(
