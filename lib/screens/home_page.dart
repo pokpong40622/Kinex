@@ -77,7 +77,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             controller: _homeCtrl,
             onPageChanged: (i) => setState(() => _homePage = i),
             children: [
-              _HomeTab(onStartGame: () => context.go('/world')),
+              const _HomeTab(),
               CharacterHomeTab(onSeeMore: () => setState(() => _tab = 3)),
             ],
           ),
@@ -308,8 +308,7 @@ class _EmgReminderBanner extends ConsumerWidget {
 // ── HOME TAB ────────────────────────────────────────────────────────────────
 
 class _HomeTab extends ConsumerStatefulWidget {
-  final VoidCallback onStartGame;
-  const _HomeTab({required this.onStartGame});
+  const _HomeTab();
 
   @override
   ConsumerState<_HomeTab> createState() => _HomeTabState();
@@ -364,23 +363,21 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                   alignment: Alignment.centerLeft,
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
-                    child: _WorldCard(
-                      onTap: widget.onStartGame,
-                      gradient: KColors.purpleRadial,
+                    child: _AssessmentCard(
+                      cardKey: _assessmentKey,
+                      onTap: () => context.push('/assessment'),
                     ),
                   ),
                 ),
               ),
+              SizedBox(height: h * 0.015),
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
-                    child: _AssessmentCard(
-                      cardKey: _assessmentKey,
-                      onTap: () => context.push('/assessment'),
-                    ),
+                    child: _LearnHomeCard(onTap: () => context.push('/learn')),
                   ),
                 ),
               ),
@@ -828,7 +825,7 @@ class _SeeMoreButton extends StatelessWidget {
 }
 
 /// Home-tab entry point for the elderly fitness-assessment module.
-/// Styled after [_WorldCard] but in the healthcare (teal→blue) palette.
+/// Uses the healthcare (teal→blue) palette.
 class _AssessmentCard extends StatefulWidget {
   final VoidCallback onTap;
   final GlobalKey? cardKey;
@@ -951,6 +948,110 @@ class _AssessmentCardState extends State<_AssessmentCard>
           },
         ),
       ),
+      ),
+    );
+  }
+}
+
+/// Home-tab entry point for the "เรียนรู้ท่าฝึก" pose library. A compact
+/// purple banner shown right below the assessment card.
+/// Home-tab entry point for the "เรียนรู้ท่าฝึก" pose library. 
+/// Now identically sized and structured to match _AssessmentCard.
+class _LearnHomeCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _LearnHomeCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final h = size.height;
+    final cardH = h * 0.145; // Exactly matches _AssessmentCard height
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: cardH,
+        child: LayoutBuilder(
+          builder: (context, cs) {
+            final cw = cs.maxWidth;
+            // Identical spacing logic to _AssessmentCard
+            final vPad = cardH * 0.12;
+            final gap1 = cardH * 0.04;
+            final gap2 = cardH * 0.06;
+            final btnVPad = cw * 0.025;
+
+            return Container(
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                // 3 shades (purple → deep purple → teal) instead of a flat single-hue
+                // fill — ties together the Learn feature's own two categories
+                // (strength=purple, balance=teal) so the card reads as more than
+                // one colour at a glance.
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [KColors.purple, KColors.deepPurple, KColors.teal],
+                  stops: [0.0, 0.55, 1.0],
+                ),
+                borderRadius: BorderRadius.circular(25), // Matched radius (25)
+                border: Border.all(color: Colors.white.withAlpha(112), width: 3),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 20, // Matched shadow radius
+                      offset: Offset(5, 5))
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          cw * 0.06, vPad, cw * 0.03, vPad),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('เรียนรู้ท่าฝึก',
+                              style: thaiSans(
+                                  size: cw * 0.060, // Matched title size
+                                  weight: FontWeight.w800,
+                                  color: Colors.white)),
+                          SizedBox(height: gap1),
+                          Text('ท่าบริหารสำหรับผู้สูงอายุ 9 ท่า',
+                              style: thaiSans(
+                                  size: cw * 0.030, // Matched subtitle size
+                                  weight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(height: gap2),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: cw * 0.05, vertical: btnVPad),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('ดูท่าฝึก',
+                                style: thaiSans(
+                                    size: cw * 0.036, // Matched button text size
+                                    weight: FontWeight.w800,
+                                    color: KColors.deepPurple)), // Deep purple text for button
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: cw * 0.05),
+                    child: Icon(Icons.menu_book_rounded,
+                        size: cw * 0.22, // Matched large right-aligned icon size
+                        color: Colors.white.withAlpha(230)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -1631,91 +1732,6 @@ class _ResultPill extends StatelessWidget {
           ],
         ),
         ),
-      ),
-    );
-  }
-}
-
-class _WorldCard extends StatelessWidget {
-  final VoidCallback onTap;
-  final Gradient gradient;
-
-  const _WorldCard({required this.onTap, required this.gradient});
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MediaQuery.sizeOf(context).height;
-    return SizedBox(
-      height: h * 0.145, // ~25% smaller than the old 0.195 (0.127 clipped the content)
-      child: LayoutBuilder(
-        builder: (context, cs) {
-          final cw = cs.maxWidth;
-          return Container(
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withAlpha(112), width: 3),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x33000000),
-                    blurRadius: 20,
-                    offset: Offset(5, 5))
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        cw * 0.07, cw * 0.05, cw * 0.04, cw * 0.05),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('WORLD',
-                            style: montserrat(
-                                size: cw * 0.085,
-                                weight: FontWeight.w900,
-                                color: Colors.white)),
-                        SizedBox(height: cw * 0.02),
-                        Text('เข้าร่วมโลกหลายผู้เล่น!',
-                            style: montserrat(
-                                size: cw * 0.030,
-                                weight: FontWeight.w900,
-                                color: Colors.white)),
-                        SizedBox(height: cw * 0.025),
-                        GestureDetector(
-                          onTap: onTap,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: cw * 0.05, vertical: cw * 0.025),
-                            decoration: BoxDecoration(
-                              gradient: KColors.orangeGradient,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: Colors.white.withAlpha(115), width: 2),
-                            ),
-                            child: Text('แตะเพื่อเริ่ม',
-                                style: montserrat(
-                                    size: cw * 0.040,
-                                    weight: FontWeight.w900,
-                                    color: Colors.white)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(right: cw * 0.03),
-                  child: Image.asset('assets/images/fox_char.png',
-                      width: cw * 0.28, fit: BoxFit.contain),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

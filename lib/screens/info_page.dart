@@ -52,6 +52,13 @@ const _mockGames = [
     iconAsset: 'assets/images/game_icons/world.png',
   ),
   _MockGame(
+    name: 'ASTRO STANCE',
+    dateLabel: 'เมื่อวาน',
+    minutes: 9,
+    score: 72,
+    iconAsset: 'assets/images/game_icons/astrostance.png',
+  ),
+  _MockGame(
     name: 'MEGA DANCE',
     dateLabel: '10 ก.ค.',
     minutes: 10,
@@ -343,11 +350,6 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
     final (leftShare, rightShare) = _legShares(report);
     final gap = (leftShare - rightShare).abs();
     final status = _BalanceStatus.of(gap);
-    final balanceScore =
-        (2 * (leftShare < rightShare ? leftShare : rightShare) /
-                (leftShare + rightShare) *
-                100)
-            .round();
 
     return Container(
       padding: EdgeInsets.all(context.r(16)),
@@ -379,92 +381,111 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
           ),
           SizedBox(height: context.r(12)),
 
-          // Split bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('ขาซ้าย',
-                  style: montserrat(
-                      size: context.r(13),
-                      weight: FontWeight.w900,
-                      color: KColors.indigo)),
-              Text('ขาขวา',
-                  style: montserrat(
-                      size: context.r(13),
-                      weight: FontWeight.w900,
-                      color: const Color(0xFFFA7F00))),
-            ],
-          ),
-          SizedBox(height: context.r(5)),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(context.r(16)),
-            child: SizedBox(
-              height: context.r(52),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: leftShare.round().clamp(1, 99),
-                    child: Container(
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFF8B7BFF), KColors.indigo],
-                        ),
-                      ),
-                      child: Text('${leftShare.round()}%',
-                          style: montserrat(
-                              size: context.r(22),
-                              weight: FontWeight.w900,
-                              color: Colors.white)),
-                    ),
-                  ),
-                  Container(width: context.r(4), color: Colors.white),
-                  Expanded(
-                    flex: rightShare.round().clamp(1, 99),
-                    child: Container(
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFFFFB365), Color(0xFFFA7F00)],
-                        ),
-                      ),
-                      child: Text('${rightShare.round()}%',
-                          style: montserrat(
-                              size: context.r(22),
-                              weight: FontWeight.w900,
-                              color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: context.r(10)),
-
-          // Status strip — driven by |left% - right%| gap
+          // Balance result — the main focus (left/right split + status),
+          // raised on a white card so it's the clear focal point of this page.
           Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: context.r(12), vertical: context.r(10)),
+            width: double.infinity,
+            padding: EdgeInsets.all(context.r(14)),
             decoration: BoxDecoration(
-              color: status.color.withValues(alpha: 0.12),
-              border: Border.all(color: status.color, width: context.r(1.5)),
-              borderRadius: BorderRadius.circular(context.r(14)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(context.r(20)),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x1F000000), blurRadius: 14, offset: Offset(0, 6)),
+              ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(status.icon, color: status.color, size: context.r(20)),
-                SizedBox(width: context.r(8)),
-                Expanded(
-                  child: Text(
-                    status.label,
-                    style: montserrat(
-                        size: context.r(13.5),
-                        weight: FontWeight.w800,
-                        color: status.color),
+                // Split bar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('ขาซ้าย',
+                        style: montserrat(
+                            size: context.r(13),
+                            weight: FontWeight.w900,
+                            color: KColors.indigo)),
+                    Text('ขาขวา',
+                        style: montserrat(
+                            size: context.r(13),
+                            weight: FontWeight.w900,
+                            color: const Color(0xFFFA7F00))),
+                  ],
+                ),
+                SizedBox(height: context.r(5)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(context.r(16)),
+                  child: SizedBox(
+                    height: context.r(52),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: leftShare.round().clamp(1, 99),
+                          child: Container(
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0xFF8B7BFF), KColors.indigo],
+                              ),
+                            ),
+                            child: Text('${leftShare.round()}%',
+                                style: montserrat(
+                                    size: context.r(22),
+                                    weight: FontWeight.w900,
+                                    color: Colors.white)),
+                          ),
+                        ),
+                        Container(width: context.r(4), color: Colors.white),
+                        Expanded(
+                          flex: rightShare.round().clamp(1, 99),
+                          child: Container(
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0xFFFFB365), Color(0xFFFA7F00)],
+                              ),
+                            ),
+                            child: Text('${rightShare.round()}%',
+                                style: montserrat(
+                                    size: context.r(22),
+                                    weight: FontWeight.w900,
+                                    color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: context.r(10)),
+
+                // Status strip — driven by |left% - right%| gap
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: context.r(12), vertical: context.r(10)),
+                  decoration: BoxDecoration(
+                    color: status.color.withValues(alpha: 0.12),
+                    border: Border.all(color: status.color, width: context.r(1.5)),
+                    borderRadius: BorderRadius.circular(context.r(14)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(status.icon, color: status.color, size: context.r(20)),
+                      SizedBox(width: context.r(8)),
+                      Expanded(
+                        child: Text(
+                          status.label,
+                          style: montserrat(
+                              size: context.r(13.5),
+                              weight: FontWeight.w800,
+                              color: status.color),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -477,26 +498,6 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
                 size: context.r(10.5),
                 weight: FontWeight.w500,
                 color: const Color(0xFF9099BC)),
-          ),
-          SizedBox(height: context.r(12)),
-
-          // Balance score
-          Row(
-            children: [
-              Text('$balanceScore',
-                  style: montserrat(
-                      size: context.r(34),
-                      weight: FontWeight.w900,
-                      color: const Color(0xFF11C18E))),
-              SizedBox(width: context.r(10)),
-              Expanded(
-                child: Text(
-                  'คะแนนสมดุล /100\nใช้ขาสองข้างร่วมกันได้ดี',
-                  style: montserrat(
-                      size: context.r(13), weight: FontWeight.w600),
-                ),
-              ),
-            ],
           ),
           SizedBox(height: context.r(12)),
 

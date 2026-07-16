@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -23,6 +21,8 @@ class _GameUnlock {
 
 const _gameUnlock = _GameUnlock(
     'kinex_world', 'KINEX World', 'KINEX World', Icons.self_improvement_rounded, 1000);
+const _gameUnlockAstro = _GameUnlock(
+    'astrostance', 'ASTRO STANCE', 'Astro Stance', Icons.rocket_launch_rounded, 800);
 
 // ── Shop tab ──────────────────────────────────────────────────────────────
 
@@ -53,7 +53,7 @@ class ShopTab extends ConsumerWidget {
                         style: montserrat(
                             size: w * 0.09,
                             weight: FontWeight.w900,
-                            color: Colors.white)),
+                            color: KColors.purple)),
                     const Spacer(),
                     const _CoinPill(),
                   ],
@@ -67,8 +67,10 @@ class ShopTab extends ConsumerWidget {
                     const _ShopSectionHeader(
                         icon: Icons.lock_open_rounded,
                         label: 'ปลดล็อกเกม',
-                        color: KColors.teal),
+                        color: KColors.purple),
                     const _GameUnlockCard(item: _gameUnlock),
+                    SizedBox(height: h * 0.015),
+                    const _GameUnlockCard(item: _gameUnlockAstro),
                     SizedBox(height: h * 0.03),
                     const _ShopSectionHeader(
                         icon: Icons.person_rounded,
@@ -88,7 +90,7 @@ class ShopTab extends ConsumerWidget {
                     const _ShopSectionHeader(
                         icon: Icons.palette_rounded,
                         label: 'ธีมเกม',
-                        color: KColors.purple),
+                        color: KColors.pinkDark),
                     const _ComingSoonCard(titleTh: 'ธีมเกม', subtitleEn: 'Themes'),
                     SizedBox(height: h * 0.02),
                   ],
@@ -103,70 +105,16 @@ class ShopTab extends ConsumerWidget {
 }
 
 // ── Shop background ───────────────────────────────────────────────────────
-// The shop deliberately does NOT use bg_room.png like the other tabs — it is
-// its own "night market" space: deep indigo→purple gradient, soft glow orbs
-// and scattered gold sparkles, all in brand colors so it still reads Kinex.
+// Light-tone background with a faint lavender wash (purple is the app's main
+// colour) so the white cards read clean but the page isn't a flat plain white.
 
 class _ShopBackground extends StatelessWidget {
   const _ShopBackground();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1D1440), Color(0xFF3A1F6E), Color(0xFF6F1BC8)],
-          stops: [0.0, 0.55, 1.0],
-        ),
-      ),
-      child: const CustomPaint(painter: _SparklePainter(), size: Size.infinite),
-    );
+    return Container(color: const Color(0xFFF5F3FC));
   }
-}
-
-class _SparklePainter extends CustomPainter {
-  const _SparklePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Two big soft glow orbs framing the content (blurred radial accents).
-    final glow = Paint()..maskFilter = const MaskFilter.blur(BlurStyle.normal, 60);
-    glow.color = const Color(0xFFFFC107).withAlpha(34); // warm gold, top-right
-    canvas.drawCircle(Offset(size.width * 0.92, size.height * 0.10), 90, glow);
-    glow.color = const Color(0xFF11C18E).withAlpha(26); // teal, bottom-left
-    canvas.drawCircle(Offset(size.width * 0.06, size.height * 0.85), 110, glow);
-
-    // Deterministic sparkle field: mostly gold, a few white/teal, varied size.
-    final rng = math.Random(7);
-    final dot = Paint();
-    for (var i = 0; i < 34; i++) {
-      final x = rng.nextDouble() * size.width;
-      final y = rng.nextDouble() * size.height;
-      final radius = 1.0 + rng.nextDouble() * 2.4;
-      final roll = rng.nextDouble();
-      dot.color = (roll < 0.6
-              ? const Color(0xFFFFD54F)
-              : roll < 0.85
-                  ? Colors.white
-                  : const Color(0xFF7BE8D0))
-          .withAlpha(40 + rng.nextInt(90));
-      canvas.drawCircle(Offset(x, y), radius, dot);
-    }
-
-    // A few faint oversized coin outlines drifting behind the cards.
-    final ring = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = const Color(0xFFFFD54F).withAlpha(22);
-    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.22), 46, ring);
-    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.55), 62, ring);
-    canvas.drawCircle(Offset(size.width * 0.30, size.height * 0.78), 38, ring);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SparklePainter oldDelegate) => false;
 }
 
 // ── Coin pill ─────────────────────────────────────────────────────────────
@@ -433,8 +381,8 @@ class _GameUnlockCard extends ConsumerWidget {
                 width: r(48),
                 height: r(48),
                 decoration:
-                    BoxDecoration(color: KColors.teal.withAlpha(26), shape: BoxShape.circle),
-                child: Icon(item.icon, color: KColors.teal, size: r(26)),
+                    BoxDecoration(color: KColors.purple.withAlpha(30), shape: BoxShape.circle),
+                child: Icon(item.icon, color: KColors.purple, size: r(26)),
               ),
               SizedBox(width: r(14)),
               Expanded(
@@ -451,7 +399,7 @@ class _GameUnlockCard extends ConsumerWidget {
                 ),
               ),
               unlocked
-                  ? Icon(Icons.check_circle_rounded, color: KColors.teal, size: r(24))
+                  ? Icon(Icons.check_circle_rounded, color: KColors.purple, size: r(24))
                   : _PriceChipLight(price: item.price),
             ],
           ),
@@ -543,7 +491,7 @@ void _confirmBuy(
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: KColors.blue,
+            backgroundColor: KColors.purple,
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

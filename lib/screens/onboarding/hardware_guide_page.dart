@@ -292,7 +292,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('ข้าม',
                 style: thaiSans(
-                    size: 15, weight: FontWeight.w700, color: KColors.blue)),
+                    size: 15, weight: FontWeight.w700, color: KColors.purple)),
           ),
         ],
       ),
@@ -307,13 +307,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Color(0xFFEFF3FB)],
-          ),
-        ),
+        color: Colors.white,
         child: SafeArea(
           child: Padding(
             padding: EdgeInsets.fromLTRB(w * 0.06, w * 0.04, w * 0.06, w * 0.05),
@@ -377,7 +371,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
                           style: thaiSans(
                               size: w * 0.035,
                               weight: FontWeight.w600,
-                              color: KColors.blue)),
+                              color: KColors.purple)),
                     )
                   : const SizedBox.shrink(),
         ),
@@ -392,7 +386,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
           '${step.muscle?.code ?? ''} · ${step.muscle?.thaiName ?? ''} (${step.padIndex}/4)',
           textAlign: TextAlign.center,
           style: thaiSans(
-              size: w * 0.038, weight: FontWeight.w600, color: KColors.blue),
+              size: w * 0.038, weight: FontWeight.w600, color: KColors.purple),
         ),
         SizedBox(height: w * 0.02),
         Row(
@@ -406,8 +400,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
               width: current ? w * 0.07 : w * 0.025,
               height: w * 0.025,
               decoration: BoxDecoration(
-                gradient: filled ? KColors.blueGradient : null,
-                color: filled ? null : const Color(0xFFD7DEEC),
+                color: filled ? KColors.purple : const Color(0xFFD7DEEC),
                 borderRadius: BorderRadius.circular(w * 0.02),
               ),
             );
@@ -439,11 +432,11 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
           width: w * 0.62,
           height: w * 0.62,
           decoration: BoxDecoration(
-            gradient: KColors.blueGradient,
+            color: KColors.purple,
             borderRadius: BorderRadius.circular(w * 0.09),
             boxShadow: [
               BoxShadow(
-                  color: KColors.blue.withValues(alpha: 0.35),
+                  color: KColors.purple.withValues(alpha: 0.35),
                   blurRadius: 30,
                   offset: const Offset(0, 14)),
             ],
@@ -460,7 +453,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
         OutlinedButton(
           onPressed: _skipFlow,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: KColors.blue.withValues(alpha: 0.5)),
+            side: BorderSide(color: KColors.purple.withValues(alpha: 0.5)),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(w * 0.05)),
             padding:
@@ -470,7 +463,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
               style: thaiSans(
                   size: w * 0.04,
                   weight: FontWeight.w600,
-                  color: KColors.blue)),
+                  color: KColors.purple)),
         ),
       ],
     );
@@ -485,7 +478,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
           height: w * 0.32,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            gradient: KColors.tealGradient,
+            color: KColors.teal,
             boxShadow: [
               BoxShadow(
                   color: Color(0x3311C18E),
@@ -713,10 +706,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
     return Container(
       padding: EdgeInsets.all(w * 0.035),
       decoration: BoxDecoration(
-        gradient: filled
-            ? const LinearGradient(colors: [KColors.greenLight, KColors.greenDark])
-            : null,
-        color: filled ? null : Colors.white,
+        color: filled ? KColors.greenDark : Colors.white,
         borderRadius: BorderRadius.circular(w * 0.04),
         border: filled ? null : Border.all(color: accent.withValues(alpha: 0.35)),
         boxShadow: filled
@@ -746,9 +736,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
           widthFactor: value.clamp(0.0, 1.0),
           child: Container(
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [KColors.greenLight, KColors.greenDark],
-              ),
+              color: KColors.greenDark,
               borderRadius: BorderRadius.circular(w * 0.03),
             ),
           ),
@@ -978,11 +966,11 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
         height: w * 0.15,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: KColors.blueGradient,
+          color: KColors.purple,
           borderRadius: BorderRadius.circular(w * 0.075),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x402766EF),
+                color: Color(0x406F1BC8),
                 blurRadius: 18,
                 offset: Offset(0, 8)),
           ],

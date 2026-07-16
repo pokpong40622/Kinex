@@ -12,14 +12,12 @@ import 'screens/settings_page.dart';
 import 'screens/customize_page.dart';
 import 'screens/mega_dance_start.dart';
 import 'screens/mega_dance_game.dart';
-import 'screens/fruit_game_screen.dart';
-import 'screens/balance_quest_screen.dart';
-import 'screens/battle_game_screen.dart';
-import 'screens/mirror_game_screen.dart';
 import 'screens/temple_hunt_screen.dart';
 import 'screens/dance_star_screen.dart';
 import 'screens/motion_lab_screen.dart';
 import 'screens/astro_stance_screen.dart';
+import 'screens/the_dasher_intro_page.dart';
+import 'screens/the_dasher_start_page.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -35,6 +33,8 @@ import 'screens/assessment/test_result_page.dart';
 import 'screens/assessment/final_summary_page.dart';
 import 'screens/assessment/history_list_page.dart';
 import 'screens/assessment/history_detail_page.dart';
+import 'screens/learn/learn_library_page.dart';
+import 'screens/learn/pose_detail_page.dart';
 import 'screens/world/world_hero_page.dart';
 import 'screens/world/world_game_screen.dart';
 import 'screens/world/world_result_page.dart';
@@ -91,22 +91,6 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/mega-dance/game',
                 builder: (context, _) => const MegaDanceGameScreen()),
-            // Real embedded Unity game (Fruit Header — สวนผลไม้).
-            GoRoute(
-                path: '/fruit-game',
-                builder: (context, _) => const FruitGameScreen()),
-            // Real embedded Unity game (Balance Quest — เส้นทางนักสมดุล).
-            GoRoute(
-                path: '/balance-quest',
-                builder: (context, _) => const BalanceQuestScreen()),
-            // Real embedded Unity game (Guardian of Balance — ผู้พิทักษ์สวนสมดุล).
-            GoRoute(
-                path: '/battle-game',
-                builder: (context, _) => const BattleGameScreen()),
-            // Real embedded Unity game (Magic Mirror — กระจกวิเศษ).
-            GoRoute(
-                path: '/mirror-game',
-                builder: (context, _) => const MirrorGameScreen()),
             // Real embedded Unity game (Temple Hunt — ล่าสมบัติวิหารโบราณ).
             GoRoute(
                 path: '/temple-hunt',
@@ -123,6 +107,14 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/astro-stance',
                 builder: (context, _) => const AstroStanceScreen()),
+            // Tutorial popups shown before The Dasher (astrostance) game launches.
+            GoRoute(
+                path: '/the-dasher-intro',
+                builder: (context, _) => const TheDasherIntroPage()),
+            // Mission-briefing start screen shown after the tutorial, before gameplay.
+            GoRoute(
+                path: '/the-dasher-start',
+                builder: (context, _) => const TheDasherStartPage()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',
@@ -168,6 +160,14 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
                 path: '/assessment/history/:recordId',
                 builder: (context, state) => HistoryDetailPage(
                     recordId: state.pathParameters['recordId']!)),
+            // Learn-the-exercises pose library (pure Flutter, static data).
+            GoRoute(
+                path: '/learn',
+                builder: (context, _) => const LearnLibraryPage()),
+            GoRoute(
+                path: '/learn/:poseId',
+                builder: (context, state) => PoseDetailPage(
+                    poseId: state.pathParameters['poseId']!)),
             // Kinex World — instructor-led exercise class (Unity-embedded session).
             GoRoute(
                 path: '/world',

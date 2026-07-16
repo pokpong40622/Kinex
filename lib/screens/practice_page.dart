@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../theme/app_theme.dart';
 
 class PracticePage extends ConsumerWidget {
   const PracticePage({super.key});
@@ -13,6 +14,43 @@ class PracticePage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Assessment shortcut — purple (the app's main colour, matching the info-page
+            // heading) with a warm orange icon badge + chevron so it reads lively, not flat.
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.push('/assessment'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: KColors.purple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18)),
+                  elevation: 2,
+                  shadowColor: KColors.deepPurple.withValues(alpha: 0.4),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                          color: KColors.orange, shape: BoxShape.circle),
+                      child: const Icon(Icons.assignment_rounded,
+                          color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('แบบประเมิน',
+                        style: thaiSans(
+                            size: 16,
+                            weight: FontWeight.w700,
+                            color: Colors.white)),
+                    const Spacer(),
+                    const Icon(Icons.chevron_right_rounded, color: Colors.white70),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             // Flagship game — hero card, deliberately bigger than the list below.
             Material(
               borderRadius: BorderRadius.circular(18),
@@ -84,6 +122,26 @@ class PracticePage extends ConsumerWidget {
                 subtitle: const Text('ฟื้นฟูด้วยการเต้นตามจังหวะ'),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () => context.go('/mega-dance'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // The Dasher (Unity scene id stays "astrostance") — hero card using the
+            // provided pre-designed card graphic, same tap structure as the DanceStar card.
+            Material(
+              borderRadius: BorderRadius.circular(18),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => context.push('/the-dasher-intro'),
+                child: Ink(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/the_dasher/card.png',
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 12),
