@@ -59,8 +59,10 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
     final pose = poseById(widget.poseId);
     if (pose == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF4F3FA),
-        body: SafeArea(
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: const BoxDecoration(gradient: KColors.learnBg),
+          child: SafeArea(
           child: Column(
             children: [
               Padding(
@@ -80,6 +82,7 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
               ),
             ],
           ),
+          ),
         ),
       );
     }
@@ -89,8 +92,10 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
     final isLast = _page == pageCount - 1;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F3FA),
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(gradient: KColors.learnBg),
+        child: SafeArea(
         child: Column(
           children: [
             SizedBox(height: context.r(8)),
@@ -167,6 +172,7 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -219,7 +225,16 @@ class _StepPage extends StatelessWidget {
           Container(
             width: context.r(64),
             height: context.r(64),
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              gradient: pose.category.gradient,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                    color: color.withValues(alpha: 0.4),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6)),
+              ],
+            ),
             alignment: Alignment.center,
             child: Text(
               '${stepIndex + 1}',

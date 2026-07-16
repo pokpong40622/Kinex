@@ -88,12 +88,18 @@ class TestInstructionPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: context.r(28),
-                          height: context.r(28),
+                          width: context.r(30),
+                          height: context.r(30),
                           alignment: Alignment.center,
-                          decoration: const BoxDecoration(
-                            color: KColors.teal,
+                          decoration: BoxDecoration(
+                            gradient: KColors.tealButtonGradient,
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                  color: KColors.teal.withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2)),
+                            ],
                           ),
                           child: Text('${i + 1}',
                               style: thaiSans(
@@ -118,14 +124,28 @@ class TestInstructionPage extends ConsumerWidget {
             width: double.infinity,
             padding: EdgeInsets.all(context.r(16)),
             decoration: BoxDecoration(
-              color: KColors.teal.withAlpha(28),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFE6F7F1), Color(0xFFD8F1E8)],
+              ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: KColors.teal, width: 1.5),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.flag_outlined, color: KColors.tealDark, size: context.r(24)),
+                Container(
+                  width: context.r(38),
+                  height: context.r(38),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: KColors.tealButtonGradient,
+                    borderRadius: BorderRadius.circular(context.r(11)),
+                  ),
+                  child: Icon(Icons.flag_rounded,
+                      color: Colors.white, size: context.r(22)),
+                ),
                 SizedBox(width: context.r(12)),
                 Expanded(
                   child: Text(

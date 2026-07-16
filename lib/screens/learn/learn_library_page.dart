@@ -12,59 +12,62 @@ class LearnLibraryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F3FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                  context.r(16), context.r(12), context.r(16), context.r(8)),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _BackButton(onTap: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/home');
-                    }
-                  }),
-                  SizedBox(width: context.r(12)),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'เรียนรู้ท่าฝึก',
-                          style: thaiSans(
-                              size: context.r(22), weight: FontWeight.w800),
-                        ),
-                        SizedBox(height: context.r(2)),
-                        Text(
-                          'เลือกท่าที่อยากเรียนรู้ · 9 ท่าบริหาร',
-                          style: thaiSans(
-                              size: context.r(13),
-                              weight: FontWeight.w500,
-                              color: KColors.navyText.withAlpha(150)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(gradient: KColors.learnBg),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
                 padding: EdgeInsets.fromLTRB(
-                    context.r(16), context.r(8), context.r(16), context.r(24)),
-                children: [
-                  _CategorySection(category: PoseCategory.strength),
-                  SizedBox(height: context.r(22)),
-                  _CategorySection(category: PoseCategory.balance),
-                ],
+                    context.r(16), context.r(12), context.r(16), context.r(8)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _BackButton(onTap: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/home');
+                      }
+                    }),
+                    SizedBox(width: context.r(12)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'เรียนรู้ท่าฝึก',
+                            style: thaiSans(
+                                size: context.r(22), weight: FontWeight.w800),
+                          ),
+                          SizedBox(height: context.r(2)),
+                          Text(
+                            'เลือกท่าที่อยากเรียนรู้ · 9 ท่าบริหาร',
+                            style: thaiSans(
+                                size: context.r(13),
+                                weight: FontWeight.w500,
+                                color: KColors.navyText.withAlpha(150)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                      context.r(16), context.r(8), context.r(16), context.r(24)),
+                  children: [
+                    _CategorySection(category: PoseCategory.strength),
+                    SizedBox(height: context.r(22)),
+                    _CategorySection(category: PoseCategory.balance),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -101,16 +104,38 @@ class _SectionPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: context.r(14), vertical: context.r(9)),
+          horizontal: context.r(12), vertical: context.r(10)),
       decoration: BoxDecoration(
-        color: category.color.withAlpha(28),
-        borderRadius: BorderRadius.circular(context.r(16)),
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            category.color.withAlpha(40),
+            category.color.withAlpha(14),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(context.r(18)),
+        border: Border.all(color: category.color.withAlpha(45), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(category.icon, color: category.color, size: context.r(20)),
-          SizedBox(width: context.r(8)),
+          Container(
+            width: context.r(38),
+            height: context.r(38),
+            decoration: BoxDecoration(
+              gradient: category.gradient,
+              borderRadius: BorderRadius.circular(context.r(12)),
+              boxShadow: [
+                BoxShadow(
+                    color: category.color.withAlpha(70),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3)),
+              ],
+            ),
+            child: Icon(category.icon, color: Colors.white, size: context.r(21)),
+          ),
+          SizedBox(width: context.r(10)),
           Flexible(
             child: Text(
               category.thaiTitle,
@@ -123,12 +148,20 @@ class _SectionPill extends StatelessWidget {
             ),
           ),
           SizedBox(width: context.r(6)),
-          Text(
-            '($count ท่า)',
-            style: thaiSans(
-                size: context.r(13),
-                weight: FontWeight.w600,
-                color: KColors.navyText.withAlpha(140)),
+          Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(9), vertical: context.r(3)),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(200),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '$count ท่า',
+              style: thaiSans(
+                  size: context.r(12),
+                  weight: FontWeight.w700,
+                  color: category.color),
+            ),
           ),
         ],
       ),
@@ -152,10 +185,18 @@ class _PoseCard extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(context.r(12)),
           decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.white, color.withAlpha(15)],
+            ),
             borderRadius: BorderRadius.circular(context.r(20)),
-            boxShadow: const [
+            border: Border.all(color: color.withAlpha(30), width: 1),
+            boxShadow: [
               BoxShadow(
-                  color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4)),
+                  color: color.withAlpha(28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5)),
             ],
           ),
           child: Row(
@@ -166,6 +207,12 @@ class _PoseCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: pose.category.gradient,
                   borderRadius: BorderRadius.circular(context.r(16)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: color.withAlpha(85),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3)),
+                  ],
                 ),
                 child: Icon(pose.icon, color: Colors.white, size: context.r(28)),
               ),
@@ -224,8 +271,16 @@ class _PoseCard extends StatelessWidget {
                 ),
               ),
               SizedBox(width: context.r(6)),
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: context.r(15), color: color),
+              Container(
+                width: context.r(30),
+                height: context.r(30),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(28),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.arrow_forward_ios_rounded,
+                    size: context.r(14), color: color),
+              ),
             ],
           ),
         ),

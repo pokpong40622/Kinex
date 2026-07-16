@@ -223,17 +223,22 @@ class _DomainRow extends StatelessWidget {
           ],
           Container(
             padding: EdgeInsets.symmetric(
-                horizontal: context.r(12), vertical: context.r(6)),
+                horizontal: context.r(13), vertical: context.r(7)),
             decoration: BoxDecoration(
-              color: KColors.teal.withAlpha(28),
+              gradient: KColors.tealButtonGradient,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: KColors.teal, width: 1.4),
+              boxShadow: [
+                BoxShadow(
+                    color: KColors.tealDark.withValues(alpha: 0.28),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3)),
+              ],
             ),
             child: Text('$points/4',
                 style: thaiSans(
                     size: context.r(15),
                     weight: FontWeight.w900,
-                    color: KColors.tealDark)),
+                    color: Colors.white)),
           ),
         ],
       ),

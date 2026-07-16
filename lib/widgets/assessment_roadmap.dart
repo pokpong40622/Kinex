@@ -55,13 +55,19 @@ class AssessmentRoadmap extends StatelessWidget {
       margin: EdgeInsets.symmetric(vertical: context.r(6)),
       padding: EdgeInsets.symmetric(horizontal: context.r(16), vertical: context.r(14)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isCurrent ? null : Colors.white,
+        gradient: isCurrent
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFEAF7F2)])
+            : null,
         borderRadius: BorderRadius.circular(18),
         border: isCurrent ? Border.all(color: _teal, width: 2) : null,
         boxShadow: [
           BoxShadow(
-            color: isCurrent ? _teal.withAlpha(40) : const Color(0x14000000),
-            blurRadius: isCurrent ? 16 : 8,
+            color: isCurrent ? _teal.withAlpha(45) : const Color(0x14000000),
+            blurRadius: isCurrent ? 18 : 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -113,20 +119,24 @@ class AssessmentRoadmap extends StatelessWidget {
   }
 
   Widget _node(BuildContext context, IconData icon, Color color, {bool isDone = false, bool pulse = false}) {
+    final active = color != _grey;
     return Container(
       width: context.r(48),
       height: context.r(48),
       decoration: BoxDecoration(
-        color: color == _grey ? const Color(0xFFEFF3F2) : color,
+        color: active ? null : const Color(0xFFEFF3F2),
+        gradient: active ? KColors.tealButtonGradient : null,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 3),
         boxShadow: pulse
-            ? [BoxShadow(color: color.withAlpha(110), blurRadius: 14)]
-            : null,
+            ? [BoxShadow(color: color.withAlpha(120), blurRadius: 16, spreadRadius: 1)]
+            : active
+                ? [BoxShadow(color: color.withAlpha(55), blurRadius: 8, offset: const Offset(0, 3))]
+                : null,
       ),
       child: Icon(
         isDone ? Icons.check_rounded : icon,
-        color: color == _grey ? _grey : Colors.white,
+        color: active ? Colors.white : _grey,
         size: context.r(24),
       ),
     );
@@ -167,9 +177,17 @@ class AssessmentRoadmap extends StatelessWidget {
   }
 
   Widget _pill(BuildContext context, String text, Color color) => Container(
-        padding: EdgeInsets.symmetric(horizontal: context.r(12), vertical: context.r(6)),
+        padding: EdgeInsets.symmetric(horizontal: context.r(13), vertical: context.r(7)),
         decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.circular(999)),
+          gradient: KColors.tealButtonGradient,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+                color: color.withAlpha(70),
+                blurRadius: 8,
+                offset: const Offset(0, 3)),
+          ],
+        ),
         child: Text(text,
             style: thaiSans(size: context.r(12), weight: FontWeight.w800, color: Colors.white)),
       );

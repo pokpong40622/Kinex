@@ -123,10 +123,11 @@ class _PrepChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: KColors.teal.withAlpha(45), width: 1),
         boxShadow: const [
           BoxShadow(
               color: Color(0x12000000), blurRadius: 6, offset: Offset(0, 2)),
@@ -135,8 +136,16 @@ class _PrepChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20, color: KColors.tealDark),
-          const SizedBox(width: 8),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              gradient: KColors.tealButtonGradient,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 19, color: Colors.white),
+          ),
+          const SizedBox(width: 9),
           Text(label, style: thaiSans(size: 14, weight: FontWeight.w700)),
         ],
       ),

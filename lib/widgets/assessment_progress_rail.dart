@@ -49,16 +49,18 @@ class AssessmentProgressRail extends StatelessWidget {
   Widget _dot(BuildContext context, int i) {
     final isCurrent = i == currentStage;
     final done = _done(i) && !isCurrent;
-    final color = isCurrent || done ? _teal : _grey;
+    final active = isCurrent || done;
     final size = isCurrent ? context.r(34) : context.r(26);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: done || isCurrent ? color : const Color(0xFFEFF3F2),
+        color: active ? null : const Color(0xFFEFF3F2),
+        gradient: active ? KColors.tealButtonGradient : null,
         shape: BoxShape.circle,
+        border: active ? Border.all(color: Colors.white, width: 2) : null,
         boxShadow: isCurrent
-            ? [BoxShadow(color: _teal.withAlpha(110), blurRadius: 10)]
+            ? [BoxShadow(color: _teal.withAlpha(120), blurRadius: 12, spreadRadius: 1)]
             : null,
       ),
       child: Icon(

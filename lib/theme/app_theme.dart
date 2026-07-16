@@ -56,6 +56,27 @@ class KColors {
     end: Alignment.bottomRight,
     colors: [teal, blue],
   );
+
+  // Soft page background for the assessment module (subtle top-tint → near-white).
+  static const assessmentBg = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFEAF7F2), Color(0xFFF5FBF9)],
+  );
+
+  // Primary teal action button — brighter top-left, deeper bottom-right for depth.
+  static const tealButtonGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF22D3A6), tealDark],
+  );
+
+  // Soft page background for the Learn library (lilac-tinted → near-white).
+  static const learnBg = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFFF1EEFB), Color(0xFFF7F6FC)],
+  );
 }
 
 // The whole app now uses Kanit (Cadson Demak), bundled in assets/fonts so it works offline.

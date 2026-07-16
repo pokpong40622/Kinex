@@ -20,14 +20,35 @@ class AssessmentLandingPage extends StatelessWidget {
           children: [
             SizedBox(height: context.r(24)),
             Container(
-              width: context.r(120),
-              height: context.r(120),
-              decoration: const BoxDecoration(
-                color: Color(0xFFD7EFE9),
+              width: context.r(132),
+              height: context.r(132),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCF2EB),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                      color: KColors.teal.withValues(alpha: 0.18),
+                      blurRadius: 28,
+                      spreadRadius: 2),
+                ],
               ),
-              child: Icon(Icons.monitor_heart_rounded,
-                  size: context.r(64), color: KColors.tealDark),
+              alignment: Alignment.center,
+              child: Container(
+                width: context.r(96),
+                height: context.r(96),
+                decoration: BoxDecoration(
+                  gradient: KColors.tealButtonGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                        color: KColors.tealDark.withValues(alpha: 0.35),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6)),
+                  ],
+                ),
+                child: Icon(Icons.monitor_heart_rounded,
+                    size: context.r(52), color: Colors.white),
+              ),
             ),
             SizedBox(height: context.r(24)),
             Text(

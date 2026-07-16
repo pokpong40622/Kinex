@@ -17,6 +17,7 @@ import 'screens/motion_lab_screen.dart';
 import 'screens/the_dasher_game_screen.dart';
 import 'screens/the_dasher_intro_page.dart';
 import 'screens/the_dasher_start_page.dart';
+import 'screens/hang_glider_game_screen.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -113,6 +114,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/the-dasher-start',
                 builder: (context, _) => const TheDasherStartPage()),
+            // Embedded Unity game (Hang Glider — tilt-controlled, landscape, sensor-only).
+            GoRoute(
+                path: '/hang-glider',
+                builder: (context, _) => const HangGliderGameScreen()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',

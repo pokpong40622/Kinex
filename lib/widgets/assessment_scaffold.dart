@@ -28,9 +28,11 @@ class AssessmentScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEFF6F4), // soft teal-tinted white
-      body: SafeArea(
-        child: Column(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(gradient: KColors.assessmentBg),
+        child: SafeArea(
+          child: Column(
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(context.r(16), context.r(12), context.r(16), context.r(8)),
@@ -39,9 +41,25 @@ class AssessmentScaffold extends StatelessWidget {
                   _BackButton(onTap: onBack ?? () => _defaultBack(context)),
                   SizedBox(width: context.r(12)),
                   Expanded(
-                    child: Text(
-                      title,
-                      style: thaiSans(size: context.r(22), weight: FontWeight.w800),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: thaiSans(
+                              size: context.r(22), weight: FontWeight.w800),
+                        ),
+                        SizedBox(height: context.r(6)),
+                        Container(
+                          width: context.r(44),
+                          height: context.r(4),
+                          decoration: BoxDecoration(
+                            gradient: KColors.tealButtonGradient,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -59,6 +77,7 @@ class AssessmentScaffold extends StatelessWidget {
                 child: bottom!,
               ),
           ],
+          ),
         ),
       ),
     );

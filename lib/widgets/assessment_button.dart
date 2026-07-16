@@ -23,7 +23,6 @@ class AssessmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onTap != null;
     final fg = primary ? Colors.white : KColors.tealDark;
-    final bg = primary ? KColors.teal : Colors.white;
 
     return Opacity(
       opacity: enabled ? 1 : 0.5,
@@ -34,19 +33,24 @@ class AssessmentButton extends StatelessWidget {
           width: double.infinity,
           padding: EdgeInsets.symmetric(vertical: context.r(18)),
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(18),
-            border: primary
-                ? null
-                : Border.all(color: KColors.teal, width: 2),
+            color: primary ? null : Colors.white,
+            gradient: primary ? KColors.tealButtonGradient : null,
+            borderRadius: BorderRadius.circular(context.r(20)),
+            border:
+                primary ? null : Border.all(color: KColors.teal, width: 2),
             boxShadow: primary
-                ? const [
+                ? [
                     BoxShadow(
-                        color: Color(0x33000000),
-                        blurRadius: 10,
-                        offset: Offset(0, 4)),
+                        color: KColors.tealDark.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6)),
                   ]
-                : null,
+                : [
+                    BoxShadow(
+                        color: KColors.teal.withValues(alpha: 0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3)),
+                  ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -57,7 +61,8 @@ class AssessmentButton extends StatelessWidget {
               ],
               Text(
                 label,
-                style: thaiSans(size: context.r(20), weight: FontWeight.w800, color: fg),
+                style: thaiSans(
+                    size: context.r(20), weight: FontWeight.w800, color: fg),
               ),
             ],
           ),
