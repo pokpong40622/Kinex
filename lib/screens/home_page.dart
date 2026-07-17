@@ -1950,10 +1950,12 @@ class _PracticeTab extends StatelessWidget {
                       label: 'ฟื้นฟูร่างกาย · REHAB',
                       color: KColors.teal,
                     ),
+                    // Hang Glider (Unity scene id "hangglider") — tilt-controlled
+                    // quiz game, plays in landscape. This is its designed card.
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card1.png',
                       aspectRatio: 1780 / 536,
-                      onTap: null,
+                      onTap: () => context.push('/hang-glider'),
                     ),
                     SizedBox(height: h * 0.025),
                     _PracticeCard(
@@ -1982,11 +1984,6 @@ class _PracticeTab extends StatelessWidget {
                       aspectRatio: 1762 / 650,
                       onTap: () => context.go('/world'),
                     ),
-                    SizedBox(height: h * 0.025),
-                    // Hang Glider (Unity scene id "hangglider") — tilt-controlled
-                    // quiz game, plays in landscape. No designed card art yet, so
-                    // this is a self-contained gradient card.
-                    _GliderCard(onTap: () => context.push('/hang-glider')),
                     SizedBox(height: h * 0.02),
                   ],
                 ),
@@ -1994,15 +1991,23 @@ class _PracticeTab extends StatelessWidget {
             ],
           ),
         ),
+        // Always-visible shortcut to the fitness assessment, locked bottom-right
+        // above the nav bar so it never scrolls away with the game list.
+        Positioned(
+          right: w * 0.05,
+          bottom: h * 0.11,
+          child: _AssessFab(onTap: () => context.push('/assessment')),
+        ),
       ],
     );
   }
 }
 
-/// Self-contained gradient card for the Hang Glider game (no image asset yet).
-class _GliderCard extends StatelessWidget {
+/// Floating pill that jumps straight to the ประเมิน (assessment) flow from the
+/// practice page. Teal healthcare palette, matches the home assessment card.
+class _AssessFab extends StatelessWidget {
   final VoidCallback onTap;
-  const _GliderCard({required this.onTap});
+  const _AssessFab({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -2010,75 +2015,28 @@ class _GliderCard extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.symmetric(
+            horizontal: context.r(16), vertical: context.r(12)),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF5EC6F2), Color(0xFF2E8BD6), Color(0xFF1FB6A6)],
-            stops: [0.0, 0.55, 1.0],
-          ),
+          gradient: KColors.tealGradient,
+          borderRadius: BorderRadius.circular(context.r(30)),
+          border: Border.all(color: Colors.white.withAlpha(150), width: 2),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x332E8BD6), blurRadius: 16, offset: Offset(0, 8)),
+                color: Color(0x552E8BD6), blurRadius: 14, offset: Offset(0, 6)),
           ],
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(Icons.paragliding_rounded,
-                  color: Colors.white, size: 34),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('เกมเครื่องร่อน',
-                      style: thaiSans(
-                          size: 18,
-                          weight: FontWeight.w800,
-                          color: Colors.white)),
-                  const SizedBox(height: 3),
-                  Text('เอียงแท็บเล็ตเพื่อบังคับ · ตอบคำถาม',
-                      maxLines: 2,
-                      style: thaiSans(
-                          size: 12.5,
-                          weight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.92))),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('เล่น',
-                      style: thaiSans(
-                          size: 13,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFF2E8BD6))),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.play_arrow_rounded,
-                      color: Color(0xFF2E8BD6), size: 18),
-                ],
-              ),
-            ),
+            Icon(Icons.monitor_heart_rounded,
+                color: Colors.white, size: context.r(22)),
+            SizedBox(width: context.r(8)),
+            Text('ประเมิน',
+                style: thaiSans(
+                    size: context.r(15),
+                    weight: FontWeight.w800,
+                    color: Colors.white)),
           ],
         ),
       ),

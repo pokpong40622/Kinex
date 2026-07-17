@@ -192,6 +192,10 @@ class _OverviewPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _HeroCard(pose: pose),
+          if (pose.image != null) ...[
+            SizedBox(height: context.r(16)),
+            _PosePhoto(pose: pose),
+          ],
           SizedBox(height: context.r(20)),
           _FactsWrap(pose: pose),
         ],
@@ -285,6 +289,60 @@ class _StepPage extends StatelessWidget {
               _CautionCallout(text: pose.caution!),
             ],
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Large reference photo of the pose (from the physiotherapy booklet), shown
+/// on a soft white card so the cut-out figure reads clearly.
+class _PosePhoto extends StatelessWidget {
+  final LearnPose pose;
+  const _PosePhoto({required this.pose});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = pose.category.color;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(context.r(12)),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.white, color.withAlpha(16)],
+        ),
+        borderRadius: BorderRadius.circular(context.r(22)),
+        border: Border.all(color: color.withAlpha(35), width: 1),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.photo_camera_back_rounded,
+                  size: context.r(16), color: color),
+              SizedBox(width: context.r(6)),
+              Text('ตัวอย่างท่า',
+                  style: thaiSans(
+                      size: context.r(13),
+                      weight: FontWeight.w700,
+                      color: color)),
+            ],
+          ),
+          SizedBox(height: context.r(8)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(context.r(14)),
+            child: Image.asset(
+              pose.image!,
+              height: context.r(220),
+              fit: BoxFit.contain,
+            ),
+          ),
         ],
       ),
     );

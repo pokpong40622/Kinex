@@ -50,80 +50,97 @@ class _ConnectDevicePageState extends ConsumerState<ConnectDevicePage> {
 
     final ble = ref.watch(bleControllerProvider);
 
+    // Matches the rest of the app: room photo background + a white rounded card,
+    // instead of a full-screen colour gradient wash.
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: KColors.blueGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Skip button (top-right) ──────────────────────────────────
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: EdgeInsets.only(right: context.r(8), top: context.r(4)),
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context, 'skipped'),
-                    child: Text(
-                      'ข้าม',
-                      style: thaiSans(
-                          size: context.r(15),
-                          weight: FontWeight.w600,
-                          color: Colors.white70),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/bg_room.png', fit: BoxFit.cover),
+          SafeArea(
+            child: Column(
+              children: [
+                // ── Skip button (top-right) ──────────────────────────────────
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                        right: context.r(10), top: context.r(4)),
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, 'skipped'),
+                      child: Text(
+                        'ข้าม',
+                        style: thaiSans(
+                            size: context.r(15),
+                            weight: FontWeight.w700,
+                            color: KColors.navyText.withAlpha(160)),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              // ── Main content ─────────────────────────────────────────────
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.bluetooth_rounded,
-                      size: context.r(72),
-                      color: Colors.white.withAlpha(200),
-                    ),
-                    SizedBox(height: context.r(24)),
-                    Text(
-                      'เชื่อมต่ออุปกรณ์ Kinex',
-                      style: thaiSans(
-                          size: context.r(22),
-                          weight: FontWeight.w800,
-                          color: Colors.white),
-                    ),
-                    SizedBox(height: context.r(10)),
-                    Padding(
+                // ── Main content card ────────────────────────────────────────
+                Expanded(
+                  child: Center(
+                    child: Padding(
                       padding:
-                          EdgeInsets.symmetric(horizontal: context.r(40)),
-                      child: Text(
-                        'เชื่อมต่อชุดเซ็นเซอร์ก่อนเริ่มการฝึก',
-                        textAlign: TextAlign.center,
-                        style: thaiSans(
-                            size: context.r(14),
-                            weight: FontWeight.w500,
-                            color: Colors.white70),
+                          EdgeInsets.symmetric(horizontal: context.r(24)),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: context.r(24), vertical: context.r(32)),
+                        decoration:
+                            cardDecoration(radius: 28, color: Colors.white),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Halo icon in the app's blue.
+                            Container(
+                              width: context.r(96),
+                              height: context.r(96),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: KColors.blue.withAlpha(26),
+                              ),
+                              child: Icon(Icons.bluetooth_rounded,
+                                  size: context.r(48), color: KColors.blue),
+                            ),
+                            SizedBox(height: context.r(20)),
+                            Text(
+                              'เชื่อมต่ออุปกรณ์ Kinex',
+                              style: thaiSans(
+                                  size: context.r(22),
+                                  weight: FontWeight.w800,
+                                  color: KColors.navyText),
+                            ),
+                            SizedBox(height: context.r(10)),
+                            Text(
+                              'เชื่อมต่อชุดเซ็นเซอร์ก่อนเริ่มการฝึก',
+                              textAlign: TextAlign.center,
+                              style: thaiSans(
+                                  size: context.r(14),
+                                  weight: FontWeight.w500,
+                                  color: KColors.navyText.withAlpha(150)),
+                            ),
+                            SizedBox(height: context.r(28)),
+                            _StatusArea(ble: ble),
+                            SizedBox(height: context.r(28)),
+                            _ConnectButton(
+                              ble: ble,
+                              onConnect: () => ref
+                                  .read(bleControllerProvider.notifier)
+                                  .quickConnect(),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(height: context.r(40)),
-                    _StatusArea(ble: ble),
-                  ],
+                  ),
                 ),
-              ),
-
-              // ── Primary action button ────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                    context.r(32), 0, context.r(32), context.r(36)),
-                child: _ConnectButton(
-                  ble: ble,
-                  onConnect: () =>
-                      ref.read(bleControllerProvider.notifier).quickConnect(),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -141,15 +158,15 @@ class _StatusArea extends StatelessWidget {
         ble.status == BleStatus.connecting) {
       return Column(
         children: [
-          const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Colors.white)),
+          CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(KColors.blue)),
           SizedBox(height: context.r(12)),
           Text(
             'กำลังค้นหา…',
             style: thaiSans(
                 size: context.r(14),
                 weight: FontWeight.w600,
-                color: Colors.white70),
+                color: KColors.navyText.withAlpha(160)),
           ),
         ],
       );
@@ -165,7 +182,7 @@ class _StatusArea extends StatelessWidget {
             style: thaiSans(
                 size: context.r(16),
                 weight: FontWeight.w700,
-                color: Colors.white),
+                color: KColors.navyText),
           ),
           if (ble.connectedName != null)
             Text(
@@ -173,22 +190,19 @@ class _StatusArea extends StatelessWidget {
               style: thaiSans(
                   size: context.r(13),
                   weight: FontWeight.w500,
-                  color: Colors.white70),
+                  color: KColors.navyText.withAlpha(150)),
             ),
         ],
       );
     }
     if (ble.needsSettings) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: context.r(32)),
-        child: Text(
-          'กรุณาเปิดสิทธิ์ Bluetooth ในการตั้งค่าของแอป',
-          textAlign: TextAlign.center,
-          style: thaiSans(
-              size: context.r(14),
-              weight: FontWeight.w500,
-              color: Colors.white70),
-        ),
+      return Text(
+        'กรุณาเปิดสิทธิ์ Bluetooth ในการตั้งค่าของแอป',
+        textAlign: TextAlign.center,
+        style: thaiSans(
+            size: context.r(14),
+            weight: FontWeight.w500,
+            color: KColors.orangeDark),
       );
     }
     if (ble.lastError != null && ble.status == BleStatus.idle) {
@@ -197,7 +211,7 @@ class _StatusArea extends StatelessWidget {
         style: thaiSans(
             size: context.r(14),
             weight: FontWeight.w600,
-            color: Colors.white70),
+            color: KColors.orangeDark),
       );
     }
     return const SizedBox.shrink();
@@ -224,13 +238,13 @@ class _ConnectButton extends StatelessWidget {
         width: double.infinity,
         padding: EdgeInsets.symmetric(vertical: context.r(16)),
         decoration: BoxDecoration(
-          color: isBusy ? Colors.white38 : Colors.white,
+          color: isBusy ? KColors.blue.withAlpha(90) : KColors.blue,
           borderRadius: BorderRadius.circular(context.r(18)),
           boxShadow: isBusy
               ? null
               : const [
                   BoxShadow(
-                      color: Color(0x40000000),
+                      color: Color(0x552E8BD6),
                       blurRadius: 14,
                       offset: Offset(0, 5)),
                 ],
@@ -241,7 +255,7 @@ class _ConnectButton extends StatelessWidget {
           style: thaiSans(
               size: context.r(18),
               weight: FontWeight.w800,
-              color: isBusy ? Colors.white70 : KColors.blue),
+              color: Colors.white),
         ),
       ),
     );

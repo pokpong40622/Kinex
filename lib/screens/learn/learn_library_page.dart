@@ -202,11 +202,13 @@ class _PoseCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: context.r(56),
-                height: context.r(56),
+                width: context.r(64),
+                height: context.r(64),
                 decoration: BoxDecoration(
-                  gradient: pose.category.gradient,
+                  gradient: pose.image == null ? pose.category.gradient : null,
+                  color: pose.image == null ? null : Colors.white,
                   borderRadius: BorderRadius.circular(context.r(16)),
+                  border: Border.all(color: color.withAlpha(40), width: 1),
                   boxShadow: [
                     BoxShadow(
                         color: color.withAlpha(85),
@@ -214,7 +216,10 @@ class _PoseCard extends StatelessWidget {
                         offset: const Offset(0, 3)),
                   ],
                 ),
-                child: Icon(pose.icon, color: Colors.white, size: context.r(28)),
+                clipBehavior: Clip.antiAlias,
+                child: pose.image == null
+                    ? Icon(pose.icon, color: Colors.white, size: context.r(28))
+                    : Image.asset(pose.image!, fit: BoxFit.cover),
               ),
               SizedBox(width: context.r(14)),
               Expanded(

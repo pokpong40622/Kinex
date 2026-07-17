@@ -59,6 +59,7 @@ class LearnPose {
   final PoseCategory category;
   final String target; // muscle group / ability trained
   final IconData icon;
+  final String? image; // booklet photo asset (assets/images/learn/<id>.jpg)
   final List<PoseFact> facts; // quick chips (dose)
   final List<String> steps; // numbered how-to
   final List<String> tips; // optional coaching pointers
@@ -72,6 +73,7 @@ class LearnPose {
     required this.category,
     required this.target,
     required this.icon,
+    this.image,
     required this.facts,
     required this.steps,
     this.tips = const [],
@@ -101,6 +103,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.strength,
     target: 'กล้ามเนื้อต้นขาด้านหน้า',
     icon: Icons.chair_rounded,
+    image: 'assets/images/learn/sit_to_stand.jpg',
     facts: [
       PoseFact(Icons.repeat_rounded, '15 ครั้ง = 1 เซต'),
       PoseFact(Icons.layers_rounded, '3 เซต'),
@@ -122,6 +125,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.strength,
     target: 'กล้ามเนื้อต้นขาด้านหน้า',
     icon: Icons.airline_seat_recline_extra_rounded,
+    image: 'assets/images/learn/seated_knee_lift.jpg',
     facts: [
       PoseFact(Icons.repeat_rounded, 'สลับซ้าย–ขวา 20 ครั้ง = 1 เซต'),
       PoseFact(Icons.layers_rounded, '3 เซต'),
@@ -142,6 +146,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.strength,
     target: 'กล้ามเนื้อกางสะโพก',
     icon: Icons.accessibility_new_rounded,
+    image: 'assets/images/learn/hip_abduction.jpg',
     facts: [
       PoseFact(Icons.slow_motion_video_rounded, 'ทำช้า ๆ ควบคุม'),
       PoseFact(Icons.repeat_rounded, '10–15 ครั้ง/ข้าง'),
@@ -164,6 +169,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.strength,
     target: 'กล้ามเนื้อเหยียดสะโพก',
     icon: Icons.directions_run_rounded,
+    image: 'assets/images/learn/hip_extension.jpg',
     facts: [
       PoseFact(Icons.slow_motion_video_rounded, 'ทำช้า ๆ ควบคุม'),
       PoseFact(Icons.repeat_rounded, '10–15 ครั้ง/ข้าง'),
@@ -188,6 +194,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.balance,
     target: 'การทรงตัว',
     icon: Icons.straighten_rounded,
+    image: 'assets/images/learn/narrow_base_stand.jpg',
     facts: [
       PoseFact(Icons.vertical_align_bottom_rounded, 'ยืนลงน้ำหนักบนส้นเท้า'),
       PoseFact(Icons.vertical_align_top_rounded, 'ยืนเขย่งปลายเท้า'),
@@ -210,6 +217,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.balance,
     target: 'การทรงตัว',
     icon: Icons.timeline_rounded,
+    image: 'assets/images/learn/tandem_stand.jpg',
     facts: [
       PoseFact(Icons.straighten_rounded, 'วางเท้าต่อกันเต็มฝ่าเท้า'),
       PoseFact(Icons.crop_portrait_rounded, 'ฐานแคบ'),
@@ -229,6 +237,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.balance,
     target: 'การทรงตัว',
     icon: Icons.self_improvement_rounded,
+    image: 'assets/images/learn/single_leg_balance.jpg',
     facts: [
       PoseFact(Icons.timer_rounded, 'ค้างไว้ 10 วินาที'),
       PoseFact(Icons.swap_horiz_rounded, 'สลับข้าง'),
@@ -252,6 +261,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.balance,
     target: 'การทรงตัว',
     icon: Icons.directions_walk_rounded,
+    image: 'assets/images/learn/tandem_walk.jpg',
     facts: [
       PoseFact(Icons.repeat_rounded, 'เดิน 10 ก้าว ไป–กลับ = 1 รอบ'),
       PoseFact(Icons.layers_rounded, '5 รอบ'),
@@ -272,6 +282,7 @@ const List<LearnPose> poseLibrary = [
     category: PoseCategory.balance,
     target: 'การทรงตัว',
     icon: Icons.swap_horiz_rounded,
+    image: 'assets/images/learn/side_walk.jpg',
     facts: [
       PoseFact(Icons.arrow_forward_rounded, 'ก้าวข้างแล้วชิดเท้า'),
       PoseFact(Icons.swap_horiz_rounded, 'ทำสลับสองข้าง'),

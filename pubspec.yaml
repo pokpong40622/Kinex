@@ -71,6 +71,7 @@ flutter:
     - assets/images/assessment/
     - assets/images/hardware_guide/
     - assets/images/info/
+    - assets/images/learn/
 
   fonts:
     - family: Kanit
