@@ -1,78 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../data/emg_repository.dart';
+import '../data/game_repository.dart';
 import '../models/emg_metrics.dart';
+import '../models/game_session_record.dart';
 import '../models/muscle.dart';
 import '../state/shop_providers.dart';
 import '../data/customize_catalog.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 
-// ─── Mock data ─────────────────────────────────────────────────────────────
-// The history list below is still mock while game-history wiring lands. The
-// L/R balance card reads real data from balanceReportProvider (emg_repository.dart).
+// The history list reads real game sessions from gameHistoryProvider
+// (game_repository.dart). The L/R balance card reads real data from
+// balanceReportProvider (emg_repository.dart).
 
 const _weekImprovement = 15; // % better than last week
 const _monthImprovement = 22; // % better than last month
-
-const _weekSessions = 5;
-const _weekMinutes = 55;
-const _weekAvgScore = 65;
-
-class _MockGame {
-  final String name;
-  final String dateLabel;
-  final int minutes;
-  final int score;
-  final String iconAsset; // real game art, assets/images/game_icons/
-
-  const _MockGame({
-    required this.name,
-    required this.dateLabel,
-    required this.minutes,
-    required this.score,
-    required this.iconAsset,
-  });
-}
-
-const _mockGames = [
-  _MockGame(
-    name: 'MEGA DANCE',
-    dateLabel: 'วันนี้',
-    minutes: 10,
-    score: 88,
-    iconAsset: 'assets/images/game_icons/megadance.png',
-  ),
-  _MockGame(
-    name: 'KINEX WORLD',
-    dateLabel: 'เมื่อวาน',
-    minutes: 15,
-    score: 76,
-    iconAsset: 'assets/images/game_icons/world.png',
-  ),
-  _MockGame(
-    name: 'THE DASHER',
-    dateLabel: 'เมื่อวาน',
-    minutes: 9,
-    score: 72,
-    iconAsset: 'assets/images/game_icons/thedasher.png',
-  ),
-  _MockGame(
-    name: 'MEGA DANCE',
-    dateLabel: '10 ก.ค.',
-    minutes: 10,
-    score: 47,
-    iconAsset: 'assets/images/game_icons/megadance.png',
-  ),
-  _MockGame(
-    name: 'KINEX WORLD',
-    dateLabel: '9 ก.ค.',
-    minutes: 12,
-    score: 68,
-    iconAsset: 'assets/images/game_icons/world.png',
-  ),
-];
 
 // ─── Balance status strip ───────────────────────────────────────────────────
 // Driven by the GAP between the two legs' share (|left% - right%|), not by
@@ -593,11 +538,27 @@ class _RangeToggle extends StatelessWidget {
 
 // ─── History card ───────────────────────────────────────────────────────────
 
-class _HistoryCard extends StatelessWidget {
+class _HistoryCard extends ConsumerWidget {
   const _HistoryCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final records =
+        ref.watch(gameHistoryProvider).valueOrNull ?? const <GameSessionRecord>[];
+
+    // Week stats — only sessions within the last 7 days.
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    final week = records.where((r) => r.dateTime.isAfter(cutoff)).toList();
+    final weekSessions = week.length;
+    final weekMinutes = week.isEmpty
+        ? 0
+        : (week.fold<double>(0, (s, r) => s + r.durationSeconds) / 60).round();
+    final weekAvgScore = week.isEmpty
+        ? 0
+        : (week.fold<double>(0, (s, r) => s + r.percent) / week.length).round();
+
+    final recent = records.take(5).toList();
+
     return Container(
       padding: EdgeInsets.all(context.r(16)),
       decoration: BoxDecoration(
@@ -621,26 +582,51 @@ class _HistoryCard extends StatelessWidget {
                   color: const Color(0xFF6D78A8))),
           SizedBox(height: context.r(10)),
           Row(
-            children: const [
-              Expanded(child: _StatTile(value: '$_weekSessions', label: 'ครั้ง')),
-              SizedBox(width: 8),
-              Expanded(child: _StatTile(value: '$_weekMinutes', label: 'นาที')),
-              SizedBox(width: 8),
+            children: [
+              Expanded(child: _StatTile(value: '$weekSessions', label: 'ครั้ง')),
+              const SizedBox(width: 8),
+              Expanded(child: _StatTile(value: '$weekMinutes', label: 'นาที')),
+              const SizedBox(width: 8),
               Expanded(
-                  child:
-                      _StatTile(value: '$_weekAvgScore%', label: 'คะแนนเฉลี่ย')),
+                  child: _StatTile(
+                      value: '$weekAvgScore%', label: 'คะแนนเฉลี่ย')),
             ],
           ),
           SizedBox(height: context.r(4)),
-          for (final g in _mockGames)
+          if (recent.isEmpty)
             Padding(
-              padding: EdgeInsets.only(top: context.r(8)),
-              child: _GameRow(game: g),
-            ),
+              padding: EdgeInsets.symmetric(vertical: context.r(18)),
+              child: Center(
+                child: Text('ยังไม่มีประวัติการเล่น',
+                    style: montserrat(
+                        size: context.r(13.5),
+                        weight: FontWeight.w600,
+                        color: const Color(0xFF9099BC))),
+              ),
+            )
+          else
+            for (final r in recent)
+              Padding(
+                padding: EdgeInsets.only(top: context.r(8)),
+                child: _GameRow(record: r),
+              ),
         ],
       ),
     );
   }
+}
+
+/// Thai relative-date label for a session: today / yesterday / 'd MMM'.
+String _thaiDateLabel(DateTime dt) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final day = DateTime(dt.year, dt.month, dt.day);
+  final diff = today.difference(day).inDays;
+  if (diff == 0) return 'วันนี้';
+  if (diff == 1) return 'เมื่อวาน';
+  // No locale arg: Thai date symbols aren't initialized app-wide (matches the
+  // assessment/world history pages), so we use the default-locale month name.
+  return DateFormat('d MMM').format(dt);
 }
 
 class _StatTile extends StatelessWidget {
@@ -675,12 +661,13 @@ class _StatTile extends StatelessWidget {
 }
 
 class _GameRow extends StatelessWidget {
-  final _MockGame game;
-  const _GameRow({required this.game});
+  final GameSessionRecord record;
+  const _GameRow({required this.record});
 
   @override
   Widget build(BuildContext context) {
-    final band = _ScoreBand.of(game.score);
+    final band = _ScoreBand.of(record.percent.round());
+    final minutes = (record.durationSeconds / 60).round();
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: context.r(10), vertical: context.r(9)),
@@ -693,10 +680,17 @@ class _GameRow extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(context.r(13)),
             child: Image.asset(
-              game.iconAsset,
+              record.iconAsset,
               width: context.r(44),
               height: context.r(44),
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stack) => Container(
+                width: context.r(44),
+                height: context.r(44),
+                color: const Color(0xFFE7E5F5),
+                child: Icon(Icons.sports_esports_rounded,
+                    color: KColors.indigo, size: context.r(24)),
+              ),
             ),
           ),
           SizedBox(width: context.r(11)),
@@ -704,10 +698,10 @@ class _GameRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(game.name,
+                Text(record.gameName,
                     style: montserrat(
                         size: context.r(14.5), weight: FontWeight.w900)),
-                Text('${game.dateLabel} · ${game.minutes} นาที',
+                Text('${_thaiDateLabel(record.dateTime)} · $minutes นาที',
                     style: montserrat(
                         size: context.r(11.5),
                         weight: FontWeight.w500,
@@ -718,7 +712,7 @@ class _GameRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${game.score}%',
+              Text(record.scoreLabel,
                   style: montserrat(
                       size: context.r(18),
                       weight: FontWeight.w900,

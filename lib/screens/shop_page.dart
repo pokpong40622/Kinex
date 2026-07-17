@@ -75,7 +75,7 @@ class ShopTab extends ConsumerWidget {
                     const _ShopSectionHeader(
                         icon: Icons.person_rounded,
                         label: 'ตัวละคร',
-                        color: KColors.blue),
+                        color: KColors.purple),
                     SizedBox(
                       height: r(160),
                       child: ListView.separated(
@@ -90,7 +90,7 @@ class ShopTab extends ConsumerWidget {
                     const _ShopSectionHeader(
                         icon: Icons.palette_rounded,
                         label: 'ธีมเกม',
-                        color: KColors.pinkDark),
+                        color: KColors.purple),
                     const _ComingSoonCard(titleTh: 'ธีมเกม', subtitleEn: 'Themes'),
                     SizedBox(height: h * 0.02),
                   ],

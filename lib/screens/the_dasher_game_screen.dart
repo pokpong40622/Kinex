@@ -6,27 +6,30 @@
 // ("thedasher") once the player is ready (and again on every unity_ready,
 // which fires on a cold Unity boot).
 //
-// Tutorial: the 3 how-to graphics show as a pop-up overlay ON TOP of the game
-// when you first enter (normal game flow), instead of on a separate page before
-// the start screen. Dismissing the overlay reveals the running game.
+// Tutorial: the 3 how-to graphics now show as a pop-up ON THE START PAGE
+// (the_dasher_start_page.dart), not here — so entering this screen goes straight
+// into the running game with no overlay.
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_embed_unity/flutter_embed_unity.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../theme/app_theme.dart';
-import '../theme/responsive.dart';
+import '../data/game_repository.dart';
+import '../models/game_session_record.dart';
 
-class TheDasherGameScreen extends StatefulWidget {
+class TheDasherGameScreen extends ConsumerStatefulWidget {
   const TheDasherGameScreen({super.key});
 
   @override
-  State<TheDasherGameScreen> createState() => _TheDasherGameScreenState();
+  ConsumerState<TheDasherGameScreen> createState() =>
+      _TheDasherGameScreenState();
 }
 
-class _TheDasherGameScreenState extends State<TheDasherGameScreen> {
+class _TheDasherGameScreenState extends ConsumerState<TheDasherGameScreen> {
   PermissionStatus _cameraStatus = PermissionStatus.denied;
   bool _checked = false;
-  bool _showTutorial = true;
+  bool _saved = false; // guard: persist a session's result only once
 
   @override
   void initState() {
@@ -51,19 +54,28 @@ class _TheDasherGameScreenState extends State<TheDasherGameScreen> {
 
   void _selectGame() => sendToUnity('SceneRouter', 'LoadGame', 'thedasher');
 
-  void _onUnityMessage(String data) {
+  Future<void> _onUnityMessage(String data) async {
     if (data.contains('unity_ready')) {
       _selectGame();
     } else if (data.contains('"exit"')) {
       // Unity back button → return to the Flutter home screen.
       if (mounted) context.go('/home');
     } else if (data.contains('thedasher_result')) {
-      debugPrint(data);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ผลเกม: บันทึกแล้ว (debug)')),
-        );
+      if (_saved) return;
+      Map<String, dynamic> msg;
+      try {
+        msg = jsonDecode(data) as Map<String, dynamic>;
+      } catch (_) {
+        return; // ignore malformed / non-JSON payloads
       }
+      _saved = true;
+      final record = GameSessionRecord.fromDasher(
+        msg,
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        dateTime: DateTime.now(),
+      );
+      await ref.read(gameRepositoryProvider).add(record);
+      ref.invalidate(gameHistoryProvider);
     }
   }
 
@@ -87,187 +99,8 @@ class _TheDasherGameScreenState extends State<TheDasherGameScreen> {
     // because the game drives lane-switch input from the live MediaPipe pose feed.
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          SizedBox.expand(child: body),
-          if (_checked && _cameraStatus.isGranted && _showTutorial)
-            _TutorialOverlay(
-              onDone: () => setState(() => _showTutorial = false),
-            ),
-        ],
-      ),
+      body: SizedBox.expand(child: body),
     );
   }
 }
 
-/// Tutorial pop-up shown over the running game on first entry: a 3-page carousel
-/// of the how-to graphics with next / start controls. Dismisses to reveal the
-/// game underneath.
-class _TutorialOverlay extends StatefulWidget {
-  final VoidCallback onDone;
-  const _TutorialOverlay({required this.onDone});
-
-  @override
-  State<_TutorialOverlay> createState() => _TutorialOverlayState();
-}
-
-class _TutorialOverlayState extends State<_TutorialOverlay> {
-  final _controller = PageController();
-  int _page = 0;
-
-  static const _images = [
-    'assets/images/the_dasher/intro_move.png',
-    'assets/images/the_dasher/intro_treasure.png',
-    'assets/images/the_dasher/intro_kick.png',
-  ];
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _next() {
-    if (_page == _images.length - 1) {
-      widget.onDone();
-    } else {
-      _controller.animateToPage(
-        _page + 1,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isLast = _page == _images.length - 1;
-
-    return Container(
-      color: Colors.black.withValues(alpha: 0.72),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Skip in the top-right — jump straight into the game.
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: EdgeInsets.all(context.r(12)),
-                child: TextButton(
-                  onPressed: widget.onDone,
-                  child: Text('ข้าม',
-                      style: thaiSans(
-                          size: context.r(15),
-                          weight: FontWeight.w700,
-                          color: Colors.white)),
-                ),
-              ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: _images.length,
-                onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (context, index) => Padding(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: context.r(24), vertical: context.r(12)),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    padding: EdgeInsets.all(context.r(18)),
-                    child: Image.asset(_images[index], fit: BoxFit.contain),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: context.r(24), vertical: context.r(20)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: List.generate(
-                      _images.length,
-                      (i) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        margin: EdgeInsets.symmetric(horizontal: context.r(4)),
-                        width: i == _page ? context.r(22) : context.r(8),
-                        height: context.r(8),
-                        decoration: BoxDecoration(
-                          color: i == _page
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(context.r(6)),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(context.r(24), 0, context.r(24),
-                  context.r(24)),
-              child: SizedBox(
-                width: double.infinity,
-                child: _StartButton(
-                  label: isLast ? 'เริ่มเล่น' : 'ถัดไป',
-                  icon: isLast
-                      ? Icons.play_arrow_rounded
-                      : Icons.arrow_forward_rounded,
-                  onTap: _next,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StartButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  const _StartButton(
-      {required this.label, required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        height: context.r(56),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: KColors.deepPurple,
-          borderRadius: BorderRadius.circular(context.r(28)),
-          boxShadow: [
-            BoxShadow(
-              color: KColors.deepPurple.withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label,
-                style: thaiSans(
-                    size: context.r(17),
-                    weight: FontWeight.w800,
-                    color: Colors.white)),
-            SizedBox(width: context.r(8)),
-            Icon(icon, color: Colors.white, size: context.r(24)),
-          ],
-        ),
-      ),
-    );
-  }
-}

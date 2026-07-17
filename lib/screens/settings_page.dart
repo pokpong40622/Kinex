@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../state/onboarding_prefs.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final w = MediaQuery.sizeOf(context).width;
+    final introEnabled = ref.watch(introEnabledProvider);
     return Scaffold(
       backgroundColor: KColors.cardBg,
       appBar: AppBar(
@@ -52,6 +55,37 @@ class SettingsPage extends StatelessWidget {
                   onTap: null,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Section: การแนะนำ (onboarding)
+          Text('การแนะนำ',
+              style: thaiSans(
+                  size: 13,
+                  weight: FontWeight.w600,
+                  color: KColors.navyText.withAlpha(140))),
+          const SizedBox(height: 8),
+          Container(
+            decoration: cardDecoration(radius: 16),
+            child: SwitchListTile(
+              value: introEnabled,
+              onChanged: (v) =>
+                  ref.read(introEnabledProvider.notifier).set(v),
+              activeThumbColor: KColors.teal,
+              contentPadding: EdgeInsets.symmetric(horizontal: w * 0.045),
+              secondary: const Icon(Icons.slideshow_rounded,
+                  color: KColors.teal, size: 22),
+              title: Text('แสดงการแนะนำแอปตอนเปิด',
+                  style: thaiSans(
+                      size: 16,
+                      weight: FontWeight.w600,
+                      color: KColors.navyText)),
+              subtitle: Text(
+                  'ปิดแล้วจะแสดงเฉพาะการเชื่อมต่อบลูทูธและการติดตั้งแผ่น EMG',
+                  style: thaiSans(
+                      size: 12,
+                      weight: FontWeight.w500,
+                      color: KColors.navyText.withAlpha(130))),
             ),
           ),
           const SizedBox(height: 24),

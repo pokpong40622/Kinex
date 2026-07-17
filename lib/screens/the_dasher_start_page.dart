@@ -14,8 +14,18 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 
-class TheDasherStartPage extends StatelessWidget {
+class TheDasherStartPage extends StatefulWidget {
   const TheDasherStartPage({super.key});
+
+  @override
+  State<TheDasherStartPage> createState() => _TheDasherStartPageState();
+}
+
+class _TheDasherStartPageState extends State<TheDasherStartPage> {
+  // The game-intro (3 how-to graphics) shows as a pop-up ON this start page —
+  // not on a page before it, nor as an overlay on the running game. Auto-shows on
+  // entry; the ⓘ button re-opens it.
+  bool _showIntro = true;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +65,12 @@ class TheDasherStartPage extends StatelessWidget {
                           },
                         ),
                         const Spacer(),
+                        // Re-open the game intro pop-up.
+                        _NavButton(
+                          icon: Icons.help_outline_rounded,
+                          onTap: () => setState(() => _showIntro = true),
+                        ),
+                        SizedBox(width: context.r(10)),
                         const _StarBadge(),
                       ],
                     ),
@@ -77,6 +93,181 @@ class TheDasherStartPage extends StatelessWidget {
                 ),
               ),
             ),
+            // Game-intro pop-up, ON the start page (over everything else).
+            if (_showIntro)
+              _DasherIntroPopup(onDone: () => setState(() => _showIntro = false)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The game-intro pop-up shown over the start page: a 3-page carousel of the
+/// how-to graphics (move / treasure / kick) with a page indicator, a Skip, and
+/// next / "เข้าใจแล้ว" controls. Dismisses (onDone) back to the start page — the
+/// player then taps เริ่มภารกิจ to launch.
+class _DasherIntroPopup extends StatefulWidget {
+  final VoidCallback onDone;
+  const _DasherIntroPopup({required this.onDone});
+
+  @override
+  State<_DasherIntroPopup> createState() => _DasherIntroPopupState();
+}
+
+class _DasherIntroPopupState extends State<_DasherIntroPopup> {
+  final _controller = PageController();
+  int _page = 0;
+
+  static const _images = [
+    'assets/images/the_dasher/intro_move.png',
+    'assets/images/the_dasher/intro_treasure.png',
+    'assets/images/the_dasher/intro_kick.png',
+  ];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _next() {
+    if (_page == _images.length - 1) {
+      widget.onDone();
+    } else {
+      _controller.animateToPage(
+        _page + 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLast = _page == _images.length - 1;
+
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.62),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Skip in the top-right — dismiss to the start page.
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: EdgeInsets.all(context.r(12)),
+                  child: TextButton(
+                    onPressed: widget.onDone,
+                    child: Text('ข้าม',
+                        style: thaiSans(
+                            size: context.r(15),
+                            weight: FontWeight.w700,
+                            color: Colors.white)),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: _images.length,
+                  onPageChanged: (i) => setState(() => _page = i),
+                  itemBuilder: (context, index) => Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: context.r(24), vertical: context.r(12)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: EdgeInsets.all(context.r(18)),
+                      child: Image.asset(_images[index], fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+              ),
+              // Page indicator dots.
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: context.r(16)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    _images.length,
+                    (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: EdgeInsets.symmetric(horizontal: context.r(4)),
+                      width: i == _page ? context.r(22) : context.r(8),
+                      height: context.r(8),
+                      decoration: BoxDecoration(
+                        color: i == _page
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(context.r(6)),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                    context.r(24), 0, context.r(24), context.r(24)),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: _PopupButton(
+                    label: isLast ? 'เข้าใจแล้ว' : 'ถัดไป',
+                    icon: isLast
+                        ? Icons.check_rounded
+                        : Icons.arrow_forward_rounded,
+                    onTap: _next,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Wide pill button used at the bottom of the intro pop-up.
+class _PopupButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _PopupButton(
+      {required this.label, required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: context.r(56),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: KColors.deepPurple,
+          borderRadius: BorderRadius.circular(context.r(28)),
+          boxShadow: [
+            BoxShadow(
+              color: KColors.deepPurple.withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: thaiSans(
+                    size: context.r(17),
+                    weight: FontWeight.w800,
+                    color: Colors.white)),
+            SizedBox(width: context.r(8)),
+            Icon(icon, color: Colors.white, size: context.r(24)),
           ],
         ),
       ),

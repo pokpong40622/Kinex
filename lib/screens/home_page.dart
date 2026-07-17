@@ -14,6 +14,8 @@ import '../data/customize_catalog.dart';
 import '../state/shop_providers.dart';
 import 'info_page.dart';
 import 'shop_page.dart';
+import 'onboarding/onboarding_flow.dart';
+import '../state/onboarding_prefs.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -36,32 +38,40 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Every app entry: show the EMG hardware-install guide, then spotlight the
-    // assessment card on home. Flags are in-memory so they reset each launch.
+    // Every app entry: run the onboarding popup FLOW (software intro slides →
+    // Bluetooth connect → EMG installation) as one themed dialog, then spotlight
+    // the assessment card. Flags are in-memory so this runs once per launch.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
-      // Step 1: BLE connect-device landing (shown once per launch, skipped if
-      // the device is already connected from a previous session or quick-connect).
-      if (ref.read(deviceConnectPendingProvider) &&
-          ref.read(bleControllerProvider).status != BleStatus.connected) {
-        ref.read(deviceConnectPendingProvider.notifier).state = false;
-        await context.push('/connect-device');
-        if (!mounted) return;
-      } else {
-        ref.read(deviceConnectPendingProvider.notifier).state = false;
-      }
+      // First entry this launch? (either landing flag still pending). Clear both,
+      // then run the flow once.
+      final firstEntry = ref.read(deviceConnectPendingProvider) ||
+          ref.read(homeGuidePendingProvider);
+      ref.read(deviceConnectPendingProvider.notifier).state = false;
+      ref.read(homeGuidePendingProvider.notifier).state = false;
+      if (!firstEntry) return;
 
-      // Step 2: EMG hardware-install guide (existing flow).
-      if (ref.read(homeGuidePendingProvider)) {
-        ref.read(homeGuidePendingProvider.notifier).state = false;
-        final result = await context.push('/hardware-guide');
+      // Intro slides are included only when the settings toggle is ON; the
+      // Bluetooth + installation stages always show.
+      final result = await showOnboardingFlow(
+        context,
+        introEnabled: ref.read(introEnabledProvider),
+      );
+      if (!mounted) return;
+
+      if (result == OnboardingResult.installRequested) {
+        // Open the real EMG install + MVC-capture guide.
+        final guideResult = await context.push('/hardware-guide');
         if (!mounted) return;
         // result == true only when the guide was fully finished; anything else
         // (skip / back-dismiss) means the EMG pads weren't installed this run.
-        ref.read(emgInstallSkippedProvider.notifier).state = result != true;
-        ref.read(assessmentSpotlightProvider.notifier).state = true;
+        ref.read(emgInstallSkippedProvider.notifier).state = guideResult != true;
+      } else {
+        // Skipped the flow / installation → EMG pads not installed this run.
+        ref.read(emgInstallSkippedProvider.notifier).state = true;
       }
+      ref.read(assessmentSpotlightProvider.notifier).state = true;
     });
   }
 

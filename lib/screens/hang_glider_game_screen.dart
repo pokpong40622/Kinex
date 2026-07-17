@@ -5,20 +5,26 @@
 //   2. does NOT ask for camera permission,
 //   3. tells the shared Unity player to load scene id "hangglider",
 //   4. overlays an in-game pause button (pause / resume / home).
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_embed_unity/flutter_embed_unity.dart';
+import '../data/game_repository.dart';
+import '../models/game_session_record.dart';
 
-class HangGliderGameScreen extends StatefulWidget {
+class HangGliderGameScreen extends ConsumerStatefulWidget {
   const HangGliderGameScreen({super.key});
 
   @override
-  State<HangGliderGameScreen> createState() => _HangGliderGameScreenState();
+  ConsumerState<HangGliderGameScreen> createState() =>
+      _HangGliderGameScreenState();
 }
 
-class _HangGliderGameScreenState extends State<HangGliderGameScreen> {
+class _HangGliderGameScreenState extends ConsumerState<HangGliderGameScreen> {
   bool _paused = false;
+  bool _saved = false; // guard: persist a session's result only once
 
   @override
   void initState() {
@@ -53,11 +59,27 @@ class _HangGliderGameScreenState extends State<HangGliderGameScreen> {
     if (mounted) context.go('/home');
   }
 
-  void _onUnityMessage(String data) {
+  Future<void> _onUnityMessage(String data) async {
     if (data.contains('unity_ready')) {
       _selectGame();
     } else if (data.contains('"exit"')) {
       _goHome();
+    } else if (data.contains('hangglider_result')) {
+      if (_saved) return;
+      Map<String, dynamic> msg;
+      try {
+        msg = jsonDecode(data) as Map<String, dynamic>;
+      } catch (_) {
+        return; // ignore malformed / non-JSON payloads
+      }
+      _saved = true;
+      final record = GameSessionRecord.fromHangGlider(
+        msg,
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        dateTime: DateTime.now(),
+      );
+      await ref.read(gameRepositoryProvider).add(record);
+      ref.invalidate(gameHistoryProvider);
     }
   }
 
