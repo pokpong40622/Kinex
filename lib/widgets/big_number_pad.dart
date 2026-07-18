@@ -73,38 +73,62 @@ class _BigNumberPadState extends State<BigNumberPad> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Value display
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(_text.isEmpty ? '0' : _text,
+        // Value display — sits in its own tinted panel so "your answer" reads
+        // as clearly separate from the keypad below it.
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+              horizontal: context.r(16), vertical: context.r(16)),
+          decoration: BoxDecoration(
+            color: outOfRange
+                ? const Color(0xFFD32F2F).withAlpha(14)
+                : KColors.teal.withAlpha(14),
+            borderRadius: BorderRadius.circular(context.r(20)),
+            border: Border.all(
+                color: outOfRange
+                    ? const Color(0xFFD32F2F).withAlpha(80)
+                    : KColors.teal.withAlpha(60),
+                width: 1),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(_text.isEmpty ? '0' : _text,
+                      style: thaiSans(
+                          size: context.r(64),
+                          weight: FontWeight.w800,
+                          color: _text.isEmpty
+                              ? KColors.navyText.withAlpha(60)
+                              : KColors.navyText)),
+                  SizedBox(width: context.r(8)),
+                  Text(widget.unit,
+                      style: thaiSans(
+                          size: context.r(24),
+                          weight: FontWeight.w700,
+                          color: KColors.navyText.withAlpha(150))),
+                ],
+              ),
+              SizedBox(height: context.r(6)),
+              Text(
+                outOfRange
+                    ? 'กรุณากรอกค่าระหว่าง ${_fmt(widget.min)}–${_fmt(widget.max)}'
+                    : 'ค่าที่ยอมรับ ${_fmt(widget.min)}–${_fmt(widget.max)} ${widget.unit}',
+                textAlign: TextAlign.center,
                 style: thaiSans(
-                    size: context.r(64),
-                    weight: FontWeight.w800,
-                    color: _text.isEmpty
-                        ? KColors.navyText.withAlpha(60)
-                        : KColors.navyText)),
-            SizedBox(width: context.r(8)),
-            Text(widget.unit,
-                style: thaiSans(
-                    size: context.r(24),
-                    weight: FontWeight.w700,
-                    color: KColors.navyText.withAlpha(150))),
-          ],
+                    size: context.r(14),
+                    weight: FontWeight.w600,
+                    color: outOfRange
+                        ? const Color(0xFFD32F2F)
+                        : KColors.navyText.withAlpha(140)),
+              ),
+            ],
+          ),
         ),
-        SizedBox(height: context.r(6)),
-        Text(
-          outOfRange
-              ? 'กรุณากรอกค่าระหว่าง ${_fmt(widget.min)}–${_fmt(widget.max)}'
-              : 'ค่าที่ยอมรับ ${_fmt(widget.min)}–${_fmt(widget.max)} ${widget.unit}',
-          style: thaiSans(
-              size: context.r(14),
-              weight: FontWeight.w600,
-              color: outOfRange ? const Color(0xFFD32F2F) : KColors.navyText.withAlpha(140)),
-        ),
-        SizedBox(height: context.r(16)),
+        SizedBox(height: context.r(18)),
         // Keypad
         for (final row in const [
           ['1', '2', '3'],
@@ -152,14 +176,9 @@ class _Key extends StatelessWidget {
         decoration: BoxDecoration(
           color: onTap == null ? Colors.transparent : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: onTap == null
+          border: onTap == null
               ? null
-              : const [
-                  BoxShadow(
-                      color: Color(0x16000000),
-                      blurRadius: 6,
-                      offset: Offset(0, 2)),
-                ],
+              : Border.all(color: KColors.hairline, width: 1),
         ),
         child: label == '⌫'
             ? Icon(Icons.backspace_outlined, size: context.r(24), color: KColors.navyText)

@@ -39,15 +39,22 @@ class _IntroSlide {
   final Color color;
   final String title;
   final String body;
+  /// Optional illustration. When set, it replaces the halo-icon so a real
+  /// screenshot / AI-generated picture can teach the UI. Drop files under
+  /// assets/images/onboarding/ and set this path (see image prompts handed to
+  /// the user). Falls back to [icon] when null.
+  final String? imageAsset;
   const _IntroSlide({
     required this.icon,
     required this.color,
     required this.title,
     required this.body,
+    this.imageAsset,
   });
 }
 
 const _introSlides = <_IntroSlide>[
+  // ── What is this ──────────────────────────────────────────────────────────
   _IntroSlide(
     icon: Icons.self_improvement_rounded,
     color: KColors.purple,
@@ -55,6 +62,7 @@ const _introSlides = <_IntroSlide>[
     body:
         'แอปฟื้นฟูกล้ามเนื้อขาที่บ้าน ด้วยเกมสนุก ๆ ที่ควบคุมด้วยการขยับร่างกายจริง '
         'พร้อมเซ็นเซอร์วัดกล้ามเนื้อ (EMG)',
+    imageAsset: 'assets/images/onboarding/intro_welcome.png',
   ),
   _IntroSlide(
     icon: Icons.directions_run_rounded,
@@ -63,7 +71,37 @@ const _introSlides = <_IntroSlide>[
     body:
         'กล้องหน้าจะจับการเคลื่อนไหวของคุณ ยืนให้เห็นทั้งตัวแล้วขยับตามเกม '
         'เช่น ก้าวข้าง นั่ง-ลุก และเตะขา เพื่อฝึกกล้ามเนื้อ',
+    imageAsset: 'assets/images/onboarding/intro_move.png',
   ),
+  // ── Where things are (the navigation tour the user asked for) ─────────────
+  _IntroSlide(
+    icon: Icons.sports_esports_rounded,
+    color: KColors.purple,
+    title: 'เล่นเกมฝึกได้ที่นี่',
+    body:
+        'แตะแท็บ “ฝึกซ้อม” ด้านล่าง เพื่อเลือกเกมฝึกกล้ามเนื้อ เช่น The Dasher '
+        'แล้วเริ่มเล่นได้ทันที',
+    imageAsset: 'assets/images/onboarding/intro_games.png',
+  ),
+  _IntroSlide(
+    icon: Icons.insights_rounded,
+    color: KColors.blue,
+    title: 'ดูความก้าวหน้าของคุณ',
+    body:
+        'แท็บ “ข้อมูล” รวมสถิติการเล่น ประวัติ และพัฒนาการของกล้ามเนื้อ '
+        'ไว้ให้ดูย้อนหลังได้ทุกเมื่อ',
+    imageAsset: 'assets/images/onboarding/intro_progress.png',
+  ),
+  _IntroSlide(
+    icon: Icons.fact_check_rounded,
+    color: KColors.teal,
+    title: 'เริ่มด้วยการประเมิน',
+    body:
+        'แนะนำให้ทำ “ประเมินสมรรถภาพ” ก่อน เพื่อวัดความแข็งแรงและการทรงตัว '
+        'แล้วแอปจะช่วยแนะนำการฝึกที่เหมาะกับคุณ',
+    imageAsset: 'assets/images/onboarding/intro_assess.png',
+  ),
+  // ── Safety ────────────────────────────────────────────────────────────────
   _IntroSlide(
     icon: Icons.health_and_safety_rounded,
     color: KColors.teal,
@@ -71,6 +109,7 @@ const _introSlides = <_IntroSlide>[
     body:
         'จัดพื้นที่โล่งประมาณ 2 เมตร วางแท็บเล็ตให้มั่นคงระดับสายตา มีที่จับหรือเก้าอี้ '
         'ไว้พยุงตัว และหยุดพักทันทีหากรู้สึกเจ็บหรือเวียนหัว',
+    imageAsset: 'assets/images/onboarding/intro_safety.png',
   ),
 ];
 
@@ -111,13 +150,16 @@ class _OnboardingFlowState extends ConsumerState<_OnboardingFlow> {
       }
     });
 
+    final size = MediaQuery.sizeOf(context);
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding:
-          EdgeInsets.symmetric(horizontal: context.r(22), vertical: context.r(40)),
+          EdgeInsets.symmetric(horizontal: context.r(14), vertical: context.r(24)),
       child: Container(
+        width: size.width,
+        constraints: BoxConstraints(minHeight: size.height * 0.62),
         padding: EdgeInsets.fromLTRB(
-            context.r(22), context.r(10), context.r(22), context.r(20)),
+            context.r(24), context.r(12), context.r(24), context.r(24)),
         decoration: cardDecoration(radius: 28, color: Colors.white),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -225,21 +267,35 @@ class _IntroBody extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _HaloIcon(icon: slide.icon, color: slide.color),
-        SizedBox(height: context.r(20)),
+        // Illustration when provided; otherwise (or if the image is missing) a
+        // clean halo-icon, so the flow works before the art is added.
+        if (slide.imageAsset != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(context.r(20)),
+            child: Image.asset(
+              slide.imageAsset!,
+              height: context.r(180),
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) =>
+                  _HaloIcon(icon: slide.icon, color: slide.color),
+            ),
+          )
+        else
+          _HaloIcon(icon: slide.icon, color: slide.color),
+        SizedBox(height: context.r(22)),
         Text(slide.title,
             textAlign: TextAlign.center,
             style: thaiSans(
-                size: context.r(22),
+                size: context.r(25),
                 weight: FontWeight.w800,
                 color: KColors.navyText)),
-        SizedBox(height: context.r(12)),
+        SizedBox(height: context.r(14)),
         Text(slide.body,
             textAlign: TextAlign.center,
             style: thaiSans(
-                size: context.r(15),
+                size: context.r(16.5),
                 weight: FontWeight.w500,
-                color: KColors.navyText.withAlpha(170))),
+                color: KColors.navyText.withAlpha(180))),
       ],
     );
   }
@@ -429,14 +485,6 @@ class _PrimaryButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: enabled ? color : color.withAlpha(90),
           borderRadius: BorderRadius.circular(context.r(18)),
-          boxShadow: enabled
-              ? [
-                  BoxShadow(
-                      color: color.withAlpha(80),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5)),
-                ]
-              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

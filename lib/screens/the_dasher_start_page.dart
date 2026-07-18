@@ -146,84 +146,94 @@ class _DasherIntroPopupState extends State<_DasherIntroPopup> {
   @override
   Widget build(BuildContext context) {
     final isLast = _page == _images.length - 1;
+    final size = MediaQuery.sizeOf(context);
+    // A compact centred card, not a full-screen takeover. Bound both axes so the
+    // popup stays small on a tablet.
+    final cardW = size.width * 0.82 > context.r(360)
+        ? context.r(360)
+        : size.width * 0.82;
+    final imgH = size.height * 0.34;
 
     return Positioned.fill(
       child: Container(
         color: Colors.black.withValues(alpha: 0.62),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Skip in the top-right — dismiss to the start page.
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: EdgeInsets.all(context.r(12)),
-                  child: TextButton(
-                    onPressed: widget.onDone,
-                    child: Text('ข้าม',
-                        style: thaiSans(
-                            size: context.r(15),
-                            weight: FontWeight.w700,
-                            color: Colors.white)),
-                  ),
-                ),
+        child: Center(
+          child: SizedBox(
+            width: cardW,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(context.r(16), context.r(8),
+                  context.r(16), context.r(16)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(context.r(24)),
               ),
-              Expanded(
-                child: PageView.builder(
-                  controller: _controller,
-                  itemCount: _images.length,
-                  onPageChanged: (i) => setState(() => _page = i),
-                  itemBuilder: (context, index) => Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: context.r(24), vertical: context.r(12)),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: EdgeInsets.all(context.r(18)),
-                      child: Image.asset(_images[index], fit: BoxFit.contain),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Skip in the top-right — dismiss to the start page.
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: widget.onDone,
+                      style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: context.r(8), vertical: context.r(2)),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                      child: Text('ข้าม',
+                          style: thaiSans(
+                              size: context.r(14),
+                              weight: FontWeight.w700,
+                              color: KColors.navyText.withAlpha(150))),
                     ),
                   ),
-                ),
-              ),
-              // Page indicator dots.
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: context.r(16)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _images.length,
-                    (i) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      margin: EdgeInsets.symmetric(horizontal: context.r(4)),
-                      width: i == _page ? context.r(22) : context.r(8),
-                      height: context.r(8),
-                      decoration: BoxDecoration(
-                        color: i == _page
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(context.r(6)),
+                  SizedBox(
+                    height: imgH,
+                    child: PageView.builder(
+                      controller: _controller,
+                      itemCount: _images.length,
+                      onPageChanged: (i) => setState(() => _page = i),
+                      itemBuilder: (context, index) => Padding(
+                        padding: EdgeInsets.symmetric(horizontal: context.r(6)),
+                        child:
+                            Image.asset(_images[index], fit: BoxFit.contain),
                       ),
                     ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                    context.r(24), 0, context.r(24), context.r(24)),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: _PopupButton(
-                    label: isLast ? 'เข้าใจแล้ว' : 'ถัดไป',
-                    icon: isLast
-                        ? Icons.check_rounded
-                        : Icons.arrow_forward_rounded,
-                    onTap: _next,
+                  SizedBox(height: context.r(14)),
+                  // Page indicator dots.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _images.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        margin: EdgeInsets.symmetric(horizontal: context.r(4)),
+                        width: i == _page ? context.r(22) : context.r(8),
+                        height: context.r(8),
+                        decoration: BoxDecoration(
+                          color: i == _page
+                              ? KColors.deepPurple
+                              : KColors.deepPurple.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(context.r(6)),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(height: context.r(16)),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _PopupButton(
+                      label: isLast ? 'เข้าใจแล้ว' : 'ถัดไป',
+                      icon: isLast
+                          ? Icons.check_rounded
+                          : Icons.arrow_forward_rounded,
+                      onTap: _next,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

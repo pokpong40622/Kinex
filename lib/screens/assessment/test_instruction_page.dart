@@ -6,6 +6,7 @@ import '../../models/assessment_stage.dart';
 import '../../models/assessment_test.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
@@ -29,61 +30,63 @@ class TestInstructionPage extends ConsumerWidget {
         currentStage: stageIndexForTest(testId),
       ),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
+        padding: EdgeInsets.fromLTRB(context.r(20), context.r(4), context.r(20), context.r(8)),
         children: [
-          // Hero reference photo
-          Container(
-            width: double.infinity,
+          // Hero reference photo with the component name as its caption — the
+          // "what am I doing" answer sits right under the picture.
+          KCard(
             padding: EdgeInsets.all(context.r(16)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x18000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 3)),
-              ],
-            ),
-            child: StageImage(name: testId, height: context.r(200)),
-          ),
-          SizedBox(height: context.r(16)),
-          _SectionCard(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                StageImage(name: testId, height: context.r(200)),
+                SizedBox(height: context.r(12)),
                 Text(test.thaiComponent,
+                    textAlign: TextAlign.center,
                     style: thaiSans(
                         size: context.r(16),
                         weight: FontWeight.w700,
                         color: KColors.tealDark)),
                 if (test.equipment != null) ...[
                   SizedBox(height: context.r(12)),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.inventory_2_outlined,
-                          color: KColors.navyText, size: context.r(22)),
-                      SizedBox(width: context.r(10)),
-                      Expanded(
-                        child: Text(test.equipment!,
-                            style: thaiSans(size: context.r(16), weight: FontWeight.w600)),
-                      ),
-                    ],
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: context.r(12), vertical: context.r(10)),
+                    decoration: BoxDecoration(
+                      color: KColors.appBg,
+                      borderRadius: BorderRadius.circular(context.r(12)),
+                      border: Border.all(color: KColors.hairline, width: 1),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.inventory_2_outlined,
+                            color: KColors.navyText, size: context.r(20)),
+                        SizedBox(width: context.r(10)),
+                        Expanded(
+                          child: Text(test.equipment!,
+                              style: thaiSans(
+                                  size: context.r(15), weight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
             ),
           ),
-          SizedBox(height: context.r(16)),
-          _SectionCard(
-            title: 'ขั้นตอนการทดสอบ',
+          SizedBox(height: context.r(18)),
+          KSectionHeader('ขั้นตอนการทดสอบ',
+              icon: Icons.list_alt_rounded, color: KColors.tealDark),
+          SizedBox(height: context.r(4)),
+          KCard(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(16), vertical: context.r(8)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (var i = 0; i < test.instructions.length; i++)
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: context.r(6)),
+                    padding: EdgeInsets.symmetric(vertical: context.r(8)),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -91,15 +94,9 @@ class TestInstructionPage extends ConsumerWidget {
                           width: context.r(30),
                           height: context.r(30),
                           alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: KColors.tealButtonGradient,
+                          decoration: const BoxDecoration(
+                            color: KColors.teal,
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                  color: KColors.teal.withValues(alpha: 0.3),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2)),
-                            ],
                           ),
                           child: Text('${i + 1}',
                               style: thaiSans(
@@ -124,13 +121,9 @@ class TestInstructionPage extends ConsumerWidget {
             width: double.infinity,
             padding: EdgeInsets.all(context.r(16)),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE6F7F1), Color(0xFFD8F1E8)],
-              ),
+              color: KColors.teal.withAlpha(18),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: KColors.teal, width: 1.5),
+              border: Border.all(color: KColors.teal.withAlpha(120), width: 1),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,7 +133,7 @@ class TestInstructionPage extends ConsumerWidget {
                   height: context.r(38),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    gradient: KColors.tealButtonGradient,
+                    color: KColors.teal,
                     borderRadius: BorderRadius.circular(context.r(11)),
                   ),
                   child: Icon(Icons.flag_rounded,
@@ -159,14 +152,14 @@ class TestInstructionPage extends ConsumerWidget {
               ],
             ),
           ),
-          SizedBox(height: context.r(16)),
+          SizedBox(height: context.r(12)),
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(context.r(16)),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFB74D), width: 1.5),
+              border: Border.all(color: const Color(0xFFFFB74D).withAlpha(150), width: 1),
             ),
             child: Row(
               children: [
@@ -190,40 +183,6 @@ class TestInstructionPage extends ConsumerWidget {
       bottom: AssessmentButton(
         label: 'เริ่มทดสอบ',
         onTap: () => context.push('/assessment/test/$testId/run'),
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  final String? title;
-  final Widget child;
-  const _SectionCard({this.title, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(context.r(18)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x18000000), blurRadius: 10, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (title != null) ...[
-            Text(title!,
-                style: thaiSans(
-                    size: context.r(18), weight: FontWeight.w800, color: KColors.tealDark)),
-            SizedBox(height: context.r(12)),
-          ],
-          child,
-        ],
       ),
     );
   }

@@ -25,7 +25,7 @@ class FallRiskBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.withAlpha(28),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: c, width: 1.5),
+        border: Border.all(color: c.withAlpha(90), width: 1),
       ),
       child: Text(risk.thaiShort,
           style: thaiSans(size: fontSize, weight: FontWeight.w800, color: c)),
@@ -125,11 +125,11 @@ class _RiskCard extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(context.r(14)),
       decoration: BoxDecoration(
-        color: active ? c.withAlpha(22) : Colors.white,
+        color: active ? c.withAlpha(18) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: active ? c : const Color(0x22000000),
-            width: active ? 2 : 1),
+            color: active ? c : KColors.hairline,
+            width: active ? 1.5 : 1),
       ),
       child: Row(
         children: [
@@ -138,7 +138,7 @@ class _RiskCard extends StatelessWidget {
             height: context.r(64),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: active ? c : c.withAlpha(120),
+              color: active ? c : c.withAlpha(140),
               shape: BoxShape.circle,
             ),
             child: Column(

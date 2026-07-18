@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
+import '../theme/kui.dart';
 import '../state/home_intro_providers.dart';
 import '../data/assessment_repository.dart';
 import '../data/emg_repository.dart';
@@ -502,28 +503,26 @@ class CharacterHomeTab extends ConsumerWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: _StatRing(
-                                  value: dStreak,
+                                child: KStatTile(
+                                  value: '$dStreak',
                                   label: 'วัน',
-                                  color: KColors.orange,
-                                  maxValue: 7,
+                                  valueColor: KColors.orangeDark,
                                 ),
                               ),
+                              SizedBox(width: context.r(8)),
                               Expanded(
-                                child: _StatRing(
-                                  value: dMins,
+                                child: KStatTile(
+                                  value: '$dMins',
                                   label: 'นาที',
-                                  color: KColors.teal,
-                                  maxValue: 60,
+                                  valueColor: KColors.tealDark,
                                 ),
                               ),
+                              SizedBox(width: context.r(8)),
                               Expanded(
-                                child: _StatRing(
-                                  value: dScore,
+                                child: KStatTile(
+                                  value: '$dScore%',
                                   label: 'คะแนน',
-                                  color: KColors.blue,
-                                  maxValue: 100,
-                                  suffix: '%',
+                                  valueColor: KColors.blue,
                                 ),
                               ),
                             ],
@@ -553,23 +552,8 @@ class _StreakChip extends StatelessWidget {
   const _StreakChip({required this.streak});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: context.r(10), vertical: context.r(4)),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF8C00), Color(0xFFFF5722)],
-        ),
-        borderRadius: BorderRadius.circular(context.r(20)),
-      ),
-      child: Text(
-        '🔥 $streak วัน',
-        style: thaiSans(
-            size: context.r(13), weight: FontWeight.w800, color: Colors.white),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      KPill('🔥 $streak วัน', color: KColors.orangeDark);
 }
 
 // ── Character hero (single image + streak-driven mood overlay) ────────────────
@@ -615,24 +599,6 @@ class _CharacterHeroState extends State<_CharacterHero>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Soft glow plinth under the feet.
-          Positioned(
-            bottom: context.r(6),
-            child: Container(
-              width: context.r(150),
-              height: context.r(30),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(context.r(80)),
-                boxShadow: [
-                  BoxShadow(
-                    color: (awake ? KColors.blue : Colors.grey).withAlpha(70),
-                    blurRadius: context.r(34),
-                    spreadRadius: context.r(6),
-                  ),
-                ],
-              ),
-            ),
-          ),
           AnimatedBuilder(
             animation: _bobAnim,
             builder: (ctx, child) => Transform.translate(
@@ -679,71 +645,6 @@ class _CharacterHeroState extends State<_CharacterHero>
   }
 }
 
-// ── Stat ring ─────────────────────────────────────────────────────────────────
-
-class _StatRing extends StatelessWidget {
-  final int? value;
-  final String label;
-  final Color color;
-  final int maxValue;
-  final String suffix;
-
-  const _StatRing({
-    required this.value,
-    required this.label,
-    required this.color,
-    required this.maxValue,
-    this.suffix = '',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = context.r(104);
-    final progress = (value == null || maxValue == 0)
-        ? 0.0
-        : (value! / maxValue).clamp(0.0, 1.0);
-    final displayText = value == null ? '—' : '${value!}$suffix';
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CircularProgressIndicator(
-                value: progress,
-                strokeWidth: context.r(14),
-                backgroundColor: const Color(0xFFEDEDF3),
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-              Text(
-                displayText,
-                style: montserrat(
-                  size: context.r(value == null ? 20 : 22),
-                  weight: FontWeight.w900,
-                  color: KColors.navyText,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: context.r(8)),
-        Text(
-          label,
-          style: thaiSans(
-            size: context.r(13),
-            weight: FontWeight.w600,
-            color: KColors.navyText.withAlpha(140),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 // ── Improvement banner ────────────────────────────────────────────────────────
 
 class _ImprovementBanner extends StatelessWidget {
@@ -772,25 +673,7 @@ class _ImprovementBanner extends StatelessWidget {
       text = 'ลดลง ${improvement!.abs()}% สัปดาห์นี้';
     }
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: context.r(16), vertical: context.r(12)),
-      decoration: BoxDecoration(
-        color: accent.withAlpha(22),
-        borderRadius: BorderRadius.circular(context.r(16)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: accent, size: context.r(22)),
-          SizedBox(width: context.r(10)),
-          Text(
-            text,
-            style: thaiSans(
-                size: context.r(14), weight: FontWeight.w700, color: accent),
-          ),
-        ],
-      ),
-    );
+    return KPill(text, color: accent, icon: icon);
   }
 }
 
@@ -836,54 +719,19 @@ class _SeeMoreButton extends StatelessWidget {
 
 /// Home-tab entry point for the elderly fitness-assessment module.
 /// Uses the healthcare (teal→blue) palette.
-class _AssessmentCard extends StatefulWidget {
+class _AssessmentCard extends StatelessWidget {
   final VoidCallback onTap;
   final GlobalKey? cardKey;
   const _AssessmentCard({required this.onTap, this.cardKey});
-
-  @override
-  State<_AssessmentCard> createState() => _AssessmentCardState();
-}
-
-class _AssessmentCardState extends State<_AssessmentCard>
-    with SingleTickerProviderStateMixin {
-  // Gentle "real game" highlight: a slow teal glow that breathes in and out.
-  late final AnimationController _glow = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1900))
-    ..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _glow.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final h = size.height;
     final cardH = h * 0.145; // ~25% smaller than the old 0.195 (0.127 clipped the content)
-    return AnimatedBuilder(
-      key: widget.cardKey,
-      animation: _glow,
-      builder: (context, child) {
-        final t = _glow.value; // 0..1
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: KColors.teal.withAlpha((45 + 90 * t).round()),
-                blurRadius: 16 + 16 * t,
-                spreadRadius: 1 + 2 * t,
-              ),
-            ],
-          ),
-          child: child,
-        );
-      },
-      child: GestureDetector(
-      onTap: widget.onTap,
+    return GestureDetector(
+      key: cardKey,
+      onTap: onTap,
       child: SizedBox(
         height: cardH,
         child: LayoutBuilder(
@@ -898,15 +746,9 @@ class _AssessmentCardState extends State<_AssessmentCard>
             return Container(
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
-                gradient: KColors.tealGradient,
+                color: KColors.teal,
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withAlpha(112), width: 3),
-                boxShadow: const [
-                  BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 20,
-                      offset: Offset(5, 5))
-                ],
+                border: Border.all(color: KColors.hairline, width: 1),
               ),
               child: Row(
                 children: [
@@ -958,7 +800,6 @@ class _AssessmentCardState extends State<_AssessmentCard>
           },
         ),
       ),
-      ),
     );
   }
 }
@@ -993,24 +834,9 @@ class _LearnHomeCard extends StatelessWidget {
             return Container(
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
-                // 3 shades (purple → deep purple → teal) instead of a flat single-hue
-                // fill — ties together the Learn feature's own two categories
-                // (strength=purple, balance=teal) so the card reads as more than
-                // one colour at a glance.
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [KColors.purple, KColors.deepPurple, KColors.teal],
-                  stops: [0.0, 0.55, 1.0],
-                ),
+                color: KColors.purple,
                 borderRadius: BorderRadius.circular(25), // Matched radius (25)
-                border: Border.all(color: Colors.white.withAlpha(112), width: 3),
-                boxShadow: const [
-                  BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 20, // Matched shadow radius
-                      offset: Offset(5, 5))
-                ],
+                border: Border.all(color: KColors.hairline, width: 1),
               ),
               child: Row(
                 children: [
@@ -1556,12 +1382,7 @@ class _ProfileCard extends ConsumerWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(cardH / 2),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x40000000),
-                blurRadius: 8,
-                offset: Offset(0, 4))
-          ],
+          border: Border.all(color: KColors.hairline, width: 1),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(cardH / 2),
@@ -1668,8 +1489,8 @@ class _ProfileCard extends ConsumerWidget {
                       children: [
                         ref.watch(latestAssessmentProvider).maybeWhen(
                               data: (rec) =>
-                                  _ResultPill(risk: rec?.risk, w: w),
-                              orElse: () => _ResultPill(risk: null, w: w),
+                                  _ResultPill(risk: rec?.risk),
+                              orElse: () => _ResultPill(risk: null),
                             ),
                         Text('@ray_lorkasemsan',
                             style: montserrat(
@@ -1693,54 +1514,24 @@ class _ProfileCard extends ConsumerWidget {
 /// background, or a soft "not assessed yet" hint. Taps through to the assessment.
 class _ResultPill extends StatelessWidget {
   final FallRisk? risk;
-  final double w;
-  const _ResultPill({required this.risk, required this.w});
+  const _ResultPill({required this.risk});
 
   @override
   Widget build(BuildContext context) {
     final assessed = risk != null;
     final c = assessed ? fallRiskColor(risk!) : const Color(0xFF9AA3B8);
-    final dark = Color.lerp(c, Colors.black, 0.18)!;
     return GestureDetector(
       onTap: () => context.push('/assessment'),
       behavior: HitTestBehavior.opaque,
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.center,
-        child: Container(
-        padding: EdgeInsets.symmetric(horizontal: w * 0.028, vertical: w * 0.014),
-        decoration: BoxDecoration(
-          gradient: assessed
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [c, dark])
-              : null,
-          color: assessed ? null : const Color(0xFFEDEFF5),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: assessed
-              ? [BoxShadow(color: c.withAlpha(140), blurRadius: 12, offset: const Offset(0, 3))]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              assessed ? Icons.monitor_heart_rounded : Icons.assignment_outlined,
-              color: assessed ? Colors.white : const Color(0xFF7A839B),
-              size: w * 0.045,
-            ),
-            SizedBox(width: w * 0.015),
-            Text(
-              assessed ? 'ผลประเมิน: ${risk!.thaiShort}' : 'ยังไม่ได้ประเมิน',
-              style: thaiSans(
-                  size: w * 0.034,
-                  weight: FontWeight.w800,
-                  color: assessed ? Colors.white : const Color(0xFF5B6B86)),
-            ),
-          ],
-        ),
+        child: KPill(
+          assessed ? 'ผลประเมิน: ${risk!.thaiShort}' : 'ยังไม่ได้ประเมิน',
+          color: c,
+          icon: assessed
+              ? Icons.monitor_heart_rounded
+              : Icons.assignment_outlined,
         ),
       ),
     );
@@ -1955,10 +1746,20 @@ class _PracticeTab extends StatelessWidget {
                       horizontal: w * 0.04, vertical: h * 0.01),
                   children: [
                     // ── REHAB section: Handglider + MEGA DANCE ───────────────
-                    _SectionHeader(
-                      icon: Icons.healing_rounded,
-                      label: 'ฟื้นฟูร่างกาย · REHAB',
-                      color: KColors.teal,
+                    // Calm semi-opaque scrim so the flat header stays legible over
+                    // the busy bg_room.png photo (replaces the old squircle+pill).
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: w * 0.03),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: KColors.hairline, width: 1),
+                      ),
+                      child: KSectionHeader(
+                        'ฟื้นฟูร่างกาย · REHAB',
+                        icon: Icons.healing_rounded,
+                        color: KColors.teal,
+                      ),
                     ),
                     // Hang Glider (Unity scene id "hangglider") — tilt-controlled
                     // quiz game, plays in landscape. This is its designed card.
@@ -1984,10 +1785,18 @@ class _PracticeTab extends StatelessWidget {
                     ),
                     SizedBox(height: h * 0.035),
                     // ── EXERCISE section: Kinex World ────────────────────────
-                    _SectionHeader(
-                      icon: Icons.fitness_center_rounded,
-                      label: 'ออกกำลังกาย · EXERCISE',
-                      color: KColors.purple,
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: w * 0.03),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: KColors.hairline, width: 1),
+                      ),
+                      child: KSectionHeader(
+                        'ออกกำลังกาย · EXERCISE',
+                        icon: Icons.fitness_center_rounded,
+                        color: KColors.purple,
+                      ),
                     ),
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card3.png',
@@ -2030,11 +1839,7 @@ class _AssessFab extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: KColors.tealGradient,
           borderRadius: BorderRadius.circular(context.r(30)),
-          border: Border.all(color: Colors.white.withAlpha(150), width: 2),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x552E8BD6), blurRadius: 14, offset: Offset(0, 6)),
-          ],
+          border: Border.all(color: KColors.hairline, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -2089,64 +1894,6 @@ class _PracticeCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ── SECTION HEADER ───────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _SectionHeader(
-      {required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(top: context.r(4), bottom: context.r(14)),
-      child: Row(
-        children: [
-          // White rounded pill so the label reads clearly over the room bg.
-          Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: context.r(12), vertical: context.r(8)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(context.r(16)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(22),
-                  blurRadius: context.r(8),
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(context.r(7)),
-                  decoration: BoxDecoration(
-                    color: color.withAlpha(38),
-                    borderRadius: BorderRadius.circular(context.r(10)),
-                  ),
-                  child: Icon(icon, color: Colors.black, size: context.r(22)),
-                ),
-                SizedBox(width: context.r(10)),
-                Text(
-                  label,
-                  style: thaiSans(
-                      size: context.r(19),
-                      weight: FontWeight.w800,
-                      color: Colors.black),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

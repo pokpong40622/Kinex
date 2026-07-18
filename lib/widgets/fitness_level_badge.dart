@@ -23,7 +23,7 @@ class FitnessLevelBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.withAlpha(28),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: c, width: 1.5),
+        border: Border.all(color: c.withAlpha(90), width: 1),
       ),
       child: Text(level.thaiLabel,
           style: thaiSans(size: fontSize, weight: FontWeight.w800, color: c)),

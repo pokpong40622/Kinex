@@ -18,6 +18,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
 
+    <!-- Emergency SOS auto-call: hands-free ACTION_CALL when Unity detects a fall. -->
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+
     <application
         android:label="kinex_app"
         android:name="${applicationName}"

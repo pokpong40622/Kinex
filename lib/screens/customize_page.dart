@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../data/customize_catalog.dart';
 import '../state/shop_providers.dart';
 import '../theme/app_theme.dart';
+import '../theme/kui.dart';
 import '../theme/responsive.dart';
 
 /// ปรับแต่ง — profile customization: display name, equipped character and
@@ -15,33 +16,24 @@ class CustomizePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment(0, -0.2),
-            colors: [Color(0xFFF6F5FD), Colors.white],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-                context.r(14), context.r(10), context.r(14), context.r(28)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _CustomizeHeader(),
-                SizedBox(height: context.r(16)),
-                const _CharacterPreviewCard(),
-                SizedBox(height: context.r(16)),
-                const _NameCard(),
-                SizedBox(height: context.r(16)),
-                const _CharacterPickerCard(),
-                SizedBox(height: context.r(16)),
-                const _ThemePickerCard(),
-              ],
-            ),
+      backgroundColor: KColors.appBg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              context.r(14), context.r(10), context.r(14), context.r(28)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _CustomizeHeader(),
+              SizedBox(height: context.r(16)),
+              const _CharacterPreviewCard(),
+              SizedBox(height: context.r(16)),
+              const _NameCard(),
+              SizedBox(height: context.r(16)),
+              const _CharacterPickerCard(),
+              SizedBox(height: context.r(16)),
+              const _ThemePickerCard(),
+            ],
           ),
         ),
       ),
@@ -63,22 +55,16 @@ class _CustomizeHeader extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.all(context.r(9)),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: KColors.white,
               shape: BoxShape.circle,
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x22000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 2)),
-              ],
+              border: Border.all(color: KColors.hairline, width: 1),
             ),
             child: Icon(Icons.arrow_back_rounded,
                 color: KColors.navyText, size: context.r(22)),
           ),
         ),
         SizedBox(width: context.r(12)),
-        Text('ปรับแต่งตัวละคร',
-            style: montserrat(size: context.r(24), weight: FontWeight.w900)),
+        const Expanded(child: KSectionHeader('ปรับแต่งตัวละคร')),
       ],
     );
   }
@@ -94,21 +80,9 @@ class _CharacterPreviewCard extends ConsumerWidget {
     final character = characterById(ref.watch(activeCharacterProvider));
     final userName = ref.watch(userNameProvider);
 
-    return Container(
+    return KCard(
+      radius: context.r(28),
       padding: EdgeInsets.all(context.r(18)),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFA699FF), Color(0xFF6F6ADE)],
-        ),
-        borderRadius: BorderRadius.circular(context.r(28)),
-        border: Border.all(color: Colors.white, width: context.r(5)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x596F6ADE), blurRadius: 22, offset: Offset(0, 10)),
-        ],
-      ),
       child: Column(
         children: [
           Image.asset(
@@ -121,12 +95,12 @@ class _CharacterPreviewCard extends ConsumerWidget {
               style: montserrat(
                   size: context.r(20),
                   weight: FontWeight.w900,
-                  color: Colors.white)),
+                  color: KColors.navyText)),
           Text(character.name,
               style: thaiSans(
                   size: context.r(14),
                   weight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.85))),
+                  color: KColors.purple)),
         ],
       ),
     );
@@ -174,16 +148,9 @@ class _NameCardState extends ConsumerState<_NameCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return KCard(
+      radius: context.r(26),
       padding: EdgeInsets.all(context.r(16)),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F2FB),
-        borderRadius: BorderRadius.circular(context.r(26)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -202,7 +169,7 @@ class _NameCardState extends ConsumerState<_NameCard> {
                     counterText: '',
                     hintText: 'ผู้ใช้ KINEX',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: KColors.appBg,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: context.r(14), vertical: context.r(12)),
                     border: OutlineInputBorder(
@@ -217,7 +184,7 @@ class _NameCardState extends ConsumerState<_NameCard> {
               ElevatedButton(
                 onPressed: _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: KColors.indigo,
+                  backgroundColor: KColors.purple,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: EdgeInsets.symmetric(
@@ -307,7 +274,7 @@ class _CharacterPickTile extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(r(18)),
           border: Border.all(
-            color: active ? KColors.teal : Colors.transparent,
+            color: active ? KColors.purple : Colors.transparent,
             width: r(2.5),
           ),
           boxShadow: const [
@@ -398,7 +365,7 @@ class _ThemePickerCard extends ConsumerWidget {
                   gradient: item.gradient,
                   borderRadius: BorderRadius.circular(context.r(20)),
                   border: Border.all(
-                    color: isActive ? KColors.teal : Colors.transparent,
+                    color: isActive ? KColors.purple : Colors.transparent,
                     width: context.r(2.5),
                   ),
                   boxShadow: const [
@@ -458,16 +425,9 @@ class _PickerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return KCard(
+      radius: context.r(26),
       padding: EdgeInsets.all(context.r(16)),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F2FB),
-        borderRadius: BorderRadius.circular(context.r(26)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -478,7 +438,7 @@ class _PickerCard extends StatelessWidget {
               style: thaiSans(
                   size: context.r(12),
                   weight: FontWeight.w500,
-                  color: const Color(0xFF6D78A8))),
+                  color: KColors.navyText.withAlpha(140))),
           SizedBox(height: context.r(10)),
           child,
         ],
@@ -489,29 +449,15 @@ class _PickerCard extends StatelessWidget {
 
 Widget _statusBadge(BuildContext context,
     {required bool active, required bool unlocked}) {
-  final r = context.r;
   if (active) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: r(8), vertical: r(3)),
-      decoration: BoxDecoration(
-          color: KColors.teal, borderRadius: BorderRadius.circular(r(12))),
-      child: Text('ใช้งานอยู่',
-          style: thaiSans(
-              size: r(11), weight: FontWeight.w800, color: Colors.white)),
-    );
+    return const KPill('ใช้งานอยู่',
+        color: KColors.purple, icon: Icons.check_circle_rounded);
   }
   if (!unlocked) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: r(8), vertical: r(3)),
-      decoration: BoxDecoration(
-          color: Colors.black.withAlpha(120),
-          borderRadius: BorderRadius.circular(r(12))),
-      child: Text('ล็อก',
-          style: thaiSans(
-              size: r(11), weight: FontWeight.w800, color: Colors.white)),
-    );
+    return const KPill('ล็อก',
+        color: KColors.navyText, icon: Icons.lock_rounded);
   }
-  return SizedBox(height: r(19));
+  return SizedBox(height: context.r(19));
 }
 
 void _lockedHint(BuildContext context, String name) {

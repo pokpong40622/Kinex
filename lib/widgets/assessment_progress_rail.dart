@@ -55,13 +55,9 @@ class AssessmentProgressRail extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: active ? null : const Color(0xFFEFF3F2),
-        gradient: active ? KColors.tealButtonGradient : null,
+        color: active ? _teal : const Color(0xFFEFF3F2),
         shape: BoxShape.circle,
         border: active ? Border.all(color: Colors.white, width: 2) : null,
-        boxShadow: isCurrent
-            ? [BoxShadow(color: _teal.withAlpha(120), blurRadius: 12, spreadRadius: 1)]
-            : null,
       ),
       child: Icon(
         done ? Icons.check_rounded : kStages[i].icon,

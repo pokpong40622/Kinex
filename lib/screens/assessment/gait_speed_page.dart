@@ -12,6 +12,7 @@ import '../../services/sppb_scoring.dart';
 import '../../services/tts_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
@@ -200,49 +201,58 @@ class _GaitSpeedPageState extends ConsumerState<GaitSpeedPage> {
     }
   }
 
-  Widget _card(BuildContext context, Widget child) => Container(
-        width: double.infinity,
+  Widget _card(BuildContext context, Widget child) => KCard(
         padding: EdgeInsets.all(context.r(18)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-            BoxShadow(color: Color(0x18000000), blurRadius: 10, offset: Offset(0, 3)),
-          ],
-        ),
         child: child,
       );
 
-  Widget _bigLabel(BuildContext context, String label, String value) => Column(
-        children: [
-          Text(label,
-              style: thaiSans(
-                  size: context.r(16),
-                  weight: FontWeight.w700,
-                  color: KColors.tealDark)),
-          SizedBox(height: context.r(6)),
-          Text(value, style: thaiSans(size: context.r(40), weight: FontWeight.w900)),
-        ],
+  Widget _bigLabel(BuildContext context, String label, String value) => KCard(
+        padding: EdgeInsets.symmetric(vertical: context.r(28)),
+        child: Column(
+          children: [
+            Text(label,
+                style: thaiSans(
+                    size: context.r(16),
+                    weight: FontWeight.w700,
+                    color: KColors.tealDark)),
+            SizedBox(height: context.r(8)),
+            Text(value, style: thaiSans(size: context.r(44), weight: FontWeight.w900)),
+          ],
+        ),
       );
 
   Widget _recordedRow(BuildContext context, int runNo, double seconds) =>
-      Container(
-        margin: EdgeInsets.only(bottom: context.r(10)),
-        padding: EdgeInsets.symmetric(
-            horizontal: context.r(16), vertical: context.r(14)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text('ครั้งที่ $runNo',
-                  style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
-            ),
-            Text('${seconds.toStringAsFixed(1)} วินาที',
-                style: thaiSans(size: context.r(18), weight: FontWeight.w900)),
-          ],
+      Padding(
+        padding: EdgeInsets.only(bottom: context.r(10)),
+        child: KCard(
+          radius: 16,
+          padding: EdgeInsets.symmetric(
+              horizontal: context.r(16), vertical: context.r(16)),
+          child: Row(
+            children: [
+              Container(
+                width: context.r(34),
+                height: context.r(34),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: KColors.teal.withAlpha(28),
+                  shape: BoxShape.circle,
+                ),
+                child: Text('$runNo',
+                    style: thaiSans(
+                        size: context.r(15),
+                        weight: FontWeight.w900,
+                        color: KColors.tealDark)),
+              ),
+              SizedBox(width: context.r(12)),
+              Expanded(
+                child: Text('ครั้งที่ $runNo',
+                    style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+              ),
+              Text('${seconds.toStringAsFixed(1)} วินาที',
+                  style: thaiSans(size: context.r(18), weight: FontWeight.w900)),
+            ],
+          ),
         ),
       );
 }

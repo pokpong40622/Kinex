@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../state/onboarding_prefs.dart';
+import '../state/emergency_contact.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -11,10 +13,13 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final w = MediaQuery.sizeOf(context).width;
     final introEnabled = ref.watch(introEnabledProvider);
+    // Read once for initial field values — fields save on change via the
+    // notifier directly, so this page doesn't need to re-render per keystroke.
+    final contact = ref.read(emergencyContactProvider);
     return Scaffold(
-      backgroundColor: KColors.cardBg,
+      backgroundColor: KColors.appBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: KColors.appBg,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
@@ -89,6 +94,55 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          // Section: ผู้ติดต่อฉุกเฉิน (emergency contact — auto-dialed on fall detection)
+          Text('ผู้ติดต่อฉุกเฉิน',
+              style: thaiSans(
+                  size: 13,
+                  weight: FontWeight.w600,
+                  color: KColors.navyText.withAlpha(140))),
+          const SizedBox(height: 8),
+          Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: w * 0.045, vertical: w * 0.04),
+            decoration: cardDecoration(radius: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ชื่อผู้ติดต่อ',
+                    style: thaiSans(
+                        size: 14, weight: FontWeight.w600, color: KColors.navyText)),
+                const SizedBox(height: 6),
+                _SettingsTextField(
+                  initialValue: contact.name,
+                  hint: 'กรอกชื่อ (ไม่บังคับ)',
+                  keyboardType: TextInputType.name,
+                  onChanged: (v) =>
+                      ref.read(emergencyContactProvider.notifier).setName(v),
+                ),
+                const SizedBox(height: 16),
+                Text('เบอร์โทรศัพท์',
+                    style: thaiSans(
+                        size: 14, weight: FontWeight.w600, color: KColors.navyText)),
+                const SizedBox(height: 6),
+                _SettingsTextField(
+                  initialValue: contact.phone,
+                  hint: 'กรอกเบอร์โทรศัพท์',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (v) =>
+                      ref.read(emergencyContactProvider.notifier).setPhone(v),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                    'หากตรวจพบการล้มระหว่างเล่นเกม ระบบจะโทรหาเบอร์นี้อัตโนมัติ',
+                    style: thaiSans(
+                        size: 12,
+                        weight: FontWeight.w500,
+                        color: KColors.navyText.withAlpha(130))),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           Center(
             child: Text('ฟีเจอร์เพิ่มเติมเร็วๆ นี้',
                 style: thaiSans(
@@ -128,6 +182,47 @@ class _SettingsTile extends StatelessWidget {
               color: KColors.navyText)),
       trailing: const Icon(Icons.chevron_right_rounded,
           color: KColors.navyText, size: 22),
+    );
+  }
+}
+
+class _SettingsTextField extends StatelessWidget {
+  final String initialValue;
+  final String hint;
+  final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String> onChanged;
+
+  const _SettingsTextField({
+    required this.initialValue,
+    required this.hint,
+    required this.keyboardType,
+    required this.onChanged,
+    this.inputFormatters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: KColors.appBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: KColors.hairline, width: 1),
+      ),
+      child: TextFormField(
+        initialValue: initialValue,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        onChanged: onChanged,
+        style: thaiSans(size: 16, weight: FontWeight.w600, color: KColors.navyText),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: thaiSans(
+              size: 15, weight: FontWeight.w500, color: KColors.navyText.withAlpha(120)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: InputBorder.none,
+        ),
+      ),
     );
   }
 }

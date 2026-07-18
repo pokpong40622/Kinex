@@ -55,22 +55,11 @@ class AssessmentRoadmap extends StatelessWidget {
       margin: EdgeInsets.symmetric(vertical: context.r(6)),
       padding: EdgeInsets.symmetric(horizontal: context.r(16), vertical: context.r(14)),
       decoration: BoxDecoration(
-        color: isCurrent ? null : Colors.white,
-        gradient: isCurrent
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Color(0xFFEAF7F2)])
-            : null,
+        color: isCurrent ? _teal.withAlpha(18) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: isCurrent ? Border.all(color: _teal, width: 2) : null,
-        boxShadow: [
-          BoxShadow(
-            color: isCurrent ? _teal.withAlpha(45) : const Color(0x14000000),
-            blurRadius: isCurrent ? 18 : 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+            color: isCurrent ? _teal : KColors.hairline,
+            width: isCurrent ? 1.5 : 1),
       ),
       child: Row(
         children: [
@@ -124,15 +113,10 @@ class AssessmentRoadmap extends StatelessWidget {
       width: context.r(48),
       height: context.r(48),
       decoration: BoxDecoration(
-        color: active ? null : const Color(0xFFEFF3F2),
-        gradient: active ? KColors.tealButtonGradient : null,
+        color: active ? color : const Color(0xFFEFF3F2),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: pulse
-            ? [BoxShadow(color: color.withAlpha(120), blurRadius: 16, spreadRadius: 1)]
-            : active
-                ? [BoxShadow(color: color.withAlpha(55), blurRadius: 8, offset: const Offset(0, 3))]
-                : null,
+        border: Border.all(
+            color: pulse ? _teal : Colors.white, width: pulse ? 3 : 3),
       ),
       child: Icon(
         isDone ? Icons.check_rounded : icon,
@@ -179,14 +163,8 @@ class AssessmentRoadmap extends StatelessWidget {
   Widget _pill(BuildContext context, String text, Color color) => Container(
         padding: EdgeInsets.symmetric(horizontal: context.r(13), vertical: context.r(7)),
         decoration: BoxDecoration(
-          gradient: KColors.tealButtonGradient,
+          color: color,
           borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-                color: color.withAlpha(70),
-                blurRadius: 8,
-                offset: const Offset(0, 3)),
-          ],
         ),
         child: Text(text,
             style: thaiSans(size: context.r(12), weight: FontWeight.w800, color: Colors.white)),

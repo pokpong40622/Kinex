@@ -6,6 +6,7 @@ import '../../data/assessment_repository.dart';
 import '../../models/assessment_record.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/fall_risk_cards.dart';
@@ -77,39 +78,58 @@ class _HistoryCard extends StatelessWidget {
       '${person.age} ปี',
     ].join(' · ');
 
-    return GestureDetector(
-      onTap: () => context.push('/assessment/history/${record.id}'),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        margin: EdgeInsets.only(bottom: context.r(12)),
-        padding: EdgeInsets.symmetric(horizontal: context.r(16), vertical: context.r(14)),
-        decoration: cardDecoration(radius: 16),
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.r(12)),
+      child: KCard(
+        radius: 16,
+        onTap: () => context.push('/assessment/history/${record.id}'),
+        padding: EdgeInsets.symmetric(
+            horizontal: context.r(16), vertical: context.r(16)),
         child: Row(
           children: [
+            // Big score block leads — it is the number people scan for.
+            SizedBox(
+              width: context.r(58),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${record.totalScore}',
+                      style: thaiSans(
+                          size: context.r(30),
+                          weight: FontWeight.w900,
+                          color: KColors.tealDark)),
+                  Text('/ 12',
+                      style: thaiSans(
+                          size: context.r(12),
+                          weight: FontWeight.w700,
+                          color: KColors.navyText.withAlpha(140))),
+                ],
+              ),
+            ),
+            SizedBox(width: context.r(14)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dateLabel, style: thaiSans(size: context.r(16), weight: FontWeight.w800)),
+                  Text(dateLabel,
+                      style: thaiSans(
+                          size: context.r(16), weight: FontWeight.w800)),
                   SizedBox(height: context.r(4)),
                   Text(
                     personLabel,
                     style: thaiSans(
-                        size: context.r(14), weight: FontWeight.w600, color: KColors.navyText.withAlpha(160)),
+                        size: context.r(14),
+                        weight: FontWeight.w600,
+                        color: KColors.navyText.withAlpha(160)),
                   ),
+                  SizedBox(height: context.r(8)),
+                  FallRiskBadge(record.risk, fontSize: context.r(13)),
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('${record.totalScore}/12',
-                    style:
-                        thaiSans(size: context.r(16), weight: FontWeight.w900)),
-                SizedBox(height: context.r(4)),
-                FallRiskBadge(record.risk, fontSize: context.r(13)),
-              ],
-            ),
+            SizedBox(width: context.r(8)),
+            Icon(Icons.chevron_right_rounded,
+                color: KColors.navyText.withAlpha(90), size: context.r(26)),
           ],
         ),
       ),

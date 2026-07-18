@@ -10,6 +10,7 @@ import '../../models/fitness_level.dart';
 import '../../services/sppb_scoring.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/bmi_band_badge.dart';
@@ -80,33 +81,45 @@ class FinalSummaryPage extends ConsumerWidget {
             context.r(20), context.r(8), context.r(20), context.r(8)),
         children: [
           FallRiskHero(total: total, risk: risk),
-          SizedBox(height: context.r(16)),
-          _DomainRow(
-            label: assessmentTestById('balance').thaiName,
-            value:
-                'ผ่าน ${[balance.sideBySideSec, balance.semiTandemSec, balance.tandemSec].where((s) => s >= 10.0).length} ท่า',
-            points: balance.points,
+          SizedBox(height: context.r(18)),
+          // The three domain scores + BMI read as one breakdown table inside a
+          // single card, rather than four separate floating rows.
+          KCard(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(16), vertical: context.r(6)),
+            child: Column(
+              children: [
+                _DomainRow(
+                  label: assessmentTestById('balance').thaiName,
+                  value:
+                      'ผ่าน ${[balance.sideBySideSec, balance.semiTandemSec, balance.tandemSec].where((s) => s >= 10.0).length} ท่า',
+                  points: balance.points,
+                ),
+                const _RowDivider(),
+                _DomainRow(
+                  label: assessmentTestById('gait_speed').thaiName,
+                  value: gait.unable
+                      ? 'เดินไม่ได้'
+                      : '${gait.seconds.toStringAsFixed(1)} วิ',
+                  points: gait.points,
+                ),
+                const _RowDivider(),
+                _DomainRow(
+                  label: assessmentTestById('chair_stand').thaiName,
+                  value: chairStand.preTestPassed
+                      ? '${chairStand.seconds.toStringAsFixed(1)} วิ'
+                      : 'ทำไม่ได้',
+                  points: chairStand.points,
+                ),
+                const _RowDivider(),
+                _BmiRow(bmiValue: bmi.value, band: bmi.band),
+              ],
+            ),
           ),
-          _DomainRow(
-            label: assessmentTestById('gait_speed').thaiName,
-            value: gait.unable
-                ? 'เดินไม่ได้'
-                : '${gait.seconds.toStringAsFixed(1)} วิ',
-            points: gait.points,
-          ),
-          _DomainRow(
-            label: assessmentTestById('chair_stand').thaiName,
-            value: chairStand.preTestPassed
-                ? '${chairStand.seconds.toStringAsFixed(1)} วิ'
-                : 'ทำไม่ได้',
-            points: chairStand.points,
-          ),
-          SizedBox(height: context.r(8)),
-          _BmiRow(bmiValue: bmi.value, band: bmi.band),
-          SizedBox(height: context.r(16)),
+          SizedBox(height: context.r(20)),
           Text('การแปลผลคะแนนและความเสี่ยงในการหกล้ม',
               style: thaiSans(size: context.r(16), weight: FontWeight.w800)),
-          SizedBox(height: context.r(10)),
+          SizedBox(height: context.r(12)),
           FallRiskCards(active: risk),
         ],
       ),
@@ -194,6 +207,15 @@ class FinalSummaryPage extends ConsumerWidget {
   }
 }
 
+/// Hairline separator between the grouped breakdown rows.
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, thickness: 1, color: KColors.hairline);
+}
+
 /// One SPPB domain row: label, optional raw value, and a "X/4" points chip.
 class _DomainRow extends StatelessWidget {
   final String label;
@@ -205,11 +227,8 @@ class _DomainRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: context.r(10)),
-      padding: EdgeInsets.symmetric(
-          horizontal: context.r(16), vertical: context.r(14)),
-      decoration: cardDecoration(radius: 16),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: context.r(14)),
       child: Row(
         children: [
           Expanded(
@@ -225,14 +244,8 @@ class _DomainRow extends StatelessWidget {
             padding: EdgeInsets.symmetric(
                 horizontal: context.r(13), vertical: context.r(7)),
             decoration: BoxDecoration(
-              gradient: KColors.tealButtonGradient,
+              color: KColors.teal,
               borderRadius: BorderRadius.circular(999),
-              boxShadow: [
-                BoxShadow(
-                    color: KColors.tealDark.withValues(alpha: 0.28),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3)),
-              ],
             ),
             child: Text('$points/4',
                 style: thaiSans(
@@ -253,10 +266,8 @@ class _BmiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: context.r(16), vertical: context.r(14)),
-      decoration: cardDecoration(radius: 16),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: context.r(14)),
       child: Row(
         children: [
           Expanded(

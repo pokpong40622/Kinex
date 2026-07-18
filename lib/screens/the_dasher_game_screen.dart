@@ -11,12 +11,18 @@
 // into the running game with no overlay.
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_embed_unity/flutter_embed_unity.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../data/game_repository.dart';
 import '../models/game_session_record.dart';
+import '../state/emergency_contact.dart';
+
+/// Native ACTION_CALL bridge (android/.../MainActivity.kt) — used to auto-dial
+/// the emergency contact hands-free when Unity reports a fall.
+const _phoneChannel = MethodChannel('kinex/phone');
 
 class TheDasherGameScreen extends ConsumerStatefulWidget {
   const TheDasherGameScreen({super.key});
@@ -76,6 +82,49 @@ class _TheDasherGameScreenState extends ConsumerState<TheDasherGameScreen> {
       );
       await ref.read(gameRepositoryProvider).add(record);
       ref.invalidate(gameHistoryProvider);
+    } else if (data.contains('sos_call')) {
+      await _handleSosCall();
+    }
+  }
+
+  // Unity detected a fall, showed its own popup + 10s countdown, and the user
+  // didn't cancel — auto-dial the configured emergency contact hands-free.
+  Future<void> _handleSosCall() async {
+    final contact = ref.read(emergencyContactProvider);
+    if (!contact.isSet) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('ยังไม่ได้ตั้งค่าผู้ติดต่อฉุกเฉิน'),
+          content: const Text('กรุณาตั้งค่าเบอร์ผู้ติดต่อฉุกเฉินในหน้าตั้งค่าก่อนใช้งาน'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ตกลง'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final status = await Permission.phone.request();
+    if (!mounted) return;
+    if (!status.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ต้องอนุญาตให้โทรออกเพื่อใช้ระบบฉุกเฉิน')),
+      );
+      return;
+    }
+
+    try {
+      await _phoneChannel.invokeMethod('call', {'number': contact.phone});
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ต้องอนุญาตให้โทรออกเพื่อใช้ระบบฉุกเฉิน')),
+      );
     }
   }
 

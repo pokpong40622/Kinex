@@ -1,24 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/pose_library.dart';
+import '../../state/learn_progress.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/kui.dart';
 import '../../theme/responsive.dart';
 
 /// Detail screen for one learnable pose, shown as a step-by-step wizard:
 /// page 0 is the overview (hero + facts), pages 1..N are one per
 /// `pose.steps`, and the final step's page also shows the breathing / tips /
 /// caution callouts.
-class PoseDetailPage extends StatefulWidget {
+///
+/// Opening this page "discovers" the pose (see `learn_progress.dart`): the
+/// library card turns from greyed-out to full colour from then on.
+class PoseDetailPage extends ConsumerStatefulWidget {
   final String poseId;
   const PoseDetailPage({super.key, required this.poseId});
 
   @override
-  State<PoseDetailPage> createState() => _PoseDetailPageState();
+  ConsumerState<PoseDetailPage> createState() => _PoseDetailPageState();
 }
 
-class _PoseDetailPageState extends State<PoseDetailPage> {
+class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
   final _controller = PageController();
   int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Mark viewed after the first frame — same pattern as other pages that
+    // touch a provider from initState (see emg_detail_page.dart).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (poseById(widget.poseId) != null) {
+        ref.read(learnProgressProvider.notifier).markViewed(widget.poseId);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -59,10 +77,8 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
     final pose = poseById(widget.poseId);
     if (pose == null) {
       return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: const BoxDecoration(gradient: KColors.learnBg),
-          child: SafeArea(
+        backgroundColor: KColors.appBg,
+        body: SafeArea(
           child: Column(
             children: [
               Padding(
@@ -82,7 +98,6 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
               ),
             ],
           ),
-          ),
         ),
       );
     }
@@ -92,10 +107,8 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
     final isLast = _page == pageCount - 1;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: const BoxDecoration(gradient: KColors.learnBg),
-        child: SafeArea(
+      backgroundColor: KColors.appBg,
+      body: SafeArea(
         child: Column(
           children: [
             SizedBox(height: context.r(8)),
@@ -172,7 +185,6 @@ class _PoseDetailPageState extends State<PoseDetailPage> {
             ),
           ],
         ),
-        ),
       ),
     );
   }
@@ -196,7 +208,13 @@ class _OverviewPage extends StatelessWidget {
             SizedBox(height: context.r(16)),
             _PosePhoto(pose: pose),
           ],
-          SizedBox(height: context.r(20)),
+          SizedBox(height: context.r(22)),
+          Text('ข้อมูลโดยสังเขป',
+              style: thaiSans(
+                  size: context.r(14),
+                  weight: FontWeight.w700,
+                  color: KColors.navyText.withAlpha(170))),
+          SizedBox(height: context.r(10)),
           _FactsWrap(pose: pose),
         ],
       ),
@@ -227,48 +245,41 @@ class _StepPage extends StatelessWidget {
         children: [
           SizedBox(height: context.r(16)),
           Container(
-            width: context.r(64),
-            height: context.r(64),
+            width: context.r(60),
+            height: context.r(60),
             decoration: BoxDecoration(
-              gradient: pose.category.gradient,
+              color: color,
               shape: BoxShape.circle,
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6)),
+                    color: Color(0x1F000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3)),
               ],
             ),
             alignment: Alignment.center,
             child: Text(
               '${stepIndex + 1}',
               style: thaiSans(
-                  size: context.r(26),
+                  size: context.r(24),
                   weight: FontWeight.w800,
                   color: Colors.white),
             ),
           ),
           SizedBox(height: context.r(22)),
-          Container(
+          SizedBox(
             width: double.infinity,
-            padding: EdgeInsets.all(context.r(22)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(context.r(16)),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3)),
-              ],
-            ),
-            child: Text(
-              pose.steps[stepIndex],
-              textAlign: TextAlign.center,
-              style: thaiSans(
-                  size: context.r(19),
-                  weight: FontWeight.w700,
-                  color: KColors.navyText),
+            child: KCard(
+              radius: context.r(18),
+              padding: EdgeInsets.all(context.r(22)),
+              child: Text(
+                pose.steps[stepIndex],
+                textAlign: TextAlign.center,
+                style: thaiSans(
+                    size: context.r(19),
+                    weight: FontWeight.w700,
+                    color: KColors.navyText),
+              ),
             ),
           ),
           if (showExtras) ...[
@@ -296,7 +307,7 @@ class _StepPage extends StatelessWidget {
 }
 
 /// Large reference photo of the pose (from the physiotherapy booklet), shown
-/// on a soft white card so the cut-out figure reads clearly.
+/// on a calm flat card so the cut-out figure reads clearly.
 class _PosePhoto extends StatelessWidget {
   final LearnPose pose;
   const _PosePhoto({required this.pose});
@@ -304,22 +315,9 @@ class _PosePhoto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = pose.category.color;
-    return Container(
-      width: double.infinity,
+    return KCard(
+      radius: context.r(20),
       padding: EdgeInsets.all(context.r(12)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.white, color.withAlpha(16)],
-        ),
-        borderRadius: BorderRadius.circular(context.r(22)),
-        border: Border.all(color: color.withAlpha(35), width: 1),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4)),
-        ],
-      ),
       child: Column(
         children: [
           Row(
@@ -349,85 +347,88 @@ class _PosePhoto extends StatelessWidget {
   }
 }
 
+/// Overview hero — flat white card with a solid category-color accent bar
+/// (no gradients, no icon glow).
 class _HeroCard extends StatelessWidget {
   final LearnPose pose;
   const _HeroCard({required this.pose});
 
   @override
   Widget build(BuildContext context) {
+    final color = pose.category.color;
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(context.r(22)),
       decoration: BoxDecoration(
-        gradient: pose.category.gradient,
-        borderRadius: BorderRadius.circular(context.r(26)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(context.r(20)),
+        border: Border.all(color: KColors.hairline, width: 1),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 8)),
+              color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 1)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: context.r(64),
-            height: context.r(64),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(60),
-              borderRadius: BorderRadius.circular(context.r(18)),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: context.r(6), color: color),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(context.r(18)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: context.r(52),
+                      height: context.r(52),
+                      decoration: BoxDecoration(
+                        color: color.withAlpha(24),
+                        borderRadius: BorderRadius.circular(context.r(15)),
+                        border: Border.all(color: color.withAlpha(70), width: 1),
+                      ),
+                      child: Icon(pose.icon, color: color, size: context.r(26)),
+                    ),
+                    SizedBox(width: context.r(14)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            pose.name,
+                            style: thaiSans(
+                                size: context.r(20),
+                                weight: FontWeight.w800,
+                                color: KColors.navyText),
+                          ),
+                          SizedBox(height: context.r(5)),
+                          Text(
+                            pose.subtitle,
+                            style: thaiSans(
+                                size: context.r(13.5),
+                                weight: FontWeight.w500,
+                                color: KColors.navyText.withAlpha(160)),
+                          ),
+                          SizedBox(height: context.r(12)),
+                          Wrap(
+                            spacing: context.r(8),
+                            runSpacing: context.r(8),
+                            children: [
+                              KPill(pose.category.thaiShort,
+                                  color: color, icon: pose.category.icon),
+                              KPill(pose.target,
+                                  color: color,
+                                  icon: Icons.track_changes_rounded),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            child: Icon(pose.icon, color: Colors.white, size: context.r(34)),
-          ),
-          SizedBox(height: context.r(16)),
-          Text(
-            pose.name,
-            style: thaiSans(
-                size: context.r(24),
-                weight: FontWeight.w800,
-                color: Colors.white),
-          ),
-          SizedBox(height: context.r(6)),
-          Text(
-            pose.subtitle,
-            style: thaiSans(
-                size: context.r(14),
-                weight: FontWeight.w500,
-                color: Colors.white.withAlpha(230)),
-          ),
-          SizedBox(height: context.r(14)),
-          Wrap(
-            spacing: context.r(8),
-            runSpacing: context.r(8),
-            children: [
-              _HeroPill(text: pose.category.thaiShort),
-              _HeroPill(text: 'กล้ามเนื้อ/ความสามารถ: ${pose.target}'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroPill extends StatelessWidget {
-  final String text;
-  const _HeroPill({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: context.r(12), vertical: context.r(7)),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(55),
-        borderRadius: BorderRadius.circular(context.r(20)),
-      ),
-      child: Text(
-        text,
-        style: thaiSans(
-            size: context.r(12.5),
-            weight: FontWeight.w700,
-            color: Colors.white),
+          ],
+        ),
       ),
     );
   }
@@ -442,38 +443,11 @@ class _FactsWrap extends StatelessWidget {
     if (pose.facts.isEmpty) return const SizedBox.shrink();
     final color = pose.category.color;
     return Wrap(
-      spacing: context.r(10),
-      runSpacing: context.r(10),
+      spacing: context.r(8),
+      runSpacing: context.r(8),
       children: [
         for (final fact in pose.facts)
-          Container(
-            padding: EdgeInsets.symmetric(
-                horizontal: context.r(14), vertical: context.r(10)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(context.r(14)),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x14000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3)),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(fact.icon, size: context.r(17), color: color),
-                SizedBox(width: context.r(8)),
-                Text(
-                  fact.label,
-                  style: thaiSans(
-                      size: context.r(13.5),
-                      weight: FontWeight.w700,
-                      color: KColors.navyText),
-                ),
-              ],
-            ),
-          ),
+          KPill(fact.label, color: color, icon: fact.icon),
       ],
     );
   }
@@ -488,8 +462,9 @@ class _BreathingCallout extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(context.r(14)),
       decoration: BoxDecoration(
-        color: KColors.blue.withAlpha(20),
+        color: KColors.blue.withAlpha(16),
         borderRadius: BorderRadius.circular(context.r(16)),
+        border: Border.all(color: KColors.blue.withAlpha(50), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,16 +503,9 @@ class _TipsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return KCard(
+      radius: context.r(16),
       padding: EdgeInsets.all(context.r(14)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(context.r(16)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 3)),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -578,6 +546,7 @@ class _CautionCallout extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(context.r(16)),
+        border: Border.all(color: const Color(0x30EF6C00), width: 1),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,9 +595,10 @@ class _BackButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: KColors.hairline, width: 1),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 2)),
+                color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 1)),
           ],
         ),
         child: Icon(Icons.arrow_back_rounded,
@@ -661,9 +631,9 @@ class _WizardNavButton extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: color.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -692,9 +662,9 @@ class _DoneButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(context.r(26)),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: color.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),

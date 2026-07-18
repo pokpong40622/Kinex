@@ -7,6 +7,7 @@ import '../../models/assessment_record.dart';
 import '../../models/assessment_test.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/bmi_band_badge.dart';
@@ -118,12 +119,11 @@ class _DetailBody extends StatelessWidget {
     ].where((s) => s >= 10.0).length;
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
+      padding: EdgeInsets.fromLTRB(context.r(20), context.r(4), context.r(20), context.r(8)),
       children: [
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: context.r(16), horizontal: context.r(16)),
-          decoration: cardDecoration(),
+        KCard(
+          padding: EdgeInsets.symmetric(
+              vertical: context.r(16), horizontal: context.r(16)),
           child: Column(
             children: [
               Text(dateLabel, style: thaiSans(size: context.r(14), weight: FontWeight.w600)),
@@ -134,33 +134,64 @@ class _DetailBody extends StatelessWidget {
         ),
         SizedBox(height: context.r(16)),
         FallRiskHero(total: record.totalScore, risk: record.risk),
-        SizedBox(height: context.r(16)),
-        _ResultRow(
-          label: assessmentTestById('balance').thaiName,
-          value: 'ผ่าน $balanceHeld ท่า',
-          badge: _PointsChip(record.balance.points),
+        SizedBox(height: context.r(18)),
+        // SPPB domain scores as one grouped table.
+        KCard(
+          padding: EdgeInsets.symmetric(
+              horizontal: context.r(16), vertical: context.r(4)),
+          child: Column(
+            children: [
+              _ResultRow(
+                label: assessmentTestById('balance').thaiName,
+                value: 'ผ่าน $balanceHeld ท่า',
+                badge: _PointsChip(record.balance.points),
+              ),
+              const _DetailDivider(),
+              _ResultRow(
+                label: assessmentTestById('gait_speed').thaiName,
+                value: gaitValue,
+                badge: _PointsChip(record.gait.points),
+              ),
+              const _DetailDivider(),
+              _ResultRow(
+                label: assessmentTestById('chair_stand').thaiName,
+                value: chairValue,
+                badge: _PointsChip(record.chairStand.points),
+              ),
+            ],
+          ),
         ),
-        _ResultRow(
-          label: assessmentTestById('gait_speed').thaiName,
-          value: gaitValue,
-          badge: _PointsChip(record.gait.points),
-        ),
-        _ResultRow(
-          label: assessmentTestById('chair_stand').thaiName,
-          value: chairValue,
-          badge: _PointsChip(record.chairStand.points),
-        ),
-        SizedBox(height: context.r(8)),
-        _ResultRow(label: 'น้ำหนัก', value: '${record.weight.value} กก.'),
-        _ResultRow(label: 'ส่วนสูง', value: '${record.height.value} ซม.'),
-        _ResultRow(
-          label: 'BMI',
-          value: record.bmi.value.toStringAsFixed(1),
-          badge: BmiBandBadge(record.bmi.band),
+        SizedBox(height: context.r(12)),
+        // Body measurements grouped separately (not part of the SPPB score).
+        KCard(
+          padding: EdgeInsets.symmetric(
+              horizontal: context.r(16), vertical: context.r(4)),
+          child: Column(
+            children: [
+              _ResultRow(label: 'น้ำหนัก', value: '${record.weight.value} กก.'),
+              const _DetailDivider(),
+              _ResultRow(label: 'ส่วนสูง', value: '${record.height.value} ซม.'),
+              const _DetailDivider(),
+              _ResultRow(
+                label: 'BMI',
+                value: record.bmi.value.toStringAsFixed(1),
+                badge: BmiBandBadge(record.bmi.band),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
+}
+
+/// Hairline separator between grouped detail rows.
+class _DetailDivider extends StatelessWidget {
+  const _DetailDivider();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, thickness: 1, color: KColors.hairline);
 }
 
 /// Small "X/4" points chip used per SPPB domain.
@@ -176,7 +207,7 @@ class _PointsChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: KColors.teal.withAlpha(28),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: KColors.teal, width: 1.4),
+        border: Border.all(color: KColors.teal.withAlpha(90), width: 1),
       ),
       child: Text('$points/4',
           style: thaiSans(
@@ -197,10 +228,8 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: context.r(10)),
-      padding: EdgeInsets.symmetric(horizontal: context.r(16), vertical: context.r(14)),
-      decoration: cardDecoration(radius: 16),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: context.r(14)),
       child: Row(
         children: [
           Expanded(

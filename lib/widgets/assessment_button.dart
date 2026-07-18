@@ -33,24 +33,15 @@ class AssessmentButton extends StatelessWidget {
           width: double.infinity,
           padding: EdgeInsets.symmetric(vertical: context.r(18)),
           decoration: BoxDecoration(
-            color: primary ? null : Colors.white,
-            gradient: primary ? KColors.tealButtonGradient : null,
-            borderRadius: BorderRadius.circular(context.r(20)),
-            border:
-                primary ? null : Border.all(color: KColors.teal, width: 2),
-            boxShadow: primary
-                ? [
-                    BoxShadow(
-                        color: KColors.tealDark.withValues(alpha: 0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6)),
-                  ]
-                : [
-                    BoxShadow(
-                        color: KColors.teal.withValues(alpha: 0.12),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3)),
-                  ],
+            color: primary ? KColors.teal : Colors.white,
+            borderRadius: BorderRadius.circular(context.r(18)),
+            border: primary
+                ? null
+                : Border.all(color: KColors.teal, width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2)),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

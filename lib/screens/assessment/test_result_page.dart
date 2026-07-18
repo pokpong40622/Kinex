@@ -7,6 +7,7 @@ import '../../models/assessment_test.dart';
 import '../../models/test_results.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
@@ -59,63 +60,38 @@ class TestResultPage extends ConsumerWidget {
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(context.r(24)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                    horizontal: context.r(24), vertical: context.r(28)),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.white, Color(0xFFEAF7F2)],
+          child: KCard(
+            radius: context.r(22),
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(24), vertical: context.r(30)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: context.r(72),
+                  height: context.r(72),
+                  decoration: const BoxDecoration(
+                    color: KColors.teal,
+                    shape: BoxShape.circle,
                   ),
-                  borderRadius: BorderRadius.circular(context.r(26)),
-                  boxShadow: [
-                    BoxShadow(
-                        color: KColors.teal.withValues(alpha: 0.18),
-                        blurRadius: 22,
-                        offset: const Offset(0, 8)),
-                  ],
+                  child: Icon(Icons.check_rounded,
+                      color: Colors.white, size: context.r(42)),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: context.r(64),
-                      height: context.r(64),
-                      decoration: BoxDecoration(
-                        gradient: KColors.tealButtonGradient,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                              color: KColors.tealDark.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5)),
-                        ],
-                      ),
-                      child: Icon(Icons.check_rounded,
-                          color: Colors.white, size: context.r(38)),
-                    ),
-                    SizedBox(height: context.r(18)),
-                    Text('ผลการทดสอบ',
-                        style: thaiSans(
-                            size: context.r(14),
-                            weight: FontWeight.w700,
-                            color: KColors.navyText.withAlpha(150))),
-                    SizedBox(height: context.r(6)),
-                    Text(valueText,
-                        textAlign: TextAlign.center,
-                        style: thaiSans(
-                            size: context.r(28), weight: FontWeight.w800)),
-                    SizedBox(height: context.r(20)),
-                    _PointsBadge(points: points),
-                  ],
-                ),
-              ),
-            ],
+                SizedBox(height: context.r(20)),
+                Text('ผลการทดสอบ',
+                    style: thaiSans(
+                        size: context.r(14),
+                        weight: FontWeight.w700,
+                        color: KColors.navyText.withAlpha(150))),
+                SizedBox(height: context.r(8)),
+                Text(valueText,
+                    textAlign: TextAlign.center,
+                    style: thaiSans(
+                        size: context.r(30), weight: FontWeight.w800)),
+                SizedBox(height: context.r(24)),
+                _PointsBadge(points: points),
+              ],
+            ),
           ),
         ),
       ),
@@ -173,14 +149,8 @@ class _PointsBadge extends StatelessWidget {
       padding: EdgeInsets.symmetric(
           horizontal: context.r(26), vertical: context.r(13)),
       decoration: BoxDecoration(
-        gradient: KColors.tealButtonGradient,
+        color: KColors.teal,
         borderRadius: BorderRadius.circular(999),
-        boxShadow: [
-          BoxShadow(
-              color: KColors.tealDark.withValues(alpha: 0.32),
-              blurRadius: 12,
-              offset: const Offset(0, 5)),
-        ],
       ),
       child: Text('$points / 4 คะแนน',
           style: thaiSans(

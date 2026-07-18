@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../theme/kui.dart';
 import '../theme/responsive.dart';
 import '../state/shop_providers.dart';
 import '../data/customize_catalog.dart';
@@ -64,18 +65,14 @@ class ShopTab extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(
                       horizontal: w * 0.04, vertical: h * 0.01),
                   children: [
-                    const _ShopSectionHeader(
-                        icon: Icons.lock_open_rounded,
-                        label: 'ปลดล็อกเกม',
-                        color: KColors.purple),
+                    const KSectionHeader('ปลดล็อกเกม',
+                        icon: Icons.lock_open_rounded, color: KColors.purple),
                     const _GameUnlockCard(item: _gameUnlock),
                     SizedBox(height: h * 0.015),
                     const _GameUnlockCard(item: _gameUnlockDasher),
                     SizedBox(height: h * 0.03),
-                    const _ShopSectionHeader(
-                        icon: Icons.person_rounded,
-                        label: 'ตัวละคร',
-                        color: KColors.purple),
+                    const KSectionHeader('ตัวละคร',
+                        icon: Icons.person_rounded, color: KColors.purple),
                     SizedBox(
                       height: r(160),
                       child: ListView.separated(
@@ -87,10 +84,8 @@ class ShopTab extends ConsumerWidget {
                       ),
                     ),
                     SizedBox(height: h * 0.03),
-                    const _ShopSectionHeader(
-                        icon: Icons.palette_rounded,
-                        label: 'ธีมเกม',
-                        color: KColors.purple),
+                    const KSectionHeader('ธีมเกม',
+                        icon: Icons.palette_rounded, color: KColors.purple),
                     const _ComingSoonCard(titleTh: 'ธีมเกม', subtitleEn: 'Themes'),
                     SizedBox(height: h * 0.02),
                   ],
@@ -105,15 +100,14 @@ class ShopTab extends ConsumerWidget {
 }
 
 // ── Shop background ───────────────────────────────────────────────────────
-// Light-tone background with a faint lavender wash (purple is the app's main
-// colour) so the white cards read clean but the page isn't a flat plain white.
+// Calm, flat app background so the white/hairline-bordered cards read clean.
 
 class _ShopBackground extends StatelessWidget {
   const _ShopBackground();
 
   @override
   Widget build(BuildContext context) {
-    return Container(color: const Color(0xFFF5F3FC));
+    return Container(color: KColors.appBg);
   }
 }
 
@@ -124,29 +118,11 @@ class _CoinPill extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final r = context.r;
     final coins = ref.watch(coinsProvider);
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: r(14), vertical: r(8)),
-      decoration: BoxDecoration(
-        gradient: KColors.orangeGradient,
-        borderRadius: BorderRadius.circular(r(20)),
-        border: Border.all(color: Colors.white.withAlpha(140), width: 1.5),
-        boxShadow: const [
-          BoxShadow(color: Color(0x40000000), blurRadius: 8, offset: Offset(0, 3))
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.monetization_on_rounded, color: Colors.white, size: r(20)),
-          SizedBox(width: r(6)),
-          Text(
-            _formatCoins(coins),
-            style: montserrat(size: r(16), weight: FontWeight.w900, color: Colors.white),
-          ),
-        ],
-      ),
+    return KPill(
+      _formatCoins(coins),
+      color: KColors.orangeDark,
+      icon: Icons.monetization_on_rounded,
     );
   }
 }
@@ -162,107 +138,15 @@ String _formatCoins(int n) {
   return buf.toString();
 }
 
-// ── Section header ────────────────────────────────────────────────────────
-// Same white-pill pattern as _SectionHeader in home_page.dart (kept private
-// there), reproduced here for the shop's own sections.
-
-class _ShopSectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _ShopSectionHeader(
-      {required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final r = context.r;
-    return Padding(
-      padding: EdgeInsets.only(top: r(4), bottom: r(14)),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: r(12), vertical: r(8)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(r(16)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(22),
-                  blurRadius: r(8),
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(r(7)),
-                  decoration: BoxDecoration(
-                    color: color.withAlpha(38),
-                    borderRadius: BorderRadius.circular(r(10)),
-                  ),
-                  child: Icon(icon, color: Colors.black, size: r(22)),
-                ),
-                SizedBox(width: r(10)),
-                Text(
-                  label,
-                  style: thaiSans(
-                      size: r(19), weight: FontWeight.w800, color: Colors.black),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Badges / price chips ──────────────────────────────────────────────────
-
-class _Badge extends StatelessWidget {
-  final String text;
-  final Color color;
-  const _Badge({required this.text, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final r = context.r;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: r(8), vertical: r(4)),
-      decoration:
-          BoxDecoration(color: color, borderRadius: BorderRadius.circular(r(12))),
-      child: Text(text,
-          style: thaiSans(size: r(11), weight: FontWeight.w800, color: Colors.white)),
-    );
-  }
-}
-
-/// Price chip for use on a plain white card background.
+/// Price pill for use on a card — wraps KPill with the shop's coin semantics.
 class _PriceChipLight extends StatelessWidget {
   final int price;
   const _PriceChipLight({required this.price});
 
   @override
   Widget build(BuildContext context) {
-    final r = context.r;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: r(10), vertical: r(6)),
-      decoration: BoxDecoration(
-          color: KColors.orange.withAlpha(35),
-          borderRadius: BorderRadius.circular(r(14))),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.monetization_on_rounded, color: KColors.orangeDark, size: r(15)),
-          SizedBox(width: r(4)),
-          Text('$price',
-              style:
-                  montserrat(size: r(13), weight: FontWeight.w800, color: KColors.orangeDark)),
-        ],
-      ),
-    );
+    return KPill('$price',
+        color: KColors.orangeDark, icon: Icons.monetization_on_rounded);
   }
 }
 
@@ -297,47 +181,50 @@ class _CharacterCard extends ConsumerWidget {
           ref.read(activeCharacterProvider.notifier).state = item.id;
         }
       },
-      child: Container(
+      child: SizedBox(
         width: r(110),
-        padding: EdgeInsets.all(r(10)),
-        decoration: cardDecoration(radius: r(18)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: r(70),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  unlocked
-                      ? avatar
-                      : ColorFiltered(
-                          colorFilter: const ColorFilter.matrix(<double>[
-                            0.2126, 0.7152, 0.0722, 0, 0, //
-                            0.2126, 0.7152, 0.0722, 0, 0, //
-                            0.2126, 0.7152, 0.0722, 0, 0, //
-                            0, 0, 0, 1, 0, //
-                          ]),
-                          child: Opacity(opacity: 0.6, child: avatar),
-                        ),
-                  if (!unlocked)
-                    Image.asset('assets/images/icon_padlock.png', width: r(28)),
-                ],
+        child: KCard(
+          padding: EdgeInsets.all(r(10)),
+          radius: r(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: r(70),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    unlocked
+                        ? avatar
+                        : ColorFiltered(
+                            colorFilter: const ColorFilter.matrix(<double>[
+                              0.2126, 0.7152, 0.0722, 0, 0, //
+                              0.2126, 0.7152, 0.0722, 0, 0, //
+                              0.2126, 0.7152, 0.0722, 0, 0, //
+                              0, 0, 0, 1, 0, //
+                            ]),
+                            child: Opacity(opacity: 0.6, child: avatar),
+                          ),
+                    if (!unlocked)
+                      Image.asset('assets/images/icon_padlock.png', width: r(28)),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: r(6)),
-            Text(
-              item.name,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: thaiSans(size: r(12), weight: FontWeight.w700, color: KColors.navyText),
-            ),
-            SizedBox(height: r(4)),
-            active
-                ? const _Badge(text: 'ใช้งานอยู่', color: KColors.teal)
-                : (unlocked ? const SizedBox.shrink() : _PriceChipLight(price: item.price)),
-          ],
+              SizedBox(height: r(6)),
+              Text(
+                item.name,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: thaiSans(size: r(12), weight: FontWeight.w700, color: KColors.navyText),
+              ),
+              SizedBox(height: r(4)),
+              active
+                  ? const KPill('ใช้งานอยู่',
+                      color: KColors.purple, icon: Icons.check_circle_rounded)
+                  : (unlocked ? const SizedBox.shrink() : _PriceChipLight(price: item.price)),
+            ],
+          ),
         ),
       ),
     );
@@ -355,55 +242,49 @@ class _GameUnlockCard extends ConsumerWidget {
     final r = context.r;
     final unlocked = ref.watch(unlockedGamesProvider).contains(item.id);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(r(18)),
-        onTap: unlocked
-            ? null
-            : () => _confirmBuy(
-                  context,
-                  ref,
-                  name: item.titleTh,
-                  price: item.price,
-                  onConfirm: () {
-                    ref
-                        .read(unlockedGamesProvider.notifier)
-                        .update((s) => {...s, item.id});
-                  },
-                ),
-        child: Container(
-          decoration: cardDecoration(radius: r(18)),
-          padding: EdgeInsets.symmetric(horizontal: r(16), vertical: r(16)),
-          child: Row(
-            children: [
-              Container(
-                width: r(48),
-                height: r(48),
-                decoration:
-                    BoxDecoration(color: KColors.purple.withAlpha(30), shape: BoxShape.circle),
-                child: Icon(item.icon, color: KColors.purple, size: r(26)),
+    return KCard(
+      radius: r(18),
+      padding: EdgeInsets.symmetric(horizontal: r(16), vertical: r(16)),
+      onTap: unlocked
+          ? null
+          : () => _confirmBuy(
+                context,
+                ref,
+                name: item.titleTh,
+                price: item.price,
+                onConfirm: () {
+                  ref
+                      .read(unlockedGamesProvider.notifier)
+                      .update((s) => {...s, item.id});
+                },
               ),
-              SizedBox(width: r(14)),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.titleTh,
-                        style: thaiSans(
-                            size: r(16), weight: FontWeight.w700, color: KColors.navyText)),
-                    SizedBox(height: r(2)),
-                    Text(item.subtitleEn,
-                        style: montserrat(size: r(12), weight: FontWeight.w500, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              unlocked
-                  ? Icon(Icons.check_circle_rounded, color: KColors.purple, size: r(24))
-                  : _PriceChipLight(price: item.price),
-            ],
+      child: Row(
+        children: [
+          Container(
+            width: r(48),
+            height: r(48),
+            decoration:
+                BoxDecoration(color: KColors.purple.withAlpha(30), shape: BoxShape.circle),
+            child: Icon(item.icon, color: KColors.purple, size: r(26)),
           ),
-        ),
+          SizedBox(width: r(14)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.titleTh,
+                    style: thaiSans(
+                        size: r(16), weight: FontWeight.w700, color: KColors.navyText)),
+                SizedBox(height: r(2)),
+                Text(item.subtitleEn,
+                    style: montserrat(size: r(12), weight: FontWeight.w500, color: Colors.grey)),
+              ],
+            ),
+          ),
+          unlocked
+              ? Icon(Icons.check_circle_rounded, color: KColors.purple, size: r(24))
+              : _PriceChipLight(price: item.price),
+        ],
       ),
     );
   }
@@ -421,8 +302,8 @@ class _ComingSoonCard extends StatelessWidget {
     final r = context.r;
     return Opacity(
       opacity: 0.55,
-      child: Container(
-        decoration: cardDecoration(radius: r(18)),
+      child: KCard(
+        radius: r(18),
         padding: EdgeInsets.symmetric(horizontal: r(16), vertical: r(16)),
         child: Row(
           children: [

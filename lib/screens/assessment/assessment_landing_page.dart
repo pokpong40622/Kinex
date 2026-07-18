@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/assessment_button.dart';
 
@@ -15,88 +16,77 @@ class AssessmentLandingPage extends StatelessWidget {
     return AssessmentScaffold(
       title: 'ประเมินสมรรถภาพทางกาย',
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: context.r(20)),
+        padding: EdgeInsets.fromLTRB(
+            context.r(20), context.r(28), context.r(20), context.r(8)),
         child: Column(
           children: [
-            SizedBox(height: context.r(24)),
+            // Hero badge floats above the card, like a friendly avatar.
             Container(
-              width: context.r(132),
-              height: context.r(132),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDCF2EB),
+              width: context.r(88),
+              height: context.r(88),
+              decoration: const BoxDecoration(
+                color: KColors.teal,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                      color: KColors.teal.withValues(alpha: 0.18),
-                      blurRadius: 28,
-                      spreadRadius: 2),
-                ],
               ),
-              alignment: Alignment.center,
-              child: Container(
-                width: context.r(96),
-                height: context.r(96),
-                decoration: BoxDecoration(
-                  gradient: KColors.tealButtonGradient,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                        color: KColors.tealDark.withValues(alpha: 0.35),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6)),
-                  ],
-                ),
-                child: Icon(Icons.monitor_heart_rounded,
-                    size: context.r(52), color: Colors.white),
-              ),
+              child: Icon(Icons.monitor_heart_rounded,
+                  size: context.r(46), color: Colors.white),
             ),
-            SizedBox(height: context.r(24)),
-            Text(
-              'การประเมินสมรรถภาพทางกายในผู้สูงอายุ',
-              textAlign: TextAlign.center,
-              style: thaiSans(size: context.r(20), weight: FontWeight.w800),
-            ),
-            SizedBox(height: context.r(10)),
-            // Instrument reference badge — professional credibility line.
-            Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: context.r(14), vertical: context.r(8)),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF8F5),
-                borderRadius: BorderRadius.circular(context.r(14)),
-                border: Border.all(
-                    color: KColors.tealDark.withAlpha(90),
-                    width: context.r(1.2)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+            SizedBox(height: context.r(20)),
+            // Everything the user needs to decide "should I start" lives in
+            // one calm card, instead of loose floating text blocks.
+            KCard(
+              padding: EdgeInsets.all(context.r(22)),
+              child: Column(
                 children: [
-                  Icon(Icons.verified_rounded,
-                      size: context.r(18), color: KColors.tealDark),
-                  SizedBox(width: context.r(8)),
-                  Flexible(
-                    child: Text(
-                      'อ้างอิงแบบประเมินมาตรฐานสากล\n'
-                      'Short Physical Performance Battery (SPPB)',
-                      textAlign: TextAlign.center,
-                      style: thaiSans(
-                          size: context.r(12.5),
-                          weight: FontWeight.w700,
-                          color: KColors.tealDark),
+                  Text(
+                    'การประเมินสมรรถภาพทางกายในผู้สูงอายุ',
+                    textAlign: TextAlign.center,
+                    style: thaiSans(size: context.r(21), weight: FontWeight.w800),
+                  ),
+                  SizedBox(height: context.r(18)),
+                  Text(
+                    'การทดสอบ SPPB 3 รายการ (การทรงตัว · ความเร็วการเดิน · '
+                    'ลุก-นั่งเก้าอี้) พร้อมวัดค่า BMI ใช้เวลาประมาณ 10 นาที',
+                    textAlign: TextAlign.center,
+                    style: thaiSans(
+                        size: context.r(16),
+                        weight: FontWeight.w500,
+                        color: KColors.navyText.withAlpha(190)),
+                  ),
+                  SizedBox(height: context.r(18)),
+                  // Instrument reference badge — professional credibility line.
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                        horizontal: context.r(14), vertical: context.r(10)),
+                    decoration: BoxDecoration(
+                      color: KColors.teal.withAlpha(20),
+                      borderRadius: BorderRadius.circular(context.r(14)),
+                      border: Border.all(
+                          color: KColors.tealDark.withAlpha(70), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified_rounded,
+                            size: context.r(18), color: KColors.tealDark),
+                        SizedBox(width: context.r(8)),
+                        Expanded(
+                          child: Text(
+                            'อ้างอิงแบบประเมินมาตรฐานสากล\n'
+                            'Short Physical Performance Battery (SPPB)',
+                            textAlign: TextAlign.center,
+                            style: thaiSans(
+                                size: context.r(12.5),
+                                weight: FontWeight.w700,
+                                color: KColors.tealDark),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-            SizedBox(height: context.r(12)),
-            Text(
-              'การทดสอบ SPPB 3 รายการ (การทรงตัว · ความเร็วการเดิน · '
-              'ลุก-นั่งเก้าอี้) พร้อมวัดค่า BMI ใช้เวลาประมาณ 10 นาที',
-              textAlign: TextAlign.center,
-              style: thaiSans(
-                  size: context.r(15),
-                  weight: FontWeight.w500,
-                  color: KColors.navyText.withAlpha(180)),
             ),
           ],
         ),

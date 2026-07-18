@@ -6,6 +6,7 @@ import '../../data/assessment_session.dart';
 import '../../models/person_info.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_scaffold.dart';
 
@@ -53,34 +54,48 @@ class _PersonInfoPageState extends ConsumerState<PersonInfoPage> {
   Widget build(BuildContext context) {
     return AssessmentScaffold(
       title: 'ข้อมูลผู้รับการประเมิน',
+      stepIndex: 0,
+      stepCount: 4,
       body: Padding(
-        padding: EdgeInsets.fromLTRB(context.r(20), context.r(8), context.r(20), context.r(8)),
+        padding: EdgeInsets.fromLTRB(context.r(20), context.r(4), context.r(20), context.r(8)),
         child: ListView(
           children: [
-            Text('ชื่อ (ไม่บังคับ)',
-                style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
-            SizedBox(height: context.r(8)),
-            _TextField(
-              controller: _nameController,
-              hint: 'กรอกชื่อ',
-              keyboardType: TextInputType.name,
-              onChanged: (_) => setState(() {}),
+            // Name + age are typed fields — grouped into one card so the form
+            // reads as a single unit rather than loose floating inputs.
+            KCard(
+              padding: EdgeInsets.all(context.r(18)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ชื่อ (ไม่บังคับ)',
+                      style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+                  SizedBox(height: context.r(8)),
+                  _TextField(
+                    controller: _nameController,
+                    hint: 'กรอกชื่อ',
+                    keyboardType: TextInputType.name,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  SizedBox(height: context.r(20)),
+                  Text('อายุ (ปี)', style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
+                  SizedBox(height: context.r(8)),
+                  _TextField(
+                    controller: _ageController,
+                    hint: 'กรอกอายุ',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: context.r(20)),
-            Text('อายุ (ปี)', style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
-            SizedBox(height: context.r(8)),
-            _TextField(
-              controller: _ageController,
-              hint: 'กรอกอายุ',
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              onChanged: (_) => setState(() {}),
-            ),
-            SizedBox(height: context.r(20)),
+            SizedBox(height: context.r(24)),
+            // Gender is a big visual choice, kept outside the card so the two
+            // tap targets stay full-width and unmistakably separate.
             Text('เพศ', style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
-            SizedBox(height: context.r(8)),
+            SizedBox(height: context.r(10)),
             Row(
               children: [
                 Expanded(
@@ -134,10 +149,7 @@ class _TextField extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x18000000), blurRadius: 10, offset: Offset(0, 3)),
-        ],
+        border: Border.all(color: KColors.hairline, width: 1),
       ),
       child: TextField(
         controller: controller,
@@ -184,13 +196,9 @@ class _GenderButton extends StatelessWidget {
           color: selected ? KColors.teal.withAlpha(28) : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? KColors.teal : Colors.transparent,
-            width: 2,
+            color: selected ? KColors.teal : KColors.hairline,
+            width: selected ? 1.5 : 1,
           ),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x18000000), blurRadius: 10, offset: Offset(0, 3)),
-          ],
         ),
         child: Column(
           children: [

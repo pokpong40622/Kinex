@@ -10,6 +10,7 @@ import '../models/muscle.dart';
 import '../state/shop_providers.dart';
 import '../data/customize_catalog.dart';
 import '../theme/app_theme.dart';
+import '../theme/kui.dart';
 import '../theme/responsive.dart';
 
 // The history list reads real game sessions from gameHistoryProvider
@@ -68,16 +69,8 @@ class InfoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment(0, -0.2),
-            colors: [Color(0xFFF6F5FD), Colors.white],
-          ),
-        ),
-        child: SafeArea(
+      backgroundColor: KColors.appBg,
+      body: SafeArea(
           bottom: false,
           child: SingleChildScrollView(
             padding: EdgeInsets.only(bottom: context.r(28)),
@@ -108,7 +101,6 @@ class InfoPage extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -127,17 +119,8 @@ class _HeaderBanner extends ConsumerWidget {
       padding: EdgeInsets.fromLTRB(
           context.r(22), context.r(18), context.r(22), context.r(18)),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFA699FF), Color(0xFF6F6ADE)],
-        ),
-        borderRadius: BorderRadius.circular(context.r(28)),
-        border: Border.all(color: Colors.white, width: context.r(5)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x596F6ADE), blurRadius: 22, offset: Offset(0, 10)),
-        ],
+        color: KColors.purple,
+        borderRadius: BorderRadius.circular(context.r(24)),
       ),
       child: Row(
         children: [
@@ -145,30 +128,13 @@ class _HeaderBanner extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  children: [
-                    Text(
-                      'INFO',
-                      style: TextStyle(
-                        fontFamily: 'Kanit',
-                        fontSize: context.r(52),
-                        fontWeight: FontWeight.w900,
-                        height: 1.05,
-                        foreground: Paint()
-                          ..style = PaintingStyle.stroke
-                          ..strokeWidth = context.r(4)
-                          ..color = Colors.white,
-                      ),
-                    ),
-                    Text(
-                      'INFO',
-                      style: montserrat(
-                        size: context.r(52),
-                        weight: FontWeight.w900,
-                        color: const Color(0xFF262626),
-                      ).copyWith(height: 1.05),
-                    ),
-                  ],
+                Text(
+                  'ข้อมูลของฉัน',
+                  style: montserrat(
+                    size: context.r(28),
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
                 ),
                 SizedBox(height: context.r(6)),
                 Text(
@@ -226,12 +192,6 @@ class _HeaderBanner extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(999),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 3)),
-                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -296,20 +256,9 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
     final gap = (leftShare - rightShare).abs();
     final status = _BalanceStatus.of(gap);
 
-    return Container(
+    return KCard(
+      radius: context.r(22),
       padding: EdgeInsets.all(context.r(16)),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFD6E6F8), Color(0xFFEBF1FA)],
-        ),
-        borderRadius: BorderRadius.circular(context.r(26)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -326,111 +275,81 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
           ),
           SizedBox(height: context.r(12)),
 
-          // Balance result — the main focus (left/right split + status),
-          // raised on a white card so it's the clear focal point of this page.
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(context.r(14)),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(context.r(20)),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x1F000000), blurRadius: 14, offset: Offset(0, 6)),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Split bar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('ขาซ้าย',
-                        style: montserrat(
-                            size: context.r(13),
-                            weight: FontWeight.w900,
-                            color: KColors.indigo)),
-                    Text('ขาขวา',
-                        style: montserrat(
-                            size: context.r(13),
-                            weight: FontWeight.w900,
-                            color: const Color(0xFFFA7F00))),
-                  ],
-                ),
-                SizedBox(height: context.r(5)),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(context.r(16)),
-                  child: SizedBox(
-                    height: context.r(52),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: leftShare.round().clamp(1, 99),
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0xFF8B7BFF), KColors.indigo],
-                              ),
-                            ),
-                            child: Text('${leftShare.round()}%',
-                                style: montserrat(
-                                    size: context.r(22),
-                                    weight: FontWeight.w900,
-                                    color: Colors.white)),
-                          ),
-                        ),
-                        Container(width: context.r(4), color: Colors.white),
-                        Expanded(
-                          flex: rightShare.round().clamp(1, 99),
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0xFFFFB365), Color(0xFFFA7F00)],
-                              ),
-                            ),
-                            child: Text('${rightShare.round()}%',
-                                style: montserrat(
-                                    size: context.r(22),
-                                    weight: FontWeight.w900,
-                                    color: Colors.white)),
-                          ),
-                        ),
-                      ],
+          // Balance result — the main focus of this page.
+          // Split bar
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('ขาซ้าย',
+                  style: montserrat(
+                      size: context.r(13),
+                      weight: FontWeight.w900,
+                      color: KColors.indigo)),
+              Text('ขาขวา',
+                  style: montserrat(
+                      size: context.r(13),
+                      weight: FontWeight.w900,
+                      color: const Color(0xFFFA7F00))),
+            ],
+          ),
+          SizedBox(height: context.r(5)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(context.r(16)),
+            child: SizedBox(
+              height: context.r(52),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: leftShare.round().clamp(1, 99),
+                    child: Container(
+                      alignment: Alignment.center,
+                      color: KColors.indigo,
+                      child: Text('${leftShare.round()}%',
+                          style: montserrat(
+                              size: context.r(22),
+                              weight: FontWeight.w900,
+                              color: Colors.white)),
                     ),
                   ),
-                ),
-                SizedBox(height: context.r(10)),
-
-                // Status strip — driven by |left% - right%| gap
-                Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: context.r(12), vertical: context.r(10)),
-                  decoration: BoxDecoration(
-                    color: status.color.withValues(alpha: 0.12),
-                    border: Border.all(color: status.color, width: context.r(1.5)),
-                    borderRadius: BorderRadius.circular(context.r(14)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(status.icon, color: status.color, size: context.r(20)),
-                      SizedBox(width: context.r(8)),
-                      Expanded(
-                        child: Text(
-                          status.label,
+                  Container(width: context.r(4), color: Colors.white),
+                  Expanded(
+                    flex: rightShare.round().clamp(1, 99),
+                    child: Container(
+                      alignment: Alignment.center,
+                      color: const Color(0xFFFA7F00),
+                      child: Text('${rightShare.round()}%',
                           style: montserrat(
-                              size: context.r(13.5),
-                              weight: FontWeight.w800,
-                              color: status.color),
-                        ),
-                      ),
-                    ],
+                              size: context.r(22),
+                              weight: FontWeight.w900,
+                              color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: context.r(10)),
+
+          // Status strip — driven by |left% - right%| gap
+          Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(12), vertical: context.r(10)),
+            decoration: BoxDecoration(
+              color: status.color.withValues(alpha: 0.10),
+              border: Border.all(color: status.color.withValues(alpha: 0.4)),
+              borderRadius: BorderRadius.circular(context.r(14)),
+            ),
+            child: Row(
+              children: [
+                Icon(status.icon, color: status.color, size: context.r(20)),
+                SizedBox(width: context.r(8)),
+                Expanded(
+                  child: Text(
+                    status.label,
+                    style: montserrat(
+                        size: context.r(13.5),
+                        weight: FontWeight.w800,
+                        color: status.color),
                   ),
                 ),
               ],
@@ -451,7 +370,7 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
             padding: EdgeInsets.symmetric(
                 horizontal: context.r(12), vertical: context.r(10)),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: KColors.appBg,
               borderRadius: BorderRadius.circular(context.r(16)),
             ),
             child: Row(
@@ -538,13 +457,69 @@ class _RangeToggle extends StatelessWidget {
 
 // ─── History card ───────────────────────────────────────────────────────────
 
+/// Sample sessions shown when the user has no real game history yet, so the
+/// history card always demonstrates its layout (mock data kept per design
+/// request). Real sessions replace these the moment one is played.
+List<GameSessionRecord> _mockHistory() {
+  final now = DateTime.now();
+  return [
+    GameSessionRecord(
+        id: 'm1',
+        dateTime: now,
+        gameId: 'megadance',
+        gameName: 'MEGA DANCE',
+        iconAsset: 'assets/images/game_icons/megadance.png',
+        durationSeconds: 600,
+        scoreLabel: '88%',
+        percent: 88),
+    GameSessionRecord(
+        id: 'm2',
+        dateTime: now.subtract(const Duration(days: 1)),
+        gameId: 'world',
+        gameName: 'KINEX WORLD',
+        iconAsset: 'assets/images/game_icons/world.png',
+        durationSeconds: 900,
+        scoreLabel: '76%',
+        percent: 76),
+    GameSessionRecord(
+        id: 'm3',
+        dateTime: now.subtract(const Duration(days: 1)),
+        gameId: 'thedasher',
+        gameName: 'THE DASHER',
+        iconAsset: 'assets/images/game_icons/thedasher.png',
+        durationSeconds: 540,
+        scoreLabel: '2★',
+        percent: 72),
+    GameSessionRecord(
+        id: 'm4',
+        dateTime: now.subtract(const Duration(days: 6)),
+        gameId: 'megadance',
+        gameName: 'MEGA DANCE',
+        iconAsset: 'assets/images/game_icons/megadance.png',
+        durationSeconds: 600,
+        scoreLabel: '47%',
+        percent: 47),
+    GameSessionRecord(
+        id: 'm5',
+        dateTime: now.subtract(const Duration(days: 6)),
+        gameId: 'world',
+        gameName: 'KINEX WORLD',
+        iconAsset: 'assets/images/game_icons/world.png',
+        durationSeconds: 720,
+        scoreLabel: '68%',
+        percent: 68),
+  ];
+}
+
 class _HistoryCard extends ConsumerWidget {
   const _HistoryCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final records =
+    final real =
         ref.watch(gameHistoryProvider).valueOrNull ?? const <GameSessionRecord>[];
+    // Fall back to sample data so the card is never empty (mock kept per request).
+    final records = real.isEmpty ? _mockHistory() : real;
 
     // Week stats — only sessions within the last 7 days.
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
@@ -559,16 +534,9 @@ class _HistoryCard extends ConsumerWidget {
 
     final recent = records.take(5).toList();
 
-    return Container(
+    return KCard(
+      radius: context.r(22),
       padding: EdgeInsets.all(context.r(16)),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F2FB),
-        borderRadius: BorderRadius.circular(context.r(26)),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -583,12 +551,12 @@ class _HistoryCard extends ConsumerWidget {
           SizedBox(height: context.r(10)),
           Row(
             children: [
-              Expanded(child: _StatTile(value: '$weekSessions', label: 'ครั้ง')),
+              Expanded(child: KStatTile(value: '$weekSessions', label: 'ครั้ง')),
               const SizedBox(width: 8),
-              Expanded(child: _StatTile(value: '$weekMinutes', label: 'นาที')),
+              Expanded(child: KStatTile(value: '$weekMinutes', label: 'นาที')),
               const SizedBox(width: 8),
               Expanded(
-                  child: _StatTile(
+                  child: KStatTile(
                       value: '$weekAvgScore%', label: 'คะแนนเฉลี่ย')),
             ],
           ),
@@ -629,37 +597,6 @@ String _thaiDateLabel(DateTime dt) {
   return DateFormat('d MMM').format(dt);
 }
 
-class _StatTile extends StatelessWidget {
-  final String value;
-  final String label;
-  const _StatTile({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: context.r(8)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(context.r(14)),
-      ),
-      child: Column(
-        children: [
-          Text(value,
-              style: montserrat(
-                  size: context.r(20),
-                  weight: FontWeight.w900,
-                  color: KColors.indigo)),
-          Text(label,
-              style: montserrat(
-                  size: context.r(11),
-                  weight: FontWeight.w600,
-                  color: const Color(0xFF6D78A8))),
-        ],
-      ),
-    );
-  }
-}
-
 class _GameRow extends StatelessWidget {
   final GameSessionRecord record;
   const _GameRow({required this.record});
@@ -672,7 +609,7 @@ class _GameRow extends StatelessWidget {
       padding: EdgeInsets.symmetric(
           horizontal: context.r(10), vertical: context.r(9)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: KColors.appBg,
         borderRadius: BorderRadius.circular(context.r(16)),
       ),
       child: Row(
@@ -717,19 +654,8 @@ class _GameRow extends StatelessWidget {
                       size: context.r(18),
                       weight: FontWeight.w900,
                       color: band.color)),
-              Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: context.r(8), vertical: context.r(1)),
-                decoration: BoxDecoration(
-                  color: band.color,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(band.label,
-                    style: montserrat(
-                        size: context.r(10),
-                        weight: FontWeight.w900,
-                        color: Colors.white)),
-              ),
+              SizedBox(height: context.r(2)),
+              KPill(band.label, color: band.color),
             ],
           ),
         ],
@@ -754,21 +680,15 @@ class _ActionButtons extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(vertical: context.r(13)),
               decoration: BoxDecoration(
-                color: const Color(0xFF746EE0),
+                color: KColors.purple,
                 borderRadius: BorderRadius.circular(context.r(22)),
-                boxShadow: const [
-                  BoxShadow(
-                      color: Color(0x80746EE0),
-                      blurRadius: 22,
-                      offset: Offset(0, 10)),
-                ],
               ),
               child: Column(
                 children: [
-                  Text('Advance INFO!',
+                  Text('ข้อมูลเชิงลึก',
                       style: montserrat(
                           size: context.r(16.5),
-                          weight: FontWeight.w900,
+                          weight: FontWeight.w800,
                           color: Colors.white)),
                   Text('ข้อมูลเชิงลึกสำหรับนักกายภาพ',
                       style: montserrat(
