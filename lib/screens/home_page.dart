@@ -182,10 +182,115 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
               ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.65,
+                    child: _CardGameCard(
+                      onTap: () => context.push('/card-game'),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Home-tab entry point for the embedded balance/fall-prevention card game.
+/// Styled after [_AssessmentCard] but in a warm orange palette.
+class _CardGameCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CardGameCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final h = size.height;
+    final cardH = h * 0.145;
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: cardH,
+        child: LayoutBuilder(
+          builder: (context, cs) {
+            final cw = cs.maxWidth;
+            final vPad = cardH * 0.12;
+            final gap1 = cardH * 0.04;
+            final gap2 = cardH * 0.06;
+            final btnVPad = cw * 0.025;
+            return Container(
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
+                ),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withAlpha(112), width: 3),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 20,
+                      offset: Offset(5, 5))
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          cw * 0.06, vPad, cw * 0.03, vPad),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('การ์ดเรียนรู้',
+                              style: thaiSans(
+                                  size: cw * 0.060,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white)),
+                          SizedBox(height: gap1),
+                          Text('เกมการ์ด ทรงตัวดี ไม่หกล้ม',
+                              style: thaiSans(
+                                  size: cw * 0.030,
+                                  weight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(height: gap2),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: cw * 0.05, vertical: btnVPad),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('เริ่มเล่น',
+                                style: thaiSans(
+                                    size: cw * 0.036,
+                                    weight: FontWeight.w800,
+                                    color: const Color(0xFFFF5722))),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: cw * 0.05),
+                    child: Icon(Icons.style_rounded,
+                        size: cw * 0.22, color: Colors.white.withAlpha(230)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

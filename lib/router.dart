@@ -30,6 +30,7 @@ import 'screens/world/world_result_page.dart';
 import 'screens/world/world_history_page.dart';
 import 'screens/world/world_history_detail_page.dart';
 import 'models/world_session_record.dart';
+import 'card_game/card_game_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
       initialLocation: '/',
@@ -102,6 +103,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
                 path: '/assessment/history/:recordId',
                 builder: (context, state) => HistoryDetailPage(
                     recordId: state.pathParameters['recordId']!)),
+            // Card game — "การ์ดเรียนรู้ ทรงตัวดี ไม่หกล้ม" (pure Flutter, embedded).
+            GoRoute(
+                path: '/card-game',
+                builder: (context, _) => const CardGameScreen()),
             // Kinex World — instructor-led exercise class (Unity-embedded session).
             GoRoute(
                 path: '/world',
