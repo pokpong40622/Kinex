@@ -53,7 +53,7 @@ class _IntroSlide {
   });
 }
 
-const _introSlides = <_IntroSlide>[
+final _introSlides = <_IntroSlide>[
   // ── What is this ──────────────────────────────────────────────────────────
   _IntroSlide(
     icon: Icons.self_improvement_rounded,
@@ -73,34 +73,10 @@ const _introSlides = <_IntroSlide>[
         'เช่น ก้าวข้าง นั่ง-ลุก และเตะขา เพื่อฝึกกล้ามเนื้อ',
     imageAsset: 'assets/images/onboarding/intro_move.png',
   ),
-  // ── Where things are (the navigation tour the user asked for) ─────────────
-  _IntroSlide(
-    icon: Icons.sports_esports_rounded,
-    color: KColors.purple,
-    title: 'เล่นเกมฝึกได้ที่นี่',
-    body:
-        'แตะแท็บ “ฝึกซ้อม” ด้านล่าง เพื่อเลือกเกมฝึกกล้ามเนื้อ เช่น The Dasher '
-        'แล้วเริ่มเล่นได้ทันที',
-    imageAsset: 'assets/images/onboarding/intro_games.png',
-  ),
-  _IntroSlide(
-    icon: Icons.insights_rounded,
-    color: KColors.blue,
-    title: 'ดูความก้าวหน้าของคุณ',
-    body:
-        'แท็บ “ข้อมูล” รวมสถิติการเล่น ประวัติ และพัฒนาการของกล้ามเนื้อ '
-        'ไว้ให้ดูย้อนหลังได้ทุกเมื่อ',
-    imageAsset: 'assets/images/onboarding/intro_progress.png',
-  ),
-  _IntroSlide(
-    icon: Icons.fact_check_rounded,
-    color: KColors.teal,
-    title: 'เริ่มด้วยการประเมิน',
-    body:
-        'แนะนำให้ทำ “ประเมินสมรรถภาพ” ก่อน เพื่อวัดความแข็งแรงและการทรงตัว '
-        'แล้วแอปจะช่วยแนะนำการฝึกที่เหมาะกับคุณ',
-    imageAsset: 'assets/images/onboarding/intro_assess.png',
-  ),
+  // NOTE: the "where things are" tour (games / progress / assess) is no longer a
+  // set of picture slides here — it now runs as a live dim-hole coach-mark walk
+  // over the REAL home UI right after this flow closes (see _CoachMarkOverlay in
+  // home_page.dart).
   // ── Safety ────────────────────────────────────────────────────────────────
   _IntroSlide(
     icon: Icons.health_and_safety_rounded,
@@ -267,21 +243,10 @@ class _IntroBody extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Illustration when provided; otherwise (or if the image is missing) a
-        // clean halo-icon, so the flow works before the art is added.
-        if (slide.imageAsset != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(context.r(20)),
-            child: Image.asset(
-              slide.imageAsset!,
-              height: context.r(180),
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) =>
-                  _HaloIcon(icon: slide.icon, color: slide.color),
-            ),
-          )
-        else
-          _HaloIcon(icon: slide.icon, color: slide.color),
+        // Framed hero: a soft same-hue panel holding the illustration (or a clean
+        // halo-icon fallback), so the popup reads professional even before the art
+        // is dropped in. Matches the approved M3 mock.
+        _HeroFrame(slide: slide),
         SizedBox(height: context.r(22)),
         Text(slide.title,
             textAlign: TextAlign.center,
@@ -297,6 +262,42 @@ class _IntroBody extends StatelessWidget {
                 weight: FontWeight.w500,
                 color: KColors.navyText.withAlpha(180))),
       ],
+    );
+  }
+}
+
+class _HeroFrame extends StatelessWidget {
+  final _IntroSlide slide;
+  const _HeroFrame({required this.slide});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = slide.color;
+    return Container(
+      height: context.r(190),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(context.r(22)),
+        gradient: RadialGradient(
+          center: const Alignment(-0.4, -0.5),
+          radius: 1.1,
+          colors: [c.withAlpha(38), c.withAlpha(14)],
+        ),
+        border: Border.all(color: c.withAlpha(36)),
+      ),
+      alignment: Alignment.center,
+      child: slide.imageAsset != null
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(context.r(18)),
+              child: Image.asset(
+                slide.imageAsset!,
+                height: context.r(150),
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) =>
+                    _HaloIcon(icon: slide.icon, color: c),
+              ),
+            )
+          : _HaloIcon(icon: slide.icon, color: c),
     );
   }
 }
@@ -463,18 +464,19 @@ class _Dots extends StatelessWidget {
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color color;
+  final Color? color;
   final VoidCallback? onTap;
   const _PrimaryButton({
     required this.label,
     required this.icon,
-    this.color = KColors.purple,
+    this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final c = color ?? KColors.purple;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -483,7 +485,7 @@ class _PrimaryButton extends StatelessWidget {
         height: context.r(54),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: enabled ? color : color.withAlpha(90),
+          color: enabled ? c : c.withAlpha(90),
           borderRadius: BorderRadius.circular(context.r(18)),
         ),
         child: Row(

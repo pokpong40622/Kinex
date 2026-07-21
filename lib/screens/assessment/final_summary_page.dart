@@ -8,10 +8,12 @@ import '../../models/assessment_test.dart';
 import '../../models/fall_risk.dart';
 import '../../models/fitness_level.dart';
 import '../../services/sppb_scoring.dart';
+import '../../state/assessment_profile.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
+import '../../widgets/assessment_confirm.dart';
 import '../../widgets/assessment_scaffold.dart';
 import '../../widgets/bmi_band_badge.dart';
 import '../../widgets/fall_risk_cards.dart';
@@ -163,6 +165,14 @@ class FinalSummaryPage extends ConsumerWidget {
     );
 
     await ref.read(assessmentRepositoryProvider).add(record);
+    // Remember the stable profile so the NEXT assessment prefills it.
+    await ref.read(savedProfileProvider.notifier).save(
+          name: session.person!.name,
+          age: session.person!.age,
+          gender: session.person!.gender,
+          heightCm: session.height!.value,
+          weightKg: session.weight!.value,
+        );
     ref.read(assessmentSessionProvider.notifier).reset();
     ref.invalidate(assessmentHistoryProvider);
 
@@ -171,31 +181,13 @@ class FinalSummaryPage extends ConsumerWidget {
   }
 
   Future<void> _confirmCancel(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('ยกเลิกการประเมิน',
-            style: thaiSans(size: context.r(18), weight: FontWeight.w800)),
-        content: Text(
-          'ผลการประเมินที่ยังไม่บันทึกจะหายไปทั้งหมด ต้องการยกเลิกหรือไม่?',
-          style: thaiSans(size: context.r(16)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('ไม่',
-                style: thaiSans(size: context.r(16), weight: FontWeight.w700)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('ยืนยัน',
-                style: thaiSans(
-                    size: context.r(16),
-                    weight: FontWeight.w800,
-                    color: KColors.tealDark)),
-          ),
-        ],
-      ),
+    final confirmed = await showSeniorConfirm(
+      context,
+      title: 'ยกเลิกการประเมิน',
+      message: 'ผลการประเมินที่ยังไม่บันทึกจะหายไปทั้งหมด ต้องการยกเลิกหรือไม่?',
+      confirmLabel: 'ยืนยันยกเลิก',
+      cancelLabel: 'ทำต่อ',
+      danger: true,
     );
 
     if (confirmed != true) return;

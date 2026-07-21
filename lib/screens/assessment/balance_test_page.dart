@@ -30,7 +30,7 @@ class BalanceTestPage extends ConsumerStatefulWidget {
   ConsumerState<BalanceTestPage> createState() => _BalanceTestPageState();
 }
 
-enum _Phase { setup, holding, done }
+enum _Phase { setup, getReady, holding, done }
 
 class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
   static const _stances = BalanceStance.values;
@@ -39,9 +39,11 @@ class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
   final BalanceHoldDetector _detector = BalanceHoldDetector();
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _ticker;
+  Timer? _cdTimer;
 
   _Phase _phase = _Phase.setup;
   int _index = 0;
+  int _countdown = 0;
   double _elapsed = 0;
   bool _bodyReady = false;
   PoseFrame? _lastFrame;
@@ -56,6 +58,7 @@ class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _cdTimer?.cancel();
     ref.read(ttsServiceProvider).stop();
     super.dispose();
   }
@@ -66,6 +69,8 @@ class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
       case _Phase.setup:
         final ready = _detector.ready(frame);
         if (ready != _bodyReady) setState(() => _bodyReady = ready);
+      case _Phase.getReady:
+        break; // counting down — just keep _lastFrame fresh for the real start
       case _Phase.holding:
         _detector.add(frame);
         if (_detector.lost) {
@@ -78,7 +83,31 @@ class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
     }
   }
 
-  void _startHold() {
+  // "เตรียมตัว… 3-2-1" before the hold actually times, so a caregiver still
+  // positioning the senior doesn't lose seconds the instant they tap Start.
+  void _startCountdown() {
+    if (_lastFrame == null) return;
+    setState(() {
+      _phase = _Phase.getReady;
+      _countdown = 3;
+    });
+    ref.read(ttsServiceProvider).speak('เตรียมตัว');
+    _cdTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      _countdown--;
+      if (_countdown <= 0) {
+        t.cancel();
+        _beginHold();
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  void _beginHold() {
     final frame = _lastFrame;
     if (frame == null) return;
     _detector.start(frame);
@@ -177,8 +206,10 @@ class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
         return AssessmentButton(
           label: 'เริ่มจับเวลา 10 วินาที',
           icon: Icons.timer_outlined,
-          onTap: _bodyReady ? _startHold : null,
+          onTap: _bodyReady ? _startCountdown : null,
         );
+      case _Phase.getReady:
+        return AssessmentButton(label: 'เตรียมตัว…', onTap: null);
       case _Phase.holding:
         return AssessmentButton(
           label: 'ผู้สูงอายุเสียหลัก / ขยับเท้า',
@@ -236,6 +267,33 @@ class _BalanceTestPageState extends ConsumerState<BalanceTestPage> {
                           ? KColors.greenLight
                           : const Color(0xFFFFB74D)),
                 ),
+              ],
+            ),
+          ),
+        );
+      case _Phase.getReady:
+        return Center(
+          child: Container(
+            width: w * 0.44,
+            height: w * 0.44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(160),
+              shape: BoxShape.circle,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('เตรียมตัว',
+                    style: thaiSans(
+                        size: w * 0.05,
+                        weight: FontWeight.w700,
+                        color: Colors.white)),
+                Text('$_countdown',
+                    style: thaiSans(
+                        size: w * 0.26,
+                        weight: FontWeight.w900,
+                        color: KColors.greenLight)),
               ],
             ),
           ),

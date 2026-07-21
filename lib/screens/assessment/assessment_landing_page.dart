@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/assessment_session.dart';
+import '../../state/assessment_profile.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../theme/kui.dart';
@@ -8,11 +11,11 @@ import '../../widgets/assessment_button.dart';
 
 /// Entry screen for the fitness-assessment module: start a new assessment or
 /// review past results. (History is wired in a later phase.)
-class AssessmentLandingPage extends StatelessWidget {
+class AssessmentLandingPage extends ConsumerWidget {
   const AssessmentLandingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AssessmentScaffold(
       title: 'ประเมินสมรรถภาพทางกาย',
       body: SingleChildScrollView(
@@ -97,7 +100,14 @@ class AssessmentLandingPage extends StatelessWidget {
           AssessmentButton(
             label: 'เริ่มการประเมินใหม่',
             icon: Icons.play_arrow_rounded,
-            onTap: () => context.push('/assessment/intro'),
+            onTap: () {
+              // Prefill this assessment from the last saved profile (name/age/
+              // gender/height/weight) so returning users don't retype them.
+              ref
+                  .read(assessmentSessionProvider.notifier)
+                  .seedFrom(ref.read(savedProfileProvider));
+              context.push('/assessment/intro');
+            },
           ),
           SizedBox(height: context.r(12)),
           AssessmentButton(

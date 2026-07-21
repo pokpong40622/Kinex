@@ -450,8 +450,7 @@ class _PickerCard extends StatelessWidget {
 Widget _statusBadge(BuildContext context,
     {required bool active, required bool unlocked}) {
   if (active) {
-    return const KPill('ใช้งานอยู่',
-        color: KColors.purple, icon: Icons.check_circle_rounded);
+    return const KPill('ใช้งานอยู่', icon: Icons.check_circle_rounded);
   }
   if (!unlocked) {
     return const KPill('ล็อก',

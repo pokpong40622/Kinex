@@ -100,7 +100,16 @@ class TestResultPage extends ConsumerWidget {
         children: [
           AssessmentButton(
             label: 'ไปต่อ',
-            onTap: () => context.go('/assessment/progress'),
+            // Jump straight to the next test (or the summary) instead of bouncing
+            // back to the progress hub and making the senior tap "ทำต่อ" again.
+            onTap: () {
+              if (!session.allMovementTestsComplete) {
+                context.go(
+                    '/assessment/test/${session.nextIncompleteTestId}/instructions');
+              } else {
+                context.go('/assessment/summary');
+              }
+            },
           ),
           SizedBox(height: context.r(12)),
           AssessmentButton(

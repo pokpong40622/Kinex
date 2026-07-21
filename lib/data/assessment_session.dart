@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/emg_metrics.dart';
 import '../models/person_info.dart';
 import '../models/test_results.dart';
+import '../state/assessment_profile.dart';
 
 /// In-progress assessment, carried across all screens. In-memory only (a
 /// Riverpod Notifier) — loss on OS process death is an accepted v1 limitation.
@@ -86,6 +87,23 @@ class AssessmentSessionNotifier extends Notifier<AssessmentSession> {
       state = state.copyWith(chairStand: r);
   void setMvcCalibration(MvcCalibration c) =>
       state = state.copyWith(mvcCalibration: c);
+
+  /// Prefill a fresh session from the last saved profile so a returning user
+  /// doesn't re-enter name/age/gender/height/weight. Only fills what's present.
+  void seedFrom(SavedProfile p) {
+    var s = state;
+    if (p.age != null && p.gender != null) {
+      s = s.copyWith(
+          person: PersonInfo(name: p.name, age: p.age!, gender: p.gender!));
+    }
+    if (p.heightCm != null) {
+      s = s.copyWith(height: MeasurementResult(p.heightCm!, 'cm'));
+    }
+    if (p.weightKg != null) {
+      s = s.copyWith(weight: MeasurementResult(p.weightKg!, 'kg'));
+    }
+    state = s;
+  }
 
   void reset() => state = AssessmentSession.empty;
 }

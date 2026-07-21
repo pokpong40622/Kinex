@@ -38,7 +38,10 @@ class TestInstructionPage extends ConsumerWidget {
             padding: EdgeInsets.all(context.r(16)),
             child: Column(
               children: [
-                StageImage(name: testId, height: context.r(200)),
+                StageImage(
+                    name: testId,
+                    height: context.r(200),
+                    fallbackIcon: _fallbackIconFor(testId)),
                 SizedBox(height: context.r(12)),
                 Text(test.thaiComponent,
                     textAlign: TextAlign.center,
@@ -186,4 +189,13 @@ class TestInstructionPage extends ConsumerWidget {
       ),
     );
   }
+
+  // A test-relevant icon shown until the real posture photo is added under
+  // assets/images/assessment/{testId}.png (balance.png / gait_speed.png pending).
+  static IconData _fallbackIconFor(String testId) => switch (testId) {
+        'balance' => Icons.accessibility_new_rounded,
+        'gait_speed' => Icons.directions_walk_rounded,
+        'chair_stand' => Icons.event_seat_rounded,
+        _ => Icons.directions_run_rounded,
+      };
 }

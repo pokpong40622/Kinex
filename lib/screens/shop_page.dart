@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../theme/kui.dart';
 import '../theme/responsive.dart';
 import '../state/shop_providers.dart';
+import '../state/accent_theme.dart';
 import '../data/customize_catalog.dart';
 
 // Theme/character catalog now lives in data/customize_catalog.dart (shared
@@ -14,16 +15,17 @@ class _GameUnlock {
   final String id;
   final String titleTh;
   final String subtitleEn;
-  final IconData icon;
+  final String iconAsset; // logo from assets/images/game_icons/
+  final IconData icon; // fallback if the asset fails to load
   final int price;
-  const _GameUnlock(
-      this.id, this.titleTh, this.subtitleEn, this.icon, this.price);
+  const _GameUnlock(this.id, this.titleTh, this.subtitleEn, this.iconAsset,
+      this.icon, this.price);
 }
 
-const _gameUnlock = _GameUnlock(
-    'kinex_world', 'KINEX World', 'KINEX World', Icons.self_improvement_rounded, 1000);
-const _gameUnlockDasher = _GameUnlock(
-    'thedasher', 'THE DASHER', 'The Dasher', Icons.rocket_launch_rounded, 800);
+const _gameUnlock = _GameUnlock('kinex_world', 'KINEX World', 'KINEX World',
+    'assets/images/game_icons/world.png', Icons.self_improvement_rounded, 1000);
+const _gameUnlockDasher = _GameUnlock('thedasher', 'THE DASHER', 'The Dasher',
+    'assets/images/game_icons/thedasher.png', Icons.rocket_launch_rounded, 800);
 
 // ── Shop tab ──────────────────────────────────────────────────────────────
 
@@ -47,32 +49,30 @@ class ShopTab extends ConsumerWidget {
             children: [
               Padding(
                 padding:
-                    EdgeInsets.fromLTRB(w * 0.06, h * 0.025, w * 0.06, h * 0.02),
-                child: Row(
-                  children: [
-                    Text('ร้านค้า',
-                        style: montserrat(
-                            size: w * 0.09,
-                            weight: FontWeight.w900,
-                            color: KColors.purple)),
-                    const Spacer(),
-                    const _CoinPill(),
-                  ],
-                ),
+                    EdgeInsets.fromLTRB(w * 0.045, h * 0.02, w * 0.045, 0),
+                child: const _ShopHeaderBanner(),
               ),
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.symmetric(
-                      horizontal: w * 0.04, vertical: h * 0.01),
+                      horizontal: w * 0.045, vertical: h * 0.02),
                   children: [
-                    const KSectionHeader('ปลดล็อกเกม',
-                        icon: Icons.lock_open_rounded, color: KColors.purple),
-                    const _GameUnlockCard(item: _gameUnlock),
+                    const _SectionBanner(
+                      title: 'ปลดล็อกเกม',
+                      subtitle: 'ใช้เหรียญปลดล็อกโหมดเกมใหม่',
+                      icon: Icons.lock_open_rounded,
+                    ),
                     SizedBox(height: h * 0.015),
+                    const _GameUnlockCard(item: _gameUnlock),
+                    SizedBox(height: h * 0.012),
                     const _GameUnlockCard(item: _gameUnlockDasher),
                     SizedBox(height: h * 0.03),
-                    const KSectionHeader('ตัวละคร',
-                        icon: Icons.person_rounded, color: KColors.purple),
+                    const _SectionBanner(
+                      title: 'ตัวละคร',
+                      subtitle: 'เลือกตัวละครประจำตัวของคุณ',
+                      icon: Icons.person_rounded,
+                    ),
+                    SizedBox(height: h * 0.015),
                     SizedBox(
                       height: r(160),
                       child: ListView.separated(
@@ -84,8 +84,20 @@ class ShopTab extends ConsumerWidget {
                       ),
                     ),
                     SizedBox(height: h * 0.03),
-                    const KSectionHeader('ธีมเกม',
-                        icon: Icons.palette_rounded, color: KColors.purple),
+                    const _SectionBanner(
+                      title: 'ธีมสี',
+                      subtitle: 'เปลี่ยนโทนสีทั้งแอปได้ทันที — พร้อมใช้งานทุกธีม',
+                      icon: Icons.color_lens_rounded,
+                    ),
+                    SizedBox(height: h * 0.015),
+                    const _AccentThemeSection(),
+                    SizedBox(height: h * 0.03),
+                    const _SectionBanner(
+                      title: 'ธีมเกม',
+                      subtitle: 'ฉากและบรรยากาศใหม่สำหรับเกม',
+                      icon: Icons.palette_rounded,
+                    ),
+                    SizedBox(height: h * 0.015),
                     const _ComingSoonCard(titleTh: 'ธีมเกม', subtitleEn: 'Themes'),
                     SizedBox(height: h * 0.02),
                   ],
@@ -97,6 +109,237 @@ class ShopTab extends ConsumerWidget {
       ],
     );
   }
+}
+
+// ── Shop header banner ────────────────────────────────────────────────────
+// Solid-accent header block (mirrors info_page.dart's _HeaderBanner) so the
+// shop opens with the same visual weight as the info tab instead of a bare
+// title row.
+
+class _ShopHeaderBanner extends StatelessWidget {
+  const _ShopHeaderBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Container(
+      padding: EdgeInsets.fromLTRB(r(22), r(18), r(20), r(18)),
+      decoration: BoxDecoration(
+        gradient: KColors.accentBand,
+        borderRadius: BorderRadius.circular(r(24)),
+        border: Border.all(color: KColors.deepPurple.withValues(alpha: 0.16)),
+        boxShadow: [
+          BoxShadow(
+              color: KColors.deepPurple.withValues(alpha: 0.20),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ร้านค้า',
+                    style: montserrat(
+                        size: r(28), weight: FontWeight.w900, color: Colors.white)),
+                SizedBox(height: r(4)),
+                Text('ปลดล็อกเกม ตัวละคร และธีมสี',
+                    style: montserrat(
+                        size: r(13),
+                        weight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.85))),
+              ],
+            ),
+          ),
+          const _CoinPill(),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Section banner ────────────────────────────────────────────────────────
+// Secondary, lighter treatment (pale accent-tinted fill + thin border, no
+// heavy shadow) so sub-section titles read clearly below the bold gradient
+// _ShopHeaderBanner instead of matching its visual weight.
+
+class _SectionBanner extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData? icon;
+  const _SectionBanner({
+    required this.title,
+    required this.subtitle,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: r(16), vertical: r(14)),
+      decoration: BoxDecoration(
+        color: KColors.purple.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(r(14)),
+        border: Border.all(color: KColors.purple.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Container(
+              width: r(36),
+              height: r(36),
+              decoration:
+                  BoxDecoration(color: KColors.purple.withValues(alpha: 0.14), shape: BoxShape.circle),
+              child: Icon(icon, color: KColors.purple, size: r(19)),
+            ),
+            SizedBox(width: r(12)),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style:
+                        montserrat(size: r(16.5), weight: FontWeight.w800, color: KColors.deepPurple)),
+                SizedBox(height: r(2)),
+                Text(subtitle,
+                    style: thaiSans(
+                        size: r(11.5),
+                        weight: FontWeight.w600,
+                        color: KColors.deepPurple.withValues(alpha: 0.75))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Accent colour theme selector (ธีมสี) ─────────────────────────────────────
+// The main new feature: 3 tappable accent colour sets that reskin the whole
+// app live via accentSetProvider (state/accent_theme.dart) + KColors.applyAccentSet
+// (applied at the app root in app.dart). All 3 are always selectable — framed
+// as equippable themes, no coin gate.
+
+class _AccentThemeSection extends StatelessWidget {
+  const _AccentThemeSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.r;
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: r(10),
+      crossAxisSpacing: r(10),
+      childAspectRatio: 0.85,
+      children: [
+        for (var i = 0; i < KColors.accentSets.length; i++) _AccentSwatchCard(index: i),
+      ],
+    );
+  }
+}
+
+class _AccentSwatchCard extends ConsumerWidget {
+  final int index;
+  const _AccentSwatchCard({required this.index});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final r = context.r;
+    final active = ref.watch(accentSetProvider) == index;
+    final set = KColors.accentSets[index];
+    final name = KColors.accentSetNames[index];
+
+    final card = KCard(
+      radius: r(16),
+      padding: EdgeInsets.all(r(10)),
+      onTap: active
+          ? null
+          : () => _confirmAccentChange(context, ref, index: index, name: name, color: set[0]),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: r(28),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(r(8)),
+                gradient: LinearGradient(colors: [set[2], set[0], set[1]]),
+              ),
+            ),
+          ),
+          SizedBox(height: r(8)),
+          Text(name,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: thaiSans(size: r(12.5), weight: FontWeight.w700, color: KColors.navyText)),
+          SizedBox(height: r(6)),
+          active
+              ? KPill('ใช้งานอยู่', color: set[0], icon: Icons.check_circle_rounded)
+              : KPill('ปุ่มหลัก', color: set[0]),
+        ],
+      ),
+    );
+
+    if (!active) return card;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(r(16)),
+        border: Border.all(color: set[0], width: 2.5),
+      ),
+      child: card,
+    );
+  }
+}
+
+// ── Accent theme change confirmation dialog ─────────────────────────────────
+
+void _confirmAccentChange(
+  BuildContext context,
+  WidgetRef ref, {
+  required int index,
+  required String name,
+  required Color color,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text('เปลี่ยนธีมสี',
+          style: thaiSans(size: 18, weight: FontWeight.w700, color: KColors.navyText)),
+      content: Text('เปลี่ยนเป็นธีม “$name” ไหม?',
+          style: thaiSans(size: 15, color: const Color(0xFF5A6685))),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text('ยกเลิก', style: thaiSans(size: 15, color: KColors.navyText)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          ),
+          onPressed: () {
+            Navigator.pop(dialogContext);
+            ref.read(accentSetProvider.notifier).select(index);
+          },
+          child: Text('เปลี่ยน', style: thaiSans(size: 15, weight: FontWeight.w700, color: Colors.white)),
+        ),
+      ],
+    ),
+  );
 }
 
 // ── Shop background ───────────────────────────────────────────────────────
@@ -221,7 +464,7 @@ class _CharacterCard extends ConsumerWidget {
               SizedBox(height: r(4)),
               active
                   ? const KPill('ใช้งานอยู่',
-                      color: KColors.purple, icon: Icons.check_circle_rounded)
+                      icon: Icons.check_circle_rounded)
                   : (unlocked ? const SizedBox.shrink() : _PriceChipLight(price: item.price)),
             ],
           ),
@@ -261,11 +504,19 @@ class _GameUnlockCard extends ConsumerWidget {
       child: Row(
         children: [
           Container(
-            width: r(48),
-            height: r(48),
-            decoration:
-                BoxDecoration(color: KColors.purple.withAlpha(30), shape: BoxShape.circle),
-            child: Icon(item.icon, color: KColors.purple, size: r(26)),
+            width: r(52),
+            height: r(52),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: KColors.purple.withAlpha(30),
+              borderRadius: BorderRadius.circular(r(14)),
+            ),
+            child: Image.asset(
+              item.iconAsset,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stack) =>
+                  Icon(item.icon, size: r(26), color: KColors.purple),
+            ),
           ),
           SizedBox(width: r(14)),
           Expanded(
@@ -282,7 +533,7 @@ class _GameUnlockCard extends ConsumerWidget {
             ),
           ),
           unlocked
-              ? Icon(Icons.check_circle_rounded, color: KColors.purple, size: r(24))
+              ? Icon(Icons.check_circle_rounded, size: r(24), color: KColors.purple)
               : _PriceChipLight(price: item.price),
         ],
       ),

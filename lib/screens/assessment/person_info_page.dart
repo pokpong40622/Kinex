@@ -25,6 +25,18 @@ class _PersonInfoPageState extends ConsumerState<PersonInfoPage> {
   Gender? _gender;
 
   @override
+  void initState() {
+    super.initState();
+    // Prefill from the saved profile seeded into the session (returning users).
+    final person = ref.read(assessmentSessionProvider).person;
+    if (person != null) {
+      if (person.name != null) _nameController.text = person.name!;
+      _ageController.text = person.age.toString();
+      _gender = person.gender;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();

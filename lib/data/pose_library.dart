@@ -36,7 +36,7 @@ extension PoseCategoryMeta on PoseCategory {
       };
 
   Gradient get gradient => switch (this) {
-        PoseCategory.strength => const LinearGradient(
+        PoseCategory.strength => LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [KColors.purple, KColors.deepPurple]),

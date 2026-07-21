@@ -8,9 +8,9 @@ import '../data/assessment_repository.dart';
 import '../data/emg_repository.dart';
 import '../models/fall_risk.dart';
 import '../widgets/fall_risk_cards.dart';
+import '../widgets/device_connect_panel.dart';
 import '../ble/ble_service.dart';
 import '../theme/responsive.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../data/customize_catalog.dart';
 import '../state/shop_providers.dart';
 import 'info_page.dart';
@@ -29,6 +29,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _tab = 0;
   int _homePage = 0;
   final PageController _homeCtrl = PageController();
+
+  // Coach-mark tour targets (measured by _CoachMarkOverlay): the ฝึกซ้อม + ข้อมูล
+  // nav tabs and the ประเมิน card. Runs once after onboarding on first entry.
+  final GlobalKey _gamesNavKey = GlobalKey();
+  final GlobalKey _infoNavKey = GlobalKey();
+  final GlobalKey _assessCardKey = GlobalKey();
+  bool _coachActive = false;
 
   @override
   void dispose() {
@@ -72,13 +79,15 @@ class _HomePageState extends ConsumerState<HomePage> {
         // Skipped the flow / installation → EMG pads not installed this run.
         ref.read(emgInstallSkippedProvider.notifier).state = true;
       }
-      ref.read(assessmentSpotlightProvider.notifier).state = true;
+      // Guided tour of the real UI: dim + spotlight the games tab, the info tab,
+      // then the assessment card (replaces the old single-card spotlight).
+      if (mounted) setState(() => _coachActive = true);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final scaffold = Scaffold(
       extendBody: true,
       body: IndexedStack(
         index: _tab,
@@ -88,7 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             controller: _homeCtrl,
             onPageChanged: (i) => setState(() => _homePage = i),
             children: [
-              const _HomeTab(),
+              _HomeTab(assessKey: _assessCardKey),
               CharacterHomeTab(onSeeMore: () => setState(() => _tab = 3)),
             ],
           ),
@@ -113,9 +122,25 @@ class _HomePageState extends ConsumerState<HomePage> {
           _KinexNavBar(
             selected: _tab,
             onTap: (i) => setState(() => _tab = i),
+            itemKeys: [null, null, _gamesNavKey, _infoNavKey, null],
           ),
         ],
       ),
+    );
+
+    return Stack(
+      children: [
+        scaffold,
+        if (_coachActive)
+          _CoachMarkOverlay(
+            steps: [
+              (_gamesNavKey, 'เล่นเกมฝึกได้ที่นี่', 'แตะแท็บ “ฝึกซ้อม” เพื่อเลือกเกมฝึกกล้ามเนื้อ'),
+              (_infoNavKey, 'ดูความก้าวหน้าที่นี่', 'แท็บ “ข้อมูล” รวมสถิติ ประวัติ และพัฒนาการของคุณ'),
+              (_assessCardKey, 'เริ่มด้วยการประเมิน', 'แตะการ์ดนี้เพื่อวัดความแข็งแรงและการทรงตัวก่อนเริ่มฝึก'),
+            ],
+            onFinish: () => setState(() => _coachActive = false),
+          ),
+      ],
     );
   }
 }
@@ -163,8 +188,11 @@ class _HomePageDots extends StatelessWidget {
 class _KinexNavBar extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onTap;
+  // Optional per-item keys so the coach-mark tour can locate specific tabs.
+  final List<GlobalKey?>? itemKeys;
 
-  const _KinexNavBar({required this.selected, required this.onTap});
+  const _KinexNavBar(
+      {required this.selected, required this.onTap, this.itemKeys});
 
   static const _labels = ['หน้าหลัก', 'ภารกิจ', 'ฝึกซ้อม', 'ข้อมูล', 'ร้านค้า'];
   static const _icons = [
@@ -201,6 +229,7 @@ class _KinexNavBar extends StatelessWidget {
                 children: List.generate(5, (i) {
                   final active = i == selected;
                   return GestureDetector(
+                    key: itemKeys != null ? itemKeys![i] : null,
                     onTap: () => onTap(i),
                     behavior: HitTestBehavior.opaque,
                     child: Column(
@@ -319,16 +348,16 @@ class _EmgReminderBanner extends ConsumerWidget {
 // ── HOME TAB ────────────────────────────────────────────────────────────────
 
 class _HomeTab extends ConsumerStatefulWidget {
-  const _HomeTab();
+  // The parent (HomePage) owns this key so its coach-mark tour can spotlight the
+  // ประเมิน card that lives inside this tab.
+  final GlobalKey assessKey;
+  const _HomeTab({required this.assessKey});
 
   @override
   ConsumerState<_HomeTab> createState() => _HomeTabState();
 }
 
 class _HomeTabState extends ConsumerState<_HomeTab> {
-  // Used to measure the on-screen rect of the ประเมิน card for the spotlight.
-  final GlobalKey _assessmentKey = GlobalKey();
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -375,7 +404,7 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                   child: FractionallySizedBox(
                     widthFactor: 0.65,
                     child: _AssessmentCard(
-                      cardKey: _assessmentKey,
+                      cardKey: widget.assessKey,
                       onTap: () => context.push('/assessment'),
                     ),
                   ),
@@ -395,13 +424,6 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
             ],
           ),
         ),
-        // Spotlight: dim everything except the ประเมิน card until dismissed.
-        if (ref.watch(assessmentSpotlightProvider))
-          _SpotlightOverlay(
-            targetKey: _assessmentKey,
-            onDismiss: () =>
-                ref.read(assessmentSpotlightProvider.notifier).state = false,
-          ),
       ],
     );
   }
@@ -746,9 +768,15 @@ class _AssessmentCard extends StatelessWidget {
             return Container(
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
-                color: KColors.teal,
+                gradient: KColors.assessmentCardGradient,
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(color: KColors.hairline, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                      color: KColors.assessmentInk.withValues(alpha: 0.30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6)),
+                ],
               ),
               child: Row(
                 children: [
@@ -783,7 +811,7 @@ class _AssessmentCard extends StatelessWidget {
                                 style: thaiSans(
                                     size: cw * 0.036,
                                     weight: FontWeight.w800,
-                                    color: KColors.tealDark)),
+                                    color: KColors.assessmentInk)),
                           ),
                         ],
                       ),
@@ -804,10 +832,9 @@ class _AssessmentCard extends StatelessWidget {
   }
 }
 
-/// Home-tab entry point for the "เรียนรู้ท่าฝึก" pose library. A compact
-/// purple banner shown right below the assessment card.
-/// Home-tab entry point for the "เรียนรู้ท่าฝึก" pose library. 
-/// Now identically sized and structured to match _AssessmentCard.
+/// Home-tab entry point for the "เรียนรู้ท่าฝึก" pose library. Sized and
+/// structured to match _AssessmentCard; warm amber gradient so the two cards
+/// read as a pair without looking like the same button twice.
 class _LearnHomeCard extends StatelessWidget {
   final VoidCallback onTap;
   const _LearnHomeCard({required this.onTap});
@@ -834,9 +861,15 @@ class _LearnHomeCard extends StatelessWidget {
             return Container(
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
-                color: KColors.purple,
+                gradient: KColors.learnCardGradient,
                 borderRadius: BorderRadius.circular(25), // Matched radius (25)
                 border: Border.all(color: KColors.hairline, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                      color: KColors.learnCardInk.withValues(alpha: 0.30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6)),
+                ],
               ),
               child: Row(
                 children: [
@@ -871,7 +904,7 @@ class _LearnHomeCard extends StatelessWidget {
                                 style: thaiSans(
                                     size: cw * 0.036, // Matched button text size
                                     weight: FontWeight.w800,
-                                    color: KColors.deepPurple)), // Deep purple text for button
+                                    color: KColors.learnCardInk)),
                           ),
                         ],
                       ),
@@ -893,36 +926,50 @@ class _LearnHomeCard extends StatelessWidget {
   }
 }
 
-/// Full-screen dim with a "hole" cut around the ประเมิน card. Taps in the dark
-/// dismiss the spotlight; taps on the card open the assessment.
-class _SpotlightOverlay extends StatefulWidget {
-  final GlobalKey targetKey;
-  final VoidCallback onDismiss;
-  const _SpotlightOverlay({required this.targetKey, required this.onDismiss});
+/// Multi-step guided tour: dims the whole screen and cuts a "hole" around each
+/// target in turn (a nav tab, then the ประเมิน card), with a caption card and a
+/// ถัดไป button. Tapping the dark area or the button advances; the last step
+/// calls [onFinish]. Reuses [_SpotlightPainter] for the dim + hole.
+typedef _CoachStep = (GlobalKey key, String title, String body);
+
+class _CoachMarkOverlay extends StatefulWidget {
+  final List<_CoachStep> steps;
+  final VoidCallback onFinish;
+  const _CoachMarkOverlay({required this.steps, required this.onFinish});
 
   @override
-  State<_SpotlightOverlay> createState() => _SpotlightOverlayState();
+  State<_CoachMarkOverlay> createState() => _CoachMarkOverlayState();
 }
 
-class _SpotlightOverlayState extends State<_SpotlightOverlay> {
+class _CoachMarkOverlayState extends State<_CoachMarkOverlay> {
+  int _step = 0;
+  Offset? _lastTopLeft;
+
   @override
   void initState() {
     super.initState();
     _scheduleMeasure();
   }
 
-  Offset? _lastTopLeft;
+  void _advance() {
+    if (_step >= widget.steps.length - 1) {
+      widget.onFinish();
+      return;
+    }
+    setState(() {
+      _step++;
+      _lastTopLeft = null; // re-measure the new target
+    });
+    _scheduleMeasure();
+  }
 
-  // Re-measure across frames until the card's global position stops changing.
-  // On first home entry the card (inside Align → FractionallySizedBox) and the
-  // reminder banner above it relayout over a few frames, so a single measurement
-  // reads a stale (too-far-left) X. We keep checking until two consecutive frames
-  // agree, then stop — matching the value seen after re-navigation.
+  // Re-measure across frames until the target's global position settles (the
+  // card relayouts over a few frames on first home entry).
   void _scheduleMeasure() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final box =
-          widget.targetKey.currentContext?.findRenderObject() as RenderBox?;
+      final box = widget.steps[_step].$1.currentContext?.findRenderObject()
+          as RenderBox?;
       if (box == null || !box.hasSize) {
         _scheduleMeasure();
         return;
@@ -931,74 +978,108 @@ class _SpotlightOverlayState extends State<_SpotlightOverlay> {
       if (_lastTopLeft != topLeft) {
         _lastTopLeft = topLeft;
         setState(() {});
-        _scheduleMeasure(); // position still moving — keep watching
+        _scheduleMeasure();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final box =
-        widget.targetKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) {
-      // Fallback: plain dim that just dismisses on tap (no hole yet).
+    final (key, title, body) = widget.steps[_step];
+    final isLast = _step == widget.steps.length - 1;
+    final rbox = key.currentContext?.findRenderObject() as RenderBox?;
+
+    if (rbox == null || !rbox.hasSize) {
+      // Not measured yet — plain dim (still tappable to advance).
       return Positioned.fill(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: widget.onDismiss,
+          onTap: _advance,
           child: Container(color: Colors.black54),
         ),
       );
     }
 
-    final topLeft = box.localToGlobal(Offset.zero);
-    final rect = (topLeft & box.size).inflate(8);
+    final rect = (rbox.localToGlobal(Offset.zero) & rbox.size).inflate(8);
     final screen = MediaQuery.sizeOf(context);
+    // Put the caption on the roomier side of the hole (above for bottom targets).
+    final below = rect.center.dy < screen.height * 0.5;
 
-    // Caption just below the hole, clamped within the screen.
-    final captionTop = (rect.bottom + 12).clamp(0.0, screen.height - 40.0);
+    final caption = Container(
+      constraints: const BoxConstraints(maxWidth: 360),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      decoration: cardDecoration(radius: 18, color: Colors.white),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title,
+              textAlign: TextAlign.center,
+              style: thaiSans(
+                  size: 18, weight: FontWeight.w800, color: KColors.navyText)),
+          const SizedBox(height: 6),
+          Text(body,
+              textAlign: TextAlign.center,
+              style: thaiSans(
+                  size: 14,
+                  weight: FontWeight.w500,
+                  color: KColors.navyText.withAlpha(170))),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (var i = 0; i < widget.steps.length; i++)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: i == _step ? 20 : 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: i == _step ? KColors.purple : Colors.grey.withAlpha(90),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: _advance,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              height: 46,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: KColors.purple,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(isLast ? 'เข้าใจแล้ว' : 'ถัดไป',
+                  style: thaiSans(
+                      size: 16, weight: FontWeight.w800, color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Stack(
       children: [
-        // Dim everything except the rounded hole around the card.
         Positioned.fill(
-          child: CustomPaint(
-            painter: _SpotlightPainter(rect: rect, radius: 24),
-          ),
+          child: CustomPaint(painter: _SpotlightPainter(rect: rect, radius: 20)),
         ),
-        // Tapping the dark area dismisses the spotlight.
+        // Dark area advances the tour.
         Positioned.fill(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: widget.onDismiss,
+            onTap: _advance,
           ),
         ),
-        // Hint caption.
+        // Caption card on the roomier side of the hole.
         Positioned(
           left: 16,
           right: 16,
-          top: captionTop,
-          child: Text(
-            'แตะที่การ์ดเพื่อเริ่มประเมิน',
-            textAlign: TextAlign.center,
-            style: thaiSans(
-                size: 16, weight: FontWeight.w700, color: Colors.white),
-          ),
-        ),
-        // Tapping the card opens the assessment (on top of the dismiss layer).
-        Positioned(
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              widget.onDismiss();
-              context.push('/assessment');
-            },
-            child: const SizedBox.expand(),
-          ),
+          top: below ? rect.bottom + 14 : null,
+          bottom: below ? null : screen.height - rect.top + 14,
+          child: Align(alignment: Alignment.center, child: caption),
         ),
       ],
     );
@@ -1094,26 +1175,32 @@ class _TopBarIconButton extends StatelessWidget {
   }
 }
 
-/// Top-bar Bluetooth button: one-tap connect / disconnect with the ESP32, and a
-/// live icon — the normal Bluetooth glyph when connected, the "disconnected"
-/// glyph otherwise. The full scan/send console lives in the BLE Debug window
-/// (reachable from the profile menu).
+/// Top-bar Bluetooth button. A Kinex set is TWO boards, so the border reports
+/// how many of them are live: grey = none, amber = only one (the state users
+/// used to mistake for "done"), green = both. Tapping opens the sheet that
+/// connects them one at a time.
 class _BleTopBarButton extends ConsumerWidget {
   const _BleTopBarButton();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final status = ref.watch(bleControllerProvider.select((s) => s.status));
-    final connected = status == BleStatus.connected;
+    final legOk = ref.watch(
+        bleControllerProvider.select((s) => s.status == BleStatus.connected));
+    final handOk = ref
+        .watch(handBleProvider.select((s) => s.status == BleStatus.connected));
+    final done = (legOk ? 1 : 0) + (handOk ? 1 : 0);
 
     return _TopBarIconButton(
-      asset: connected
+      asset: done > 0
           ? 'assets/images/icon_bluetooth.png'
           : 'assets/images/icon_bt_disconnected.png',
-      solidBorderColor:
-          connected ? const Color(0xFF60A343) : const Color(0xFFB0B0B0),
-      // Always open the sheet — it explains the button and drives the whole
-      // connect / searching / connected / disconnect flow with clear feedback.
+      solidBorderColor: switch (done) {
+        2 => const Color(0xFF60A343), // both boards live
+        1 => KColors.orangeDark, // half-connected — still needs the other one
+        _ => const Color(0xFFB0B0B0),
+      },
+      // Always open the sheet — it explains that there are two boards and drives
+      // the whole connect / searching / connected / disconnect flow.
       onTap: () => showModalBottomSheet<void>(
         context: context,
         backgroundColor: Colors.transparent,
@@ -1124,42 +1211,16 @@ class _BleTopBarButton extends ConsumerWidget {
   }
 }
 
-/// Bottom sheet behind the top-bar Bluetooth button. One adaptive surface that
-/// covers every state — intro, searching, connected, not-found, and the
-/// permission-blocked case — so the user always knows what the button is doing.
-class _BleConnectSheet extends ConsumerStatefulWidget {
+/// Bottom sheet behind the top-bar Bluetooth button. Shows BOTH Kinex boards —
+/// leg and hand — at once, because users were connecting one and assuming the
+/// set was ready. All the connect logic lives in [DeviceConnectPanel], shared
+/// with the cold-launch connect page.
+class _BleConnectSheet extends ConsumerWidget {
   const _BleConnectSheet();
 
   @override
-  ConsumerState<_BleConnectSheet> createState() => _BleConnectSheetState();
-}
-
-class _BleConnectSheetState extends ConsumerState<_BleConnectSheet> {
-  // True once the user has pressed "search" this sheet session, so we can tell
-  // the first-open intro apart from a finished-but-failed scan.
-  bool _attempted = false;
-
-  void _scan() {
-    setState(() => _attempted = true);
-    ref.read(bleControllerProvider.notifier).quickConnect();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(bleControllerProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final r = context.r;
-
-    // Auto-dismiss shortly after a successful connection so the success state
-    // is visible for a beat, then gets out of the way.
-    ref.listen(bleControllerProvider.select((s) => s.status), (prev, next) {
-      if (next == BleStatus.connected && mounted) {
-        final navigator = Navigator.of(context);
-        Future.delayed(const Duration(milliseconds: 950), () {
-          if (mounted && navigator.canPop()) navigator.pop();
-        });
-      }
-    });
-
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Container(
@@ -1167,203 +1228,32 @@ class _BleConnectSheetState extends ConsumerState<_BleConnectSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: EdgeInsets.fromLTRB(r(24), r(12), r(24), r(24) + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag handle
-          Container(
-            width: r(40),
-            height: r(4),
-            margin: EdgeInsets.only(bottom: r(20)),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(r(2)),
-            ),
-          ),
-          _buildBody(state, r),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody(BleState state, double Function(double) r) {
-    switch (state.status) {
-      case BleStatus.connected:
-        return _connectedView(state, r);
-      case BleStatus.scanning:
-      case BleStatus.connecting:
-        return _searchingView(r);
-      case BleStatus.idle:
-        if (state.needsSettings) return _permissionView(state, r);
-        if (_attempted) return _notFoundView(state, r);
-        return _introView(r);
-    }
-  }
-
-  // ── Visual building blocks ────────────────────────────────────────────────
-
-  Widget _haloIcon(IconData icon, Color color, double Function(double) r,
-      {Widget? overlay}) {
-    return Container(
-      width: r(76),
-      height: r(76),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withAlpha(26),
-      ),
-      child: overlay ?? Icon(icon, color: color, size: r(38)),
-    );
-  }
-
-  Widget _title(String text, double Function(double) r) => Text(
-        text,
-        textAlign: TextAlign.center,
-        style: thaiSans(
-            size: r(19), weight: FontWeight.w700, color: KColors.navyText),
-      );
-
-  Widget _subtitle(String text, double Function(double) r) => Text(
-        text,
-        textAlign: TextAlign.center,
-        style: thaiSans(size: r(14), color: Colors.grey.shade600),
-      );
-
-  Widget _primaryButton(
-          String label, Color color, VoidCallback onTap, double Function(double) r,
-          {IconData? icon}) =>
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: r(15)),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(r(16))),
-          ),
-          icon: icon == null
-              ? const SizedBox.shrink()
-              : Icon(icon, size: r(20)),
-          label: Text(label,
-              style: thaiSans(
-                  size: r(16), weight: FontWeight.w700, color: Colors.white)),
-          onPressed: onTap,
-        ),
-      );
-
-  Widget _textButton(
-          String label, VoidCallback onTap, double Function(double) r) =>
-      TextButton(
-        onPressed: onTap,
-        child: Text(label,
-            style: thaiSans(
-                size: r(14), weight: FontWeight.w600, color: KColors.teal)),
-      );
-
-  void _openDebug() {
-    Navigator.pop(context);
-    context.push('/ble-debug');
-  }
-
-  // ── States ────────────────────────────────────────────────────────────────
-
-  Widget _introView(double Function(double) r) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _haloIcon(Icons.bluetooth_rounded, KColors.blue, r),
-          SizedBox(height: r(16)),
-          _title('เชื่อมต่ออุปกรณ์ Kinex', r),
-          SizedBox(height: r(8)),
-          _subtitle('ปุ่มนี้ใช้เชื่อมต่อกับกล่องเซนเซอร์ (ESP32) ผ่าน Bluetooth\n'
-              'เปิดเครื่องอุปกรณ์ให้พร้อม แล้วกดค้นหา', r),
-          SizedBox(height: r(22)),
-          _primaryButton('ค้นหาและเชื่อมต่อ', KColors.blue, _scan, r,
-              icon: Icons.bluetooth_searching_rounded),
-          SizedBox(height: r(4)),
-          _textButton('เปิดหน้า BLE Debug', _openDebug, r),
-        ],
-      );
-
-  Widget _searchingView(double Function(double) r) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _haloIcon(
-            Icons.bluetooth_searching_rounded,
-            KColors.blue,
-            r,
-            overlay: Center(
-              child: SizedBox(
-                width: r(34),
-                height: r(34),
-                child: CircularProgressIndicator(
-                    strokeWidth: 3, color: KColors.blue),
+      padding: EdgeInsets.fromLTRB(r(20), r(12), r(20), r(20) + bottomInset),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              width: r(40),
+              height: r(4),
+              margin: EdgeInsets.only(bottom: r(18)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(r(2)),
               ),
             ),
-          ),
-          SizedBox(height: r(16)),
-          _title('กำลังค้นหาอุปกรณ์…', r),
-          SizedBox(height: r(8)),
-          _subtitle('ตรวจสอบว่าเปิดเครื่อง ESP32 และอยู่ใกล้แท็บเล็ต', r),
-          SizedBox(height: r(20)),
-        ],
-      );
-
-  Widget _connectedView(BleState state, double Function(double) r) {
-    final name = state.connectedName ?? state.connectedId ?? 'อุปกรณ์ Kinex';
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _haloIcon(Icons.bluetooth_connected_rounded, KColors.teal, r),
-        SizedBox(height: r(16)),
-        _title('เชื่อมต่อแล้ว', r),
-        SizedBox(height: r(8)),
-        _subtitle(name, r),
-        SizedBox(height: r(22)),
-        _primaryButton('ตัดการเชื่อมต่อ', const Color(0xFFE53935),
-            () => ref.read(bleControllerProvider.notifier).disconnect(), r,
-            icon: Icons.link_off_rounded),
-        SizedBox(height: r(4)),
-        _textButton('เปิดหน้า BLE Debug', _openDebug, r),
-      ],
+            DeviceConnectPanel(
+              onOpenDebug: () {
+                Navigator.pop(context);
+                context.push('/ble-debug');
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
-
-  Widget _notFoundView(BleState state, double Function(double) r) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _haloIcon(Icons.bluetooth_disabled_rounded, KColors.orangeDark, r),
-          SizedBox(height: r(16)),
-          _title('ไม่พบอุปกรณ์ Kinex', r),
-          SizedBox(height: r(8)),
-          _subtitle('ตรวจสอบว่าเปิดเครื่อง ESP32 แล้ว และเปิด Bluetooth '
-              'ของแท็บเล็ตไว้ จากนั้นลองอีกครั้ง', r),
-          SizedBox(height: r(22)),
-          _primaryButton('ลองอีกครั้ง', KColors.blue, _scan, r,
-              icon: Icons.refresh_rounded),
-          SizedBox(height: r(4)),
-          _textButton('เลือกอุปกรณ์เองใน BLE Debug', _openDebug, r),
-        ],
-      );
-
-  Widget _permissionView(BleState state, double Function(double) r) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _haloIcon(Icons.lock_outline_rounded, KColors.orangeDark, r),
-          SizedBox(height: r(16)),
-          _title('ต้องอนุญาต Bluetooth', r),
-          SizedBox(height: r(8)),
-          _subtitle('แอปต้องการสิทธิ์ Bluetooth เพื่อค้นหาและเชื่อมต่ออุปกรณ์\n'
-              'เปิดสิทธิ์ในการตั้งค่าแอป แล้วกลับมาลองใหม่', r),
-          SizedBox(height: r(22)),
-          _primaryButton('เปิดการตั้งค่า', KColors.blue, () => openAppSettings(),
-              r,
-              icon: Icons.settings_rounded),
-          SizedBox(height: r(4)),
-          _textButton('ลองอีกครั้ง', _scan, r),
-        ],
-      );
 }
 
 class _ProfileCard extends ConsumerWidget {
@@ -1403,6 +1293,7 @@ class _ProfileCard extends ConsumerWidget {
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'settings') context.push('/settings');
+                      if (value == 'devices') context.push('/devices');
                       if (value == 'debug') context.push('/ble-debug');
                       if (value == 'games') context.push('/game-debug');
                     },
@@ -1420,6 +1311,22 @@ class _ProfileCard extends ConsumerWidget {
                                 color: KColors.navyText, size: 20),
                             const SizedBox(width: 10),
                             Text('ตั้งค่า',
+                                style: thaiSans(
+                                    size: 16,
+                                    weight: FontWeight.w600,
+                                    color: KColors.navyText)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'devices',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.devices_other_rounded,
+                                color: KColors.navyText, size: 20),
+                            const SizedBox(width: 10),
+                            Text('อุปกรณ์ Kinex',
                                 style: thaiSans(
                                     size: 16,
                                     weight: FontWeight.w600,
@@ -1492,7 +1399,9 @@ class _ProfileCard extends ConsumerWidget {
                                   _ResultPill(risk: rec?.risk),
                               orElse: () => _ResultPill(risk: null),
                             ),
-                        Text('@ray_lorkasemsan',
+                        Text(ref.watch(userNameProvider),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: montserrat(
                                 size: w * 0.030,
                                 weight: FontWeight.w900,
@@ -1746,21 +1655,6 @@ class _PracticeTab extends StatelessWidget {
                       horizontal: w * 0.04, vertical: h * 0.01),
                   children: [
                     // ── REHAB section: Handglider + MEGA DANCE ───────────────
-                    // Calm semi-opaque scrim so the flat header stays legible over
-                    // the busy bg_room.png photo (replaces the old squircle+pill).
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: w * 0.03),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: KColors.hairline, width: 1),
-                      ),
-                      child: KSectionHeader(
-                        'ฟื้นฟูร่างกาย · REHAB',
-                        icon: Icons.healing_rounded,
-                        color: KColors.teal,
-                      ),
-                    ),
                     // Hang Glider (Unity scene id "hangglider") — tilt-controlled
                     // quiz game, plays in landscape. This is its designed card.
                     _PracticeCard(
@@ -1785,19 +1679,6 @@ class _PracticeTab extends StatelessWidget {
                     ),
                     SizedBox(height: h * 0.035),
                     // ── EXERCISE section: Kinex World ────────────────────────
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: w * 0.03),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: KColors.hairline, width: 1),
-                      ),
-                      child: KSectionHeader(
-                        'ออกกำลังกาย · EXERCISE',
-                        icon: Icons.fitness_center_rounded,
-                        color: KColors.purple,
-                      ),
-                    ),
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card3.png',
                       aspectRatio: 1762 / 650,
@@ -1822,8 +1703,9 @@ class _PracticeTab extends StatelessWidget {
   }
 }
 
-/// Floating pill that jumps straight to the ประเมิน (assessment) flow from the
-/// practice page. Teal healthcare palette, matches the home assessment card.
+/// Confident primary shortcut to the ประเมิน (assessment) flow from the
+/// practice page. Solid teal fill, bigger footprint than a plain FAB so it
+/// reads as the page's main call-to-action rather than a decorative pill.
 class _AssessFab extends StatelessWidget {
   final VoidCallback onTap;
   const _AssessFab({required this.onTap});
@@ -1835,21 +1717,35 @@ class _AssessFab extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: EdgeInsets.symmetric(
-            horizontal: context.r(16), vertical: context.r(12)),
+            horizontal: context.r(22), vertical: context.r(16)),
         decoration: BoxDecoration(
-          gradient: KColors.tealGradient,
-          borderRadius: BorderRadius.circular(context.r(30)),
+          gradient: KColors.assessmentCardGradient,
+          borderRadius: BorderRadius.circular(context.r(28)),
           border: Border.all(color: KColors.hairline, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: KColors.assessmentInk.withValues(alpha: 0.35),
+              blurRadius: context.r(16),
+              offset: Offset(0, context.r(6)),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.monitor_heart_rounded,
-                color: Colors.white, size: context.r(22)),
-            SizedBox(width: context.r(8)),
-            Text('ประเมิน',
+            Container(
+              padding: EdgeInsets.all(context.r(6)),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.monitor_heart_rounded,
+                  color: Colors.white, size: context.r(24)),
+            ),
+            SizedBox(width: context.r(10)),
+            Text('ประเมินอีกครั้ง',
                 style: thaiSans(
-                    size: context.r(15),
+                    size: context.r(17),
                     weight: FontWeight.w800,
                     color: Colors.white)),
           ],

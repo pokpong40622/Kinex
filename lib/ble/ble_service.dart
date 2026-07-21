@@ -262,11 +262,11 @@ class BleController extends Notifier<BleState> {
 
   // ─── Quick connect (top-bar button) ───────────────────────────────────────
 
-  /// One-tap connect used by the home top-bar BT button: scans briefly and
-  /// connects to the first device whose name starts with [namePrefix] (the
-  /// ESP32 advertises as "Kinex-EMG"). The full device picker still lives in
-  /// the BLE Debug window.
-  Future<void> quickConnect({String namePrefix = 'Kinex'}) async {
+  /// One-tap connect: scans briefly and connects to the first device whose name
+  /// contains [namePrefix]. The Leg board advertises as "Kinex-EMG" (the default
+  /// here) and the Hand board as "Kinex-Hand", so each device slot connects to
+  /// its own board. The full device picker still lives in the BLE Debug window.
+  Future<void> quickConnect({String namePrefix = 'Kinex-EMG'}) async {
     try {
       if (state.status == BleStatus.connected ||
           state.status == BleStatus.connecting) {
@@ -521,5 +521,15 @@ class BleController extends Notifier<BleState> {
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
+// Two independent board slots, each its own BLE connection. flutter_blue_plus
+// keeps multiple devices connected at once, so both can be live together — or
+// either one alone. The Leg board (EMG) uses [bleControllerProvider] so every
+// existing EMG screen is unchanged; the Hand board (MPU6050 tilt) uses
+// [handBleProvider]. They share the global BLE scanner, so the Devices page
+// connects them one at a time (it disables a board's button while the other is
+// scanning/connecting).
 final bleControllerProvider =
+    NotifierProvider<BleController, BleState>(BleController.new);
+
+final handBleProvider =
     NotifierProvider<BleController, BleState>(BleController.new);

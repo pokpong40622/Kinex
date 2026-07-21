@@ -5,12 +5,14 @@
 //   2. does NOT ask for camera permission,
 //   3. tells the shared Unity player to load scene id "hangglider",
 //   4. overlays an in-game pause button (pause / resume / home).
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_embed_unity/flutter_embed_unity.dart';
+import '../ble/ble_service.dart';
 import '../data/game_repository.dart';
 import '../models/game_session_record.dart';
 
@@ -26,6 +28,9 @@ class _HangGliderGameScreenState extends ConsumerState<HangGliderGameScreen> {
   bool _paused = false;
   bool _saved = false; // guard: persist a session's result only once
 
+  BleController? _handCtl;
+  StreamSubscription<String>? _handSub;
+
   @override
   void initState() {
     super.initState();
@@ -34,13 +39,42 @@ class _HangGliderGameScreenState extends ConsumerState<HangGliderGameScreen> {
         const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     // Warm case: Unity is already running, so select the scene immediately. Cold
     // boots are covered by the unity_ready handshake below.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _selectGame());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _selectGame();
+      _startHandStream();
+    });
+  }
+
+  void _startHandStream() {
+    if (ref.read(handBleProvider).status != BleStatus.connected) return;
+    final ctl = ref.read(handBleProvider.notifier);
+    _handCtl = ctl;
+    _handSub = ctl.incoming.listen(_onTiltLine);
+    ctl.send('STREAM:ON');
+  }
+
+  // TILT:<x>,<y>,<z> — forward the pitch (y, middle value) to Unity as the
+  // glider's steering input. Fires at 30 Hz, so no setState here.
+  void _onTiltLine(String line) {
+    if (!line.startsWith('TILT:')) return;
+    final parts = line.substring(5).split(',');
+    if (parts.length != 3) return;
+    final vals = <double>[];
+    for (final p in parts) {
+      final v = double.tryParse(p.trim());
+      if (v == null) return; // malformed → drop the whole sample
+      vals.add(v);
+    }
+    final y = vals[1];
+    sendToUnity('SceneRouter', 'SetHandTilt', y.toStringAsFixed(1));
   }
 
   @override
   void dispose() {
     // Make sure the game isn't left frozen for the next launch.
     sendToUnity('SceneRouter', 'SetPaused', 'false');
+    _handCtl?.send('STREAM:OFF');
+    _handSub?.cancel();
     // Restore the app-wide portrait lock (mirrors main.dart).
     SystemChrome.setPreferredOrientations(
         const [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);

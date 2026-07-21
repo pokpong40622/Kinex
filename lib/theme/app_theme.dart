@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 class KColors {
   static const blue = Color(0xFF2766EF);
-  // Purple kept as brand, but MUTED to one calm shade family (no more vivid violet).
-  static const purple = Color(0xFF7A67C0);
-  static const deepPurple = Color(0xFF5C4B9E);
+  // Brand accents — MUTABLE so the shop "ธีมสี" color sets can reskin the app at
+  // runtime (see applyAccentSet + accentSets below). Muted amethyst by default.
+  static Color purple = const Color(0xFF7A67C0);
+  static Color deepPurple = const Color(0xFF5C4B9E);
   static const greenLight = Color(0xFF8BFA48);
   static const greenDark = Color(0xFF5EC832);
   static const pinkLight = Color(0xFFFFA08D);
@@ -16,10 +17,50 @@ class KColors {
   static const orange = Color(0xFFFFC107);
   static const orangeDark = Color(0xFFFFA000);
   static const white = Colors.white;
-  static const purpleCard = Color(0xFF5C4B9E);
-  static const indigo = Color(0xFF6E5FB0);
+  static Color purpleCard = const Color(0xFF5C4B9E);
+  static Color indigo = const Color(0xFF6E5FB0);
   static const teal = Color(0xFF11C18E);
   static const tealDark = Color(0xFF0E9E78);
+
+  // ── Accent color sets (shop "ธีมสี") ──────────────────────────────────────
+  // Each set = [main, deep, mid, card] → maps to [purple, deepPurple, indigo,
+  // purpleCard]. Index 0 = ต้นฉบับ (original app colours). Each set is a harmonious
+  // multi-shade ramp of ONE hue so buttons/cards/headers reskin cohesively.
+  // applyAccentSet reskins the mutable accents + accent-driven gradients below;
+  // app.dart applies the active set at startup and whenever the user equips one.
+  static const List<List<Color>> accentSets = [
+    [Color(0xFF7A67C0), Color(0xFF5C4B9E), Color(0xFF6E5FB0), Color(0xFF5C4B9E)], // ต้นฉบับ
+    [Color(0xFF7C5CE6), Color(0xFF5A3EC8), Color(0xFF8E72F0), Color(0xFF4E32B0)], // ไวโอเล็ต
+    [Color(0xFF3A78F0), Color(0xFF235FD1), Color(0xFF5B8DF7), Color(0xFF1E4FB8)], // มหาสมุทร
+    [Color(0xFF17B890), Color(0xFF0E9E78), Color(0xFF2EC9A6), Color(0xFF0B7A5E)], // เขียวมรกต
+    [Color(0xFFF2764B), Color(0xFFD95A2E), Color(0xFFFF9166), Color(0xFFC24A22)], // พระอาทิตย์ตก
+    [Color(0xFFE85C97), Color(0xFFC93B76), Color(0xFFF27BAD), Color(0xFFA82C5E)], // กุหลาบ
+  ];
+  static const List<String> accentSetNames = [
+    'ต้นฉบับ', 'ไวโอเล็ต', 'มหาสมุทร', 'เขียวมรกต', 'พระอาทิตย์ตก', 'กุหลาบ',
+  ];
+
+  static void applyAccentSet(int i) {
+    final s = accentSets[(i < 0 || i >= accentSets.length) ? 0 : i];
+    purple = s[0];
+    deepPurple = s[1];
+    indigo = s[2];
+    purpleCard = s[3];
+    // Rebuild the accent-driven gradients so themed surfaces (world hero, section
+    // header bands) follow the equipped set instead of frozen literal colours.
+    purpleRadial = _buildPurpleRadial();
+    accentBand = _buildAccentBand();
+  }
+
+  // Section-title / card-header band: a subtle same-hue gradient (lighter → main →
+  // deep) used by the "banner" treatment. Rebuilt per accent set.
+  static LinearGradient accentBand = _buildAccentBand();
+  static LinearGradient _buildAccentBand() => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color.lerp(purple, Colors.white, 0.14)!, purple, deepPurple],
+        stops: const [0.0, 0.55, 1.0],
+      );
 
   // De-slop tokens: solid near-white app background + hairline border for flat cards.
   static const appBg = Color(0xFFFAFAFB);
@@ -44,17 +85,44 @@ class KColors {
     colors: [Color(0xFF3B78F0), blue],
   );
 
-  // De-slopped: was a vivid violet radial. Now a calm muted-purple, low-contrast.
-  static const purpleRadial = RadialGradient(
-    center: Alignment(0.78, -0.64),
-    radius: 1.0,
-    colors: [Color(0xFF5C4B9E), Color(0xFF6E5FB0)],
-  );
+  // De-slopped: calm muted radial. Now ACCENT-DRIVEN (deep → mid of the equipped
+  // set) so themed surfaces recolour; rebuilt in applyAccentSet.
+  static RadialGradient purpleRadial = _buildPurpleRadial();
+  static RadialGradient _buildPurpleRadial() => RadialGradient(
+        center: const Alignment(0.78, -0.64),
+        radius: 1.0,
+        colors: [deepPurple, indigo],
+      );
 
   static const orangeGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [orange, orangeDark],
+  );
+
+  // ── Home-tab cards ────────────────────────────────────────────────────────
+  // Both home cards use FIXED gradients, deliberately not the accent theme, so
+  // equipping a shop colour set never restyles the two primary entry points.
+  // Each ramp stays inside one hue family and only shifts a little (blue→teal,
+  // amber→clay) instead of the long neon hue sweeps that read as generic.
+
+  // ประเมินสมรรถภาพ — cool "clinic" blue easing into teal.
+  static const assessmentInk = Color(0xFF0B5E7A);
+  static const assessmentCardGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF1E6FA8), Color(0xFF127C93), Color(0xFF0E8A83)],
+    stops: [0.0, 0.55, 1.0],
+  );
+
+  // เรียนรู้ท่าฝึก — warm amber settling into clay; the counterweight to the
+  // cool assessment card so the two never read as the same button twice.
+  static const learnCardInk = Color(0xFF8A3F14);
+  static const learnCardGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFE0912F), Color(0xFFC96A22), Color(0xFFA84E1A)],
+    stops: [0.0, 0.55, 1.0],
   );
 
   // Healthcare palette for the fitness-assessment module.

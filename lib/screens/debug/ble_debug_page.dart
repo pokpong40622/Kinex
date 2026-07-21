@@ -7,6 +7,11 @@ import '../../theme/responsive.dart';
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
+/// Which board's connection this console is driving. Both boards can be
+/// connected at once (see DevicesPage); the toggle just switches which one the
+/// scan/connect/send/log view is showing — e.g. pick Hand to watch TILT samples.
+enum _Board { leg, hand }
+
 class BleDebugPage extends ConsumerStatefulWidget {
   const BleDebugPage({super.key});
 
@@ -17,6 +22,10 @@ class BleDebugPage extends ConsumerStatefulWidget {
 class _BleDebugPageState extends ConsumerState<BleDebugPage> {
   final _sendController = TextEditingController();
   final _scrollController = ScrollController();
+  _Board _board = _Board.leg;
+
+  NotifierProvider<BleController, BleState> get _provider =>
+      _board == _Board.leg ? bleControllerProvider : handBleProvider;
 
   @override
   void dispose() {
@@ -48,8 +57,8 @@ class _BleDebugPageState extends ConsumerState<BleDebugPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(bleControllerProvider);
-    final ctl = ref.read(bleControllerProvider.notifier);
+    final state = ref.watch(_provider);
+    final ctl = ref.read(_provider.notifier);
 
     // Auto-scroll log to bottom on each build (new entries)
     _scrollToBottom();
@@ -68,6 +77,13 @@ class _BleDebugPageState extends ConsumerState<BleDebugPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Board selector (Leg / Hand) ───────────────────────────────────
+          _BoardToggle(
+            board: _board,
+            onChanged: (b) => setState(() => _board = b),
+            r: context.r,
+          ),
+
           // ── Status row ────────────────────────────────────────────────────
           _StatusRow(state: state, r: context.r),
 
@@ -115,6 +131,66 @@ class _BleDebugPageState extends ConsumerState<BleDebugPage> {
             bottomInset: MediaQuery.paddingOf(context).bottom,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Board Toggle ─────────────────────────────────────────────────────────────
+
+class _BoardToggle extends StatelessWidget {
+  final _Board board;
+  final ValueChanged<_Board> onChanged;
+  final double Function(double) r;
+
+  const _BoardToggle({
+    required this.board,
+    required this.onChanged,
+    required this.r,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: KColors.teal.withAlpha(20),
+      padding: EdgeInsets.symmetric(horizontal: r(12), vertical: r(8)),
+      child: Row(
+        children: [
+          _seg('ขา (EMG)', _Board.leg, Icons.directions_walk),
+          SizedBox(width: r(8)),
+          _seg('มือ (Tilt)', _Board.hand, Icons.back_hand),
+        ],
+      ),
+    );
+  }
+
+  Widget _seg(String label, _Board value, IconData icon) {
+    final selected = board == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onChanged(value),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: r(9)),
+          decoration: BoxDecoration(
+            color: selected ? KColors.teal : Colors.white,
+            borderRadius: BorderRadius.circular(r(10)),
+            border: Border.all(
+                color: selected ? KColors.teal : Colors.grey.shade300),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon,
+                  size: r(16),
+                  color: selected ? Colors.white : KColors.navyText),
+              SizedBox(width: r(6)),
+              Text(label,
+                  style: thaiSans(
+                      size: r(13),
+                      color: selected ? Colors.white : KColors.navyText)),
+            ],
+          ),
+        ),
       ),
     );
   }

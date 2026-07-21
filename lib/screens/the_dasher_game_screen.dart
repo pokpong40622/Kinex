@@ -19,6 +19,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../data/game_repository.dart';
 import '../models/game_session_record.dart';
 import '../state/emergency_contact.dart';
+import '../state/dasher_difficulty.dart';
+import '../state/tutorial_prefs.dart';
 
 /// Native ACTION_CALL bridge (android/.../MainActivity.kt) — used to auto-dial
 /// the emergency contact hands-free when Unity reports a fall.
@@ -58,7 +60,16 @@ class _TheDasherGameScreenState extends ConsumerState<TheDasherGameScreen> {
     }
   }
 
-  void _selectGame() => sendToUnity('SceneRouter', 'LoadGame', 'thedasher');
+  void _selectGame() {
+    // Config must reach Unity before LoadGame so SceneRouter has it when the
+    // scene spins up.
+    const difficulties = ['easy', 'normal', 'hard'];
+    sendToUnity('SceneRouter', 'SetDifficulty',
+        difficulties[ref.read(dasherDifficultyProvider)]);
+    sendToUnity('SceneRouter', 'SetTutorial',
+        ref.read(tutorialEnabledProvider) ? 'true' : 'false');
+    sendToUnity('SceneRouter', 'LoadGame', 'thedasher');
+  }
 
   Future<void> _onUnityMessage(String data) async {
     if (data.contains('unity_ready')) {

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../state/onboarding_prefs.dart';
 import '../state/emergency_contact.dart';
+import '../state/tutorial_prefs.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -13,6 +14,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final w = MediaQuery.sizeOf(context).width;
     final introEnabled = ref.watch(introEnabledProvider);
+    final tutorialEnabled = ref.watch(tutorialEnabledProvider);
     // Read once for initial field values — fields save on change via the
     // notifier directly, so this page doesn't need to re-render per keystroke.
     final contact = ref.read(emergencyContactProvider);
@@ -87,6 +89,37 @@ class SettingsPage extends ConsumerWidget {
                       color: KColors.navyText)),
               subtitle: Text(
                   'ปิดแล้วจะแสดงเฉพาะการเชื่อมต่อบลูทูธและการติดตั้งแผ่น EMG',
+                  style: thaiSans(
+                      size: 12,
+                      weight: FontWeight.w500,
+                      color: KColors.navyText.withAlpha(130))),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Section: โหมดสอนเล่น (The Dasher in-game tutorial toggle)
+          Text('โหมดสอนเล่น',
+              style: thaiSans(
+                  size: 13,
+                  weight: FontWeight.w600,
+                  color: KColors.navyText.withAlpha(140))),
+          const SizedBox(height: 8),
+          Container(
+            decoration: cardDecoration(radius: 16),
+            child: SwitchListTile(
+              value: tutorialEnabled,
+              onChanged: (v) =>
+                  ref.read(tutorialEnabledProvider.notifier).set(v),
+              activeThumbColor: KColors.teal,
+              contentPadding: EdgeInsets.symmetric(horizontal: w * 0.045),
+              secondary: const Icon(Icons.school_rounded,
+                  color: KColors.teal, size: 22),
+              title: Text('โหมดสอนเล่น (กำลังพัฒนา)',
+                  style: thaiSans(
+                      size: 16,
+                      weight: FontWeight.w600,
+                      color: KColors.navyText)),
+              subtitle: Text(
+                  'สอนท่าทางทั้ง 3 ท่าก่อนเริ่มเกม The Dasher',
                   style: thaiSans(
                       size: 12,
                       weight: FontWeight.w500,

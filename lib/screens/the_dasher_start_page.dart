@@ -10,18 +10,21 @@
 // read clearly over the photographic park background.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
+import '../state/dasher_difficulty.dart';
 
-class TheDasherStartPage extends StatefulWidget {
+class TheDasherStartPage extends ConsumerStatefulWidget {
   const TheDasherStartPage({super.key});
 
   @override
-  State<TheDasherStartPage> createState() => _TheDasherStartPageState();
+  ConsumerState<TheDasherStartPage> createState() =>
+      _TheDasherStartPageState();
 }
 
-class _TheDasherStartPageState extends State<TheDasherStartPage> {
+class _TheDasherStartPageState extends ConsumerState<TheDasherStartPage> {
   // The game-intro (3 how-to graphics) shows as a pop-up ON this start page —
   // not on a page before it, nor as an overlay on the running game. Auto-shows on
   // entry; the ⓘ button re-opens it.
@@ -85,6 +88,8 @@ class _TheDasherStartPageState extends State<TheDasherStartPage> {
                     // Fanned instruction cards — middle ("sit") in front (item 2).
                     const _CardFan(),
                     const Spacer(),
+                    const _DifficultySelector(),
+                    SizedBox(height: context.r(18)),
                     _StartButton(
                         onTap: () => context.pushReplacement('/the-dasher')),
                     // Lift the button off the very bottom edge (item 1).
@@ -149,10 +154,10 @@ class _DasherIntroPopupState extends State<_DasherIntroPopup> {
     final size = MediaQuery.sizeOf(context);
     // A compact centred card, not a full-screen takeover. Bound both axes so the
     // popup stays small on a tablet.
-    final cardW = size.width * 0.82 > context.r(360)
-        ? context.r(360)
-        : size.width * 0.82;
-    final imgH = size.height * 0.34;
+    final cardW = size.width * 0.90 > context.r(440)
+        ? context.r(440)
+        : size.width * 0.90;
+    final imgH = size.height * 0.42;
 
     return Positioned.fill(
       child: Container(
@@ -352,6 +357,112 @@ class _CardFan extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Three-card difficulty selector (ง่าย / ปกติ / ยาก) shown above the start
+/// button. A semi-opaque white row reads clearly over the photo background;
+/// the selected card gets a KColors.purple ring + tint. Tapping a card sets
+/// dasherDifficultyProvider — read on launch by the_dasher_game_screen.dart
+/// and sent to Unity as SceneRouter.SetDifficulty.
+class _DifficultySelector extends ConsumerWidget {
+  const _DifficultySelector();
+
+  static const _levels = [
+    (label: 'ง่าย', hint: 'ช้า', icon: Icons.sentiment_satisfied_rounded),
+    (label: 'ปกติ', hint: 'สมดุล', icon: Icons.bolt_rounded),
+    (label: 'ยาก', hint: 'เร็ว', icon: Icons.whatshot_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(dasherDifficultyProvider);
+    return Container(
+      padding: EdgeInsets.all(context.r(10)),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(context.r(20)),
+        border: Border.all(color: KColors.hairline, width: 1),
+        boxShadow: const [
+          BoxShadow(color: Color(0x22000000), blurRadius: 10, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: List.generate(_levels.length, (i) {
+          final level = _levels[i];
+          final isSelected = selected == i;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: context.r(4)),
+              child: _DifficultyCard(
+                label: level.label,
+                hint: level.hint,
+                icon: level.icon,
+                selected: isSelected,
+                onTap: () =>
+                    ref.read(dasherDifficultyProvider.notifier).select(i),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// Single tappable difficulty card — icon + Thai label + one-word hint.
+class _DifficultyCard extends StatelessWidget {
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _DifficultyCard({
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(vertical: context.r(10)),
+        decoration: BoxDecoration(
+          color: selected ? KColors.purple.withAlpha(28) : Colors.transparent,
+          borderRadius: BorderRadius.circular(context.r(14)),
+          border: Border.all(
+            color: selected ? KColors.purple : KColors.hairline,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: context.r(22),
+                color: selected ? KColors.purple : KColors.navyText.withAlpha(160)),
+            SizedBox(height: context.r(4)),
+            Text(label,
+                style: thaiSans(
+                    size: context.r(14),
+                    weight: FontWeight.w700,
+                    color: selected ? KColors.purple : KColors.navyText)),
+            SizedBox(height: context.r(1)),
+            Text(hint,
+                style: thaiSans(
+                    size: context.r(11),
+                    weight: FontWeight.w500,
+                    color: KColors.navyText.withAlpha(120))),
+          ],
+        ),
+      ),
     );
   }
 }

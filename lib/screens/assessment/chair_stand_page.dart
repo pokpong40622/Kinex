@@ -28,7 +28,7 @@ class ChairStandPage extends ConsumerStatefulWidget {
   ConsumerState<ChairStandPage> createState() => _ChairStandPageState();
 }
 
-enum _Phase { pretest, counting, done }
+enum _Phase { pretest, getReady, counting, done }
 
 class _ChairStandPageState extends ConsumerState<ChairStandPage> {
   static const int _targetReps = 5;
@@ -42,14 +42,17 @@ class _ChairStandPageState extends ConsumerState<ChairStandPage> {
   final ChairStandCounter _counter = ChairStandCounter();
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _ticker;
+  Timer? _cdTimer;
 
   _Phase _phase = _Phase.pretest;
   bool _bodyOk = false;
+  int _countdown = 0;
   double _elapsed = 0;
 
   @override
   void dispose() {
     _ticker?.cancel();
+    _cdTimer?.cancel();
     ref.read(ttsServiceProvider).stop();
     super.dispose();
   }
@@ -62,6 +65,8 @@ class _ChairStandPageState extends ConsumerState<ChairStandPage> {
         _bodyOk = frame.allVisible(_required);
         _counter.calibrate(frame);
         setState(() {});
+      case _Phase.getReady:
+        break; // counting down before the timed reps start
       case _Phase.counting:
         final before = _counter.reps;
         _counter.add(frame);
@@ -78,7 +83,30 @@ class _ChairStandPageState extends ConsumerState<ChairStandPage> {
     }
   }
 
-  void _startCounting() {
+  // "เตรียมตัว… 3-2-1" before the reps start timing, so the senior can get seated
+  // and ready without losing time the instant Start is tapped.
+  void _startCountdown() {
+    setState(() {
+      _phase = _Phase.getReady;
+      _countdown = 3;
+    });
+    ref.read(ttsServiceProvider).speak('เตรียมตัว');
+    _cdTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      _countdown--;
+      if (_countdown <= 0) {
+        t.cancel();
+        _beginCounting();
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  void _beginCounting() {
     setState(() => _phase = _Phase.counting);
     ref.read(ttsServiceProvider).speak('เริ่ม');
     _stopwatch
@@ -136,7 +164,7 @@ class _ChairStandPageState extends ConsumerState<ChairStandPage> {
             AssessmentButton(
               label: 'เริ่มนับ 5 ครั้ง',
               icon: Icons.timer_outlined,
-              onTap: _readyToCount ? _startCounting : null,
+              onTap: _readyToCount ? _startCountdown : null,
             ),
             SizedBox(height: MediaQuery.sizeOf(context).width * 0.03),
             AssessmentButton(
@@ -146,6 +174,8 @@ class _ChairStandPageState extends ConsumerState<ChairStandPage> {
             ),
           ],
         );
+      case _Phase.getReady:
+        return AssessmentButton(label: 'เตรียมตัว…', onTap: null);
       case _Phase.counting:
         return AssessmentButton(
           label: 'นับครบ 5 ครั้งแล้ว',
@@ -193,6 +223,33 @@ class _ChairStandPageState extends ConsumerState<ChairStandPage> {
                         size: w * 0.05,
                         weight: FontWeight.w800,
                         color: Colors.white)),
+              ],
+            ),
+          ),
+        );
+      case _Phase.getReady:
+        return Center(
+          child: Container(
+            width: w * 0.44,
+            height: w * 0.44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(160),
+              shape: BoxShape.circle,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('เตรียมตัว',
+                    style: thaiSans(
+                        size: w * 0.05,
+                        weight: FontWeight.w700,
+                        color: Colors.white)),
+                Text('$_countdown',
+                    style: thaiSans(
+                        size: w * 0.26,
+                        weight: FontWeight.w900,
+                        color: KColors.greenLight)),
               ],
             ),
           ),

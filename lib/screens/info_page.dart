@@ -8,7 +8,10 @@ import '../models/emg_metrics.dart';
 import '../models/game_session_record.dart';
 import '../models/muscle.dart';
 import '../state/shop_providers.dart';
+import '../state/assessment_profile.dart';
+import '../data/assessment_repository.dart';
 import '../data/customize_catalog.dart';
+import '../services/assessment_pdf.dart';
 import '../theme/app_theme.dart';
 import '../theme/kui.dart';
 import '../theme/responsive.dart';
@@ -55,7 +58,7 @@ class _ScoreBand {
 
   static _ScoreBand of(int score) {
     if (score >= 85) return const _ScoreBand('ยอดเยี่ยม', Color(0xFF11C18E));
-    if (score >= 70) return const _ScoreBand('ดีมาก', KColors.purple);
+    if (score >= 70) return _ScoreBand('ดีมาก', KColors.purple);
     if (score >= 50) return const _ScoreBand('ดี', KColors.blue);
     return const _ScoreBand('สู้ๆ นะ', KColors.orangeDark);
   }
@@ -73,7 +76,10 @@ class InfoPage extends StatelessWidget {
       body: SafeArea(
           bottom: false,
           child: SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: context.r(28)),
+            // Clear the app's bottom nav/system bar so the Export-PDF button
+            // row at the end of the scroll isn't clipped or blocked.
+            padding: EdgeInsets.only(
+                bottom: context.r(96) + MediaQuery.paddingOf(context).bottom),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -113,6 +119,7 @@ class _HeaderBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userName = ref.watch(userNameProvider);
+    final age = ref.watch(savedProfileProvider).age;
     final character = characterById(ref.watch(activeCharacterProvider));
 
     return Container(
@@ -145,7 +152,7 @@ class _HeaderBanner extends ConsumerWidget {
                       color: Colors.white),
                 ),
                 Text(
-                  'อายุ: 80',
+                  age != null ? 'อายุ: $age' : 'อายุ: -',
                   style: montserrat(
                       size: context.r(17),
                       weight: FontWeight.w600,
@@ -216,6 +223,47 @@ class _HeaderBanner extends ConsumerWidget {
   }
 }
 
+// ─── Section banner ─────────────────────────────────────────────────────────
+// Same secondary, lighter treatment as shop_page.dart's _SectionBanner (pale
+// accent-tinted fill + thin border, no heavy shadow), scaled down for use as
+// an in-card title band. `icon` is optional — the history title omits it
+// entirely per spec (no emoji, no leading icon).
+
+class _SectionBanner extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  const _SectionBanner(this.title, {this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: context.r(14), vertical: context.r(10)),
+      decoration: BoxDecoration(
+        color: KColors.purple.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(context.r(14)),
+        border: Border.all(color: KColors.purple.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Container(
+              width: context.r(30),
+              height: context.r(30),
+              decoration: BoxDecoration(
+                  color: KColors.purple.withValues(alpha: 0.14), shape: BoxShape.circle),
+              child: Icon(icon, color: KColors.purple, size: context.r(16)),
+            ),
+            SizedBox(width: context.r(10)),
+          ],
+          Text(title,
+              style: montserrat(size: context.r(17), weight: FontWeight.w900, color: KColors.deepPurple)),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Balance card (EMG L/R) ─────────────────────────────────────────────────
 
 /// Sums each muscle reading's %MVC per leg from the balance report and
@@ -262,9 +310,8 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('สมดุลซ้าย–ขวา (EMG)',
-              style: montserrat(size: context.r(19), weight: FontWeight.w900)),
-          SizedBox(height: context.r(2)),
+          const _SectionBanner('สมดุลซ้าย–ขวา (EMG)', icon: Icons.compare_arrows_rounded),
+          SizedBox(height: context.r(8)),
           Text(
             '% การใช้กล้ามเนื้อจาก EMG ขณะทำท่าที่ลงน้ำหนัก 2 ข้างเท่ากัน '
             '(เช่น ยืนสองเท้า หรือเทียบยืนขาเดียวซ้าย-ขวา)',
@@ -540,9 +587,8 @@ class _HistoryCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ประวัติการเล่น',
-              style: montserrat(size: context.r(19), weight: FontWeight.w900)),
-          SizedBox(height: context.r(2)),
+          const _SectionBanner('ประวัติการเล่น'),
+          SizedBox(height: context.r(8)),
           Text('สัปดาห์นี้',
               style: montserrat(
                   size: context.r(12.5),
@@ -666,11 +712,53 @@ class _GameRow extends StatelessWidget {
 
 // ─── Action buttons ─────────────────────────────────────────────────────────
 
-class _ActionButtons extends StatelessWidget {
+class _ActionButtons extends ConsumerWidget {
   const _ActionButtons();
 
+  // Build + open the assessment PDF for the latest saved result. If the user has
+  // never completed an assessment, tell them and offer to start one instead.
+  Future<void> _exportPdf(BuildContext context, WidgetRef ref) async {
+    final record = await ref.read(latestAssessmentProvider.future);
+    if (!context.mounted) return;
+    if (record == null) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20)),
+          title: Text('ยังไม่มีผลการประเมิน',
+              style: montserrat(size: 19, weight: FontWeight.w800)),
+          content: Text(
+              'คุณยังไม่ได้ทำแบบประเมินสมรรถภาพ\nกรุณาทำการประเมินก่อน จึงจะบันทึกรายงานได้',
+              style: montserrat(size: 15, weight: FontWeight.w500)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('ปิด',
+                  style: montserrat(
+                      size: 15,
+                      weight: FontWeight.w700,
+                      color: const Color(0xFF6D78A8))),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: KColors.indigo),
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.push('/assessment');
+              },
+              child: Text('เริ่มประเมิน',
+                  style: montserrat(size: 15, weight: FontWeight.w800)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    await AssessmentPdf.generateAndShare(record);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
         Expanded(
@@ -704,13 +792,7 @@ class _ActionButtons extends StatelessWidget {
         Expanded(
           flex: 4,
           child: GestureDetector(
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Export PDF — เร็วๆ นี้',
-                    style: montserrat(size: 15, color: Colors.white)),
-                behavior: SnackBarBehavior.floating,
-              ),
-            ),
+            onTap: () => _exportPdf(context, ref),
             child: Container(
               padding: EdgeInsets.symmetric(vertical: context.r(13)),
               decoration: BoxDecoration(

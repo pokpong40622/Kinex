@@ -26,7 +26,7 @@ class _Channel {
 }
 
 // Channel order MUST match the firmware's EMG_PINS[] (pin7=VL, 6=BF, 5=TA, 4=GCM).
-const List<_Channel> _channels = [
+final List<_Channel> _channels = [
   _Channel('VL', KColors.purple),
   _Channel('BF', KColors.orange),
   _Channel('TA', KColors.teal),

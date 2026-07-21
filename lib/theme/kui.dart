@@ -53,32 +53,35 @@ class KCard extends StatelessWidget {
 /// Generalizes the good `FitnessLevelBadge` pattern for use everywhere.
 class KPill extends StatelessWidget {
   final String text;
-  final Color color;
+  // Nullable so the default can resolve to the (now mutable / theme-able)
+  // KColors.purple at build time instead of as a const default.
+  final Color? color;
   final IconData? icon;
-  const KPill(this.text, {super.key, this.color = KColors.purple, this.icon});
+  const KPill(this.text, {super.key, this.color, this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final c = color ?? KColors.purple;
     return Container(
       padding:
           EdgeInsets.symmetric(horizontal: context.r(10), vertical: context.r(5)),
       decoration: BoxDecoration(
-        color: color.withAlpha(28),
+        color: c.withAlpha(28),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withAlpha(90), width: 1),
+        border: Border.all(color: c.withAlpha(90), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: context.r(14), color: color),
+            Icon(icon, size: context.r(14), color: c),
             SizedBox(width: context.r(5)),
           ],
           Text(text,
               style: thaiSans(
                   size: context.r(12.5),
                   weight: FontWeight.w700,
-                  color: color)),
+                  color: c)),
         ],
       ),
     );
@@ -126,24 +129,25 @@ class KStatTile extends StatelessWidget {
 class KSectionHeader extends StatelessWidget {
   final String title;
   final IconData? icon;
-  final Color color;
+  final Color? color;
   final Widget? trailing;
   const KSectionHeader(
     this.title, {
     super.key,
     this.icon,
-    this.color = KColors.purple,
+    this.color,
     this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
+    final c = color ?? KColors.purple;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: context.r(6)),
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: context.r(20), color: color),
+            Icon(icon, size: context.r(20), color: c),
             SizedBox(width: context.r(8)),
           ],
           Expanded(
