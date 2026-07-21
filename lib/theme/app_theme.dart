@@ -125,6 +125,17 @@ class KColors {
     stops: [0.0, 0.55, 1.0],
   );
 
+  // การ์ดเรียนรู้ — indigo easing into plum. The third home card needs to read
+  // as a sibling of the other two without repeating either's temperature, so it
+  // sits between the assessment card's cool blue and the learn card's warm clay.
+  static const cardGameInk = Color(0xFF4A2B6B);
+  static const cardGameGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF5B62B5), Color(0xFF7A55A8), Color(0xFF94498F)],
+    stops: [0.0, 0.55, 1.0],
+  );
+
   // Healthcare palette for the fitness-assessment module.
   static const tealGradient = LinearGradient(
     begin: Alignment.topLeft,

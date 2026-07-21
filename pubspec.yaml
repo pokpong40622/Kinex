@@ -71,6 +71,7 @@ flutter:
     - assets/images/game_icons/
     - assets/images/the_dasher/
     - assets/images/assessment/
+    - assets/images/card_game/
     - assets/images/hardware_guide/
     - assets/images/info/
     - assets/images/learn/

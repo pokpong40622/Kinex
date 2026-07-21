@@ -421,6 +421,18 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                   ),
                 ),
               ),
+              SizedBox(height: h * 0.015),
+              Padding(
+                padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.65,
+                    child:
+                        _CardGameCard(onTap: () => context.push('/card-game')),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -914,6 +926,99 @@ class _LearnHomeCard extends StatelessWidget {
                     padding: EdgeInsets.only(right: cw * 0.05),
                     child: Icon(Icons.menu_book_rounded,
                         size: cw * 0.22, // Matched large right-aligned icon size
+                        color: Colors.white.withAlpha(230)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Home-tab entry point for the balance/fall-prevention card game under
+/// lib/card_game/. Same geometry as the two cards above so the three read as a
+/// set; only the gradient and the icon change.
+class _CardGameCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CardGameCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final h = size.height;
+    final cardH = h * 0.145;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        height: cardH,
+        child: LayoutBuilder(
+          builder: (context, cs) {
+            final cw = cs.maxWidth;
+            final vPad = cardH * 0.12;
+            final gap1 = cardH * 0.04;
+            final gap2 = cardH * 0.06;
+            final btnVPad = cw * 0.025;
+
+            return Container(
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                gradient: KColors.cardGameGradient,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: KColors.hairline, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                      color: KColors.cardGameInk.withValues(alpha: 0.30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.fromLTRB(cw * 0.06, vPad, cw * 0.03, vPad),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('การ์ดเรียนรู้',
+                              style: thaiSans(
+                                  size: cw * 0.060,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white)),
+                          SizedBox(height: gap1),
+                          Text('ทรงตัวดี ไม่หกล้ม',
+                              style: thaiSans(
+                                  size: cw * 0.030,
+                                  weight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(height: gap2),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: cw * 0.05, vertical: btnVPad),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('เริ่มเล่น',
+                                style: thaiSans(
+                                    size: cw * 0.036,
+                                    weight: FontWeight.w800,
+                                    color: KColors.cardGameInk)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: cw * 0.05),
+                    child: Icon(Icons.style_rounded,
+                        size: cw * 0.22,
                         color: Colors.white.withAlpha(230)),
                   ),
                 ],

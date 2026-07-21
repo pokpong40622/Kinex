@@ -1,6 +1,9 @@
 # kinex_app
 
-Flutter front-end for **Kinex**. The app embeds the Unity **MEGA DANCE** game
+Flutter front-end for **Kinex**. The app also bundles the pure-Flutter
+**การ์ดเรียนรู้ ทรงตัวดี ไม่หกล้ม** balance/fall-prevention card game
+(under `lib/card_game/`, reachable from the Home tab → "การ์ดเรียนรู้",
+route `/card-game`). The app embeds the Unity **MEGA DANCE** game
 (pose-tracked dancing) via the [`flutter_embed_unity`](https://pub.dev/packages/flutter_embed_unity)
 package.
 

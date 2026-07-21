@@ -48,6 +48,7 @@ import 'screens/debug/ble_debug_page.dart';
 import 'screens/debug/game_debug_page.dart';
 import 'screens/devices/devices_page.dart';
 import 'models/world_session_record.dart';
+import 'card_game/card_game_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
       initialLocation: '/',
@@ -175,6 +176,10 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
                 path: '/learn/:poseId',
                 builder: (context, state) => PoseDetailPage(
                     poseId: state.pathParameters['poseId']!)),
+            // Card game — "การ์ดเรียนรู้ ทรงตัวดี ไม่หกล้ม" (pure Flutter, embedded).
+            GoRoute(
+                path: '/card-game',
+                builder: (context, _) => const CardGameScreen()),
             // Kinex World — instructor-led exercise class (Unity-embedded session).
             GoRoute(
                 path: '/world',
