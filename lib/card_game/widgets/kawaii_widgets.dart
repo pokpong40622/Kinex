@@ -4,6 +4,30 @@ import '../theme/app_theme.dart';
 import 'mascot_painter.dart';
 import '../models/models.dart';
 
+/// The shared scene backdrop behind every card-game screen — same image as
+/// the home page uses, so pushed routes (which paint over it) still match.
+class CardGameBackground extends StatelessWidget {
+  final Widget child;
+  const CardGameBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const RepaintBoundary(
+          child: Image(
+            image: AssetImage('assets/images/card_game/background.png'),
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.low,
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+}
+
 /// Keeps the interactive game area comfortably centered on large tablet and
 /// desktop screens so players never need to scan from edge to edge.
 class CenteredGameArea extends StatelessWidget {

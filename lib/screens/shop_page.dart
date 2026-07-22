@@ -22,10 +22,17 @@ class _GameUnlock {
       this.icon, this.price);
 }
 
-const _gameUnlock = _GameUnlock('kinex_world', 'KINEX World', 'KINEX World',
-    'assets/images/game_icons/world.png', Icons.self_improvement_rounded, 1000);
+// The Dasher ships free/owned by default (see ShopState.defaults.unlockedGames)
+// — its card still renders here but always shows as owned, never for sale.
 const _gameUnlockDasher = _GameUnlock('thedasher', 'THE DASHER', 'The Dasher',
     'assets/images/game_icons/thedasher.png', Icons.rocket_launch_rounded, 800);
+const _gameUnlock = _GameUnlock('kinex_world', 'KINEX World', 'KINEX World',
+    'assets/images/game_icons/world.png', Icons.self_improvement_rounded, 1000);
+const _gameUnlockHangGlider = _GameUnlock('hangglider', 'นักร่อน',
+    'Hang Glider', 'assets/images/game_icons/hangglider.png', Icons.flight_rounded, 600);
+const _gameUnlockQuakeEscape = _GameUnlock('quakeescape', 'QUAKE ESCAPE',
+    'Quake Escape', 'assets/images/game_icons/quakeescape.png',
+    Icons.warning_amber_rounded, 700);
 
 // ── Shop tab ──────────────────────────────────────────────────────────────
 
@@ -63,9 +70,13 @@ class ShopTab extends ConsumerWidget {
                       icon: Icons.lock_open_rounded,
                     ),
                     SizedBox(height: h * 0.015),
+                    const _GameUnlockCard(item: _gameUnlockDasher),
+                    SizedBox(height: h * 0.012),
                     const _GameUnlockCard(item: _gameUnlock),
                     SizedBox(height: h * 0.012),
-                    const _GameUnlockCard(item: _gameUnlockDasher),
+                    const _GameUnlockCard(item: _gameUnlockHangGlider),
+                    SizedBox(height: h * 0.012),
+                    const _GameUnlockCard(item: _gameUnlockQuakeEscape),
                     SizedBox(height: h * 0.03),
                     const _SectionBanner(
                       title: 'ตัวละคร',
@@ -116,11 +127,11 @@ class ShopTab extends ConsumerWidget {
 // shop opens with the same visual weight as the info tab instead of a bare
 // title row.
 
-class _ShopHeaderBanner extends StatelessWidget {
+class _ShopHeaderBanner extends ConsumerWidget {
   const _ShopHeaderBanner();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final r = context.r;
     return Container(
       padding: EdgeInsets.fromLTRB(r(22), r(18), r(20), r(18)),
@@ -141,9 +152,14 @@ class _ShopHeaderBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ร้านค้า',
-                    style: montserrat(
-                        size: r(28), weight: FontWeight.w900, color: Colors.white)),
+                // DEV: tap the ร้านค้า title to grant +500 coins, stacks per tap.
+                // Dev convenience only — remove before release.
+                GestureDetector(
+                  onTap: () => ref.read(coinsProvider.notifier).state += 500,
+                  child: Text('ร้านค้า',
+                      style: montserrat(
+                          size: r(28), weight: FontWeight.w900, color: Colors.white)),
+                ),
                 SizedBox(height: r(4)),
                 Text('ปลดล็อกเกม ตัวละคร และธีมสี',
                     style: montserrat(

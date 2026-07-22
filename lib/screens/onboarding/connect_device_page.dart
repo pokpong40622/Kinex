@@ -7,22 +7,25 @@ import '../../widgets/device_connect_panel.dart';
 
 /// Full-screen landing shown on every cold launch (before the hardware guide).
 ///
-/// A Kinex set is TWO boards — leg (EMG) and hand (tilt) — and the old version
-/// of this page had a single "เชื่อมต่อ" button, so users connected the leg
-/// board and walked away thinking they were done. It now shows both slots via
-/// [DeviceConnectPanel] and only reports success once both are live.
+/// A Kinex set is THREE boards — leg-L, leg-R (both EMG) and hand (tilt) —
+/// and the old version of this page had a single "เชื่อมต่อ" button, so users
+/// connected one board and walked away thinking they were done. It now shows
+/// all three slots via [DeviceConnectPanel] and only reports success once all
+/// three are live.
 ///
 /// Pop contract (mirrors hardware_guide_page.dart):
-///   true      → both boards connected (user tapped the done button)
-///   'skipped' → user tapped "ข้าม" / left with fewer than two connected
+///   true      → all three boards connected (user tapped the done button)
+///   'skipped' → user tapped "ข้าม" / left with fewer than three connected
 ///   null      → back-dismissed
 class ConnectDevicePage extends ConsumerWidget {
   const ConnectDevicePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final legOk = ref.watch(
+    final legLOk = ref.watch(
         bleControllerProvider.select((s) => s.status == BleStatus.connected));
+    final legROk = ref
+        .watch(legRBleProvider.select((s) => s.status == BleStatus.connected));
     final handOk = ref
         .watch(handBleProvider.select((s) => s.status == BleStatus.connected));
 
@@ -66,10 +69,10 @@ class ConnectDevicePage extends ConsumerWidget {
                         decoration:
                             cardDecoration(radius: 28, color: Colors.white),
                         child: DeviceConnectPanel(
-                          // Both connected → real success; otherwise the user is
-                          // choosing to move on without the full set.
-                          onDone: () => Navigator.pop(
-                              context, (legOk && handOk) ? true : 'skipped'),
+                          // All three connected → real success; otherwise the
+                          // user is choosing to move on without the full set.
+                          onDone: () => Navigator.pop(context,
+                              (legLOk && legROk && handOk) ? true : 'skipped'),
                         ),
                       ),
                     ),

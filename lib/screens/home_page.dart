@@ -13,8 +13,11 @@ import '../ble/ble_service.dart';
 import '../theme/responsive.dart';
 import '../data/customize_catalog.dart';
 import '../state/shop_providers.dart';
+import '../models/daily_quest.dart';
+import '../state/quest_providers.dart';
 import 'info_page.dart';
 import 'shop_page.dart';
+import 'learn/learning_center_page.dart';
 import 'onboarding/onboarding_flow.dart';
 import '../state/onboarding_prefs.dart';
 
@@ -101,7 +104,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               CharacterHomeTab(onSeeMore: () => setState(() => _tab = 3)),
             ],
           ),
-          const _QuestTab(),
+          const LearningCenterPage(),
           _PracticeTab(onStartGame: () => context.go('/mega-dance')),
           const _InfoTab(),
           const ShopTab(),
@@ -194,10 +197,10 @@ class _KinexNavBar extends StatelessWidget {
   const _KinexNavBar(
       {required this.selected, required this.onTap, this.itemKeys});
 
-  static const _labels = ['หน้าหลัก', 'ภารกิจ', 'ฝึกซ้อม', 'ข้อมูล', 'ร้านค้า'];
+  static const _labels = ['หน้าหลัก', 'เรียนรู้', 'ฝึกซ้อม', 'ข้อมูล', 'ร้านค้า'];
   static const _icons = [
     'assets/images/nav_home.png',
-    'assets/images/nav_quest.png',
+    'assets/images/nav_learn.png',
     'assets/images/nav_practice.png',
     'assets/images/nav_info.png',
     'assets/images/nav_shop.png',
@@ -395,42 +398,31 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
               SizedBox(height: h * 0.015),
               const _EmgReminderBanner(),
               SizedBox(height: h * 0.01),
+              // Top row: a small ประเมิน card on the left, and today's ภารกิจ
+              // checklist on the right. Putting the day's quests on Home (like a
+              // commercial game menu) means the user opens the app and instantly
+              // sees what to do — play a game, learn a pose — instead of the old
+              // green "go look at quests" card that hid the goals behind a tap.
               Padding(
                 padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
-                // 35% smaller: 65% width (left-aligned) keeps the card's aspect ratio so the
-                // width-driven content scales down with the reduced height (see card heights).
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.65,
-                    child: _AssessmentCard(
-                      cardKey: widget.assessKey,
-                      onTap: () => context.push('/assessment'),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 46,
+                      child: _AssessmentCard(
+                        cardKey: widget.assessKey,
+                        onTap: () => context.push('/assessment'),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              SizedBox(height: h * 0.015),
-              Padding(
-                padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.65,
-                    child: _LearnHomeCard(onTap: () => context.push('/learn')),
-                  ),
-                ),
-              ),
-              SizedBox(height: h * 0.015),
-              Padding(
-                padding: EdgeInsets.fromLTRB(w * 0.04, 0, w * 0.04, h * 0.02),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.65,
-                    child:
-                        _CardGameCard(onTap: () => context.push('/card-game')),
-                  ),
+                    SizedBox(width: w * 0.03),
+                    Expanded(
+                      flex: 54,
+                      child: _DailyQuestPanel(
+                        onTap: () => context.push('/quest'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -844,192 +836,139 @@ class _AssessmentCard extends StatelessWidget {
   }
 }
 
-/// Home-tab entry point for the "เรียนรู้ท่าฝึก" pose library. Sized and
-/// structured to match _AssessmentCard; warm amber gradient so the two cards
-/// read as a pair without looking like the same button twice.
-class _LearnHomeCard extends StatelessWidget {
+/// Home-tab ภารกิจ panel: today's four daily quests with a live check state and
+/// coin reward, driven by [dailyQuestsProvider]. Replaces the old green
+/// "go look at quests" card — the goals themselves now sit on Home so the user
+/// sees at a glance what's left to do today. Tapping opens the full quest page.
+///
+/// White + flat to read as a calm information panel beside the coloured
+/// ประเมิน card, not a second call-to-action competing with it.
+class _DailyQuestPanel extends ConsumerWidget {
   final VoidCallback onTap;
-  const _LearnHomeCard({required this.onTap});
+  const _DailyQuestPanel({required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final h = size.height;
-    final cardH = h * 0.145; // Exactly matches _AssessmentCard height
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quests = ref.watch(dailyQuestsProvider);
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        height: cardH,
-        child: LayoutBuilder(
-          builder: (context, cs) {
-            final cw = cs.maxWidth;
-            // Identical spacing logic to _AssessmentCard
-            final vPad = cardH * 0.12;
-            final gap1 = cardH * 0.04;
-            final gap2 = cardH * 0.06;
-            final btnVPad = cw * 0.025;
-
-            return Container(
-              clipBehavior: Clip.hardEdge,
-              decoration: BoxDecoration(
-                gradient: KColors.learnCardGradient,
-                borderRadius: BorderRadius.circular(25), // Matched radius (25)
-                border: Border.all(color: KColors.hairline, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                      color: KColors.learnCardInk.withValues(alpha: 0.30),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6)),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                          cw * 0.06, vPad, cw * 0.03, vPad),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('เรียนรู้ท่าฝึก',
-                              style: thaiSans(
-                                  size: cw * 0.060, // Matched title size
-                                  weight: FontWeight.w800,
-                                  color: Colors.white)),
-                          SizedBox(height: gap1),
-                          Text('ท่าบริหารสำหรับผู้สูงอายุ 9 ท่า',
-                              style: thaiSans(
-                                  size: cw * 0.030, // Matched subtitle size
-                                  weight: FontWeight.w600,
-                                  color: Colors.white)),
-                          SizedBox(height: gap2),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: cw * 0.05, vertical: btnVPad),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('ดูท่าฝึก',
-                                style: thaiSans(
-                                    size: cw * 0.036, // Matched button text size
-                                    weight: FontWeight.w800,
-                                    color: KColors.learnCardInk)),
-                          ),
-                        ],
-                      ),
+      child: LayoutBuilder(
+        builder: (context, cs) {
+          final cw = cs.maxWidth;
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+                cw * 0.055, cw * 0.05, cw * 0.055, cw * 0.05),
+            decoration: cardDecoration(radius: 22, color: Colors.white),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.emoji_events_rounded,
+                        size: cw * 0.075, color: KColors.orangeDark),
+                    SizedBox(width: cw * 0.025),
+                    Expanded(
+                      child: Text('ภารกิจวันนี้',
+                          style: thaiSans(
+                              size: cw * 0.058,
+                              weight: FontWeight.w800,
+                              color: KColors.navyText)),
                     ),
+                    quests.maybeWhen(
+                      data: (list) {
+                        final done = list.where((q) => q.done).length;
+                        return Text('$done/${list.length}',
+                            style: montserrat(
+                                size: cw * 0.05,
+                                weight: FontWeight.w900,
+                                color: KColors.navyText));
+                      },
+                      orElse: () => const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: cw * 0.035),
+                quests.maybeWhen(
+                  data: (list) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final q in list) _QuestPanelRow(quest: q, cw: cw),
+                    ],
                   ),
-                  Padding(
-                    padding: EdgeInsets.only(right: cw * 0.05),
-                    child: Icon(Icons.menu_book_rounded,
-                        size: cw * 0.22, // Matched large right-aligned icon size
-                        color: Colors.white.withAlpha(230)),
+                  // Quiet placeholder while prefs load — same title above stays
+                  // put, so Home never flashes a spinner or jumps height.
+                  orElse: () => Padding(
+                    padding: EdgeInsets.symmetric(vertical: cw * 0.06),
+                    child: Text('กำลังโหลด…',
+                        style: thaiSans(
+                            size: cw * 0.04,
+                            weight: FontWeight.w600,
+                            color: const Color(0xFF9AA3B8))),
                   ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-/// Home-tab entry point for the balance/fall-prevention card game under
-/// lib/card_game/. Same geometry as the two cards above so the three read as a
-/// set; only the gradient and the icon change.
-class _CardGameCard extends StatelessWidget {
-  final VoidCallback onTap;
-  const _CardGameCard({required this.onTap});
+/// One compact quest line inside [_DailyQuestPanel]: state tick, Thai title, and
+/// the coin reward (dimmed to a check once earned).
+class _QuestPanelRow extends StatelessWidget {
+  final DailyQuest quest;
+  final double cw;
+  const _QuestPanelRow({required this.quest, required this.cw});
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final h = size.height;
-    final cardH = h * 0.145;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        height: cardH,
-        child: LayoutBuilder(
-          builder: (context, cs) {
-            final cw = cs.maxWidth;
-            final vPad = cardH * 0.12;
-            final gap1 = cardH * 0.04;
-            final gap2 = cardH * 0.06;
-            final btnVPad = cw * 0.025;
-
-            return Container(
-              clipBehavior: Clip.hardEdge,
-              decoration: BoxDecoration(
-                gradient: KColors.cardGameGradient,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: KColors.hairline, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                      color: KColors.cardGameInk.withValues(alpha: 0.30),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6)),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.fromLTRB(cw * 0.06, vPad, cw * 0.03, vPad),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('การ์ดเรียนรู้',
-                              style: thaiSans(
-                                  size: cw * 0.060,
-                                  weight: FontWeight.w800,
-                                  color: Colors.white)),
-                          SizedBox(height: gap1),
-                          Text('ทรงตัวดี ไม่หกล้ม',
-                              style: thaiSans(
-                                  size: cw * 0.030,
-                                  weight: FontWeight.w600,
-                                  color: Colors.white)),
-                          SizedBox(height: gap2),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: cw * 0.05, vertical: btnVPad),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('เริ่มเล่น',
-                                style: thaiSans(
-                                    size: cw * 0.036,
-                                    weight: FontWeight.w800,
-                                    color: KColors.cardGameInk)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(right: cw * 0.05),
-                    child: Icon(Icons.style_rounded,
-                        size: cw * 0.22,
-                        color: Colors.white.withAlpha(230)),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+    final done = quest.done;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: cw * 0.022),
+      child: Row(
+        children: [
+          Icon(
+            done
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            size: cw * 0.055,
+            color: done ? KColors.greenDark : const Color(0xFFC2C9D6),
+          ),
+          SizedBox(width: cw * 0.03),
+          Expanded(
+            child: Text(
+              quest.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: thaiSans(
+                  size: cw * 0.04,
+                  weight: FontWeight.w600,
+                  color: done ? const Color(0xFF9AA3B8) : KColors.darkText),
+            ),
+          ),
+          SizedBox(width: cw * 0.02),
+          Icon(
+            done ? Icons.check_rounded : Icons.monetization_on_rounded,
+            size: cw * 0.042,
+            color: done ? KColors.greenDark : KColors.orange,
+          ),
+          SizedBox(width: cw * 0.008),
+          Text(
+            done ? '' : '+${quest.reward}',
+            style: montserrat(
+                size: cw * 0.038,
+                weight: FontWeight.w800,
+                color: KColors.orangeDark),
+          ),
+        ],
       ),
     );
   }
 }
+
 
 /// Multi-step guided tour: dims the whole screen and cuts a "hole" around each
 /// target in turn (a nav tab, then the ประเมิน card), with a caption card and a
@@ -1552,180 +1491,6 @@ class _ResultPill extends StatelessWidget {
   }
 }
 
-// ── QUEST TAB ───────────────────────────────────────────────────────────────
-
-class _QuestTab extends StatelessWidget {
-  const _QuestTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    final h = size.height;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.asset('assets/images/bg_room.png', fit: BoxFit.cover),
-        SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                    w * 0.06, h * 0.025, w * 0.06, h * 0.025),
-                child: Text(
-                  'Complete\nYour Quest',
-                  textAlign: TextAlign.left,
-                  style: nunito(size: w * 0.085, weight: FontWeight.w900),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: w * 0.04, vertical: h * 0.01),
-                  children: [
-                    _QuestCard(
-                      imagePath: 'assets/images/quest_card1.png',
-                      aspectRatio: 1768 / 654,
-                      progress: 0.75,
-                      progressLabel: '15/20',
-                      progressFillColors: const [
-                        Color(0xFF8B5CF6),
-                        Color(0xFFA3E635),
-                      ],
-                      receiveButtonPath: 'assets/images/red_receive_button.png',
-                    ),
-                    SizedBox(height: h * 0.022),
-                    _QuestCard(
-                      imagePath: 'assets/images/quest_card2.png',
-                      aspectRatio: 1762 / 654,
-                      progress: 0.3,
-                      progressLabel: '3/10',
-                      progressFillColors: const [Color(0xFF4ADE80)],
-                      receiveButtonPath: 'assets/images/red_receive_button.png',
-                    ),
-                    SizedBox(height: h * 0.022),
-                    _QuestCard(
-                      imagePath: 'assets/images/quest_card3.png',
-                      aspectRatio: 1796 / 606,
-                      progress: 1.0,
-                      progressLabel: '100%',
-                      progressFillColors: const [Color(0xFFA3E635)],
-                      receiveButtonPath: 'assets/images/green_receive_button.png',
-                    ),
-                    SizedBox(height: h * 0.02),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuestCard extends StatelessWidget {
-  final String imagePath;
-  final double aspectRatio;
-  final double progress;
-  final String progressLabel;
-  final List<Color> progressFillColors;
-  final String receiveButtonPath;
-  final VoidCallback? onTap;
-
-  const _QuestCard({
-    required this.imagePath,
-    required this.aspectRatio,
-    required this.progress,
-    required this.progressLabel,
-    required this.progressFillColors,
-    required this.receiveButtonPath,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    final h = size.height;
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(25),
-            child: AspectRatio(
-              aspectRatio: aspectRatio,
-              child: Image.asset(imagePath, fit: BoxFit.fill),
-            ),
-          ),
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(right: w * 0.03),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Image.asset(receiveButtonPath, width: w * 0.28),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: h * 0.014,
-            left: w * 0.04,
-            right: w * 0.32,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _QuestProgressBar(
-                    progress: progress, fillColors: progressFillColors),
-                SizedBox(height: h * 0.004),
-                Text(progressLabel,
-                    style: montserrat(
-                        size: w * 0.028,
-                        weight: FontWeight.w700,
-                        color: Colors.white70)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuestProgressBar extends StatelessWidget {
-  final double progress;
-  final List<Color> fillColors;
-
-  const _QuestProgressBar(
-      {required this.progress, required this.fillColors});
-
-  @override
-  Widget build(BuildContext context) {
-    final h = MediaQuery.sizeOf(context).height;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        height: h * 0.014,
-        color: const Color(0xFF2D2D2D),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: FractionallySizedBox(
-            widthFactor: progress.clamp(0.0, 1.0),
-            child: Container(
-              decoration: fillColors.length > 1
-                  ? BoxDecoration(
-                      gradient: LinearGradient(colors: fillColors),
-                    )
-                  : BoxDecoration(color: fillColors.first),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ── PRACTICE TAB ────────────────────────────────────────────────────────────
 
 class _PracticeTab extends StatelessWidget {
@@ -1759,7 +1524,7 @@ class _PracticeTab extends StatelessWidget {
                   padding: EdgeInsets.symmetric(
                       horizontal: w * 0.04, vertical: h * 0.01),
                   children: [
-                    // ── REHAB section: Handglider + MEGA DANCE ───────────────
+                    // ── Top three games: Hang Glider → Quake Escape → Dasher ──
                     // Hang Glider (Unity scene id "hangglider") — tilt-controlled
                     // quiz game, plays in landscape. This is its designed card.
                     _PracticeCard(
@@ -1768,10 +1533,12 @@ class _PracticeTab extends StatelessWidget {
                       onTap: () => context.push('/hang-glider'),
                     ),
                     SizedBox(height: h * 0.025),
+                    // Quake Escape (Unity scene id "quakeescape") — balance game;
+                    // dodge the collapsing city by standing on the safe leg.
                     _PracticeCard(
-                      imagePath: 'assets/images/practice_card2.png',
-                      aspectRatio: 1772 / 638,
-                      onTap: onStartGame,
+                      imagePath: 'assets/images/quake_escape/card.png',
+                      aspectRatio: 929 / 319,
+                      onTap: () => context.push('/quake-escape'),
                     ),
                     SizedBox(height: h * 0.025),
                     // The Dasher (Unity scene id "thedasher") — the card opens the
@@ -1783,7 +1550,13 @@ class _PracticeTab extends StatelessWidget {
                       onTap: () => context.push('/the-dasher-start'),
                     ),
                     SizedBox(height: h * 0.035),
-                    // ── EXERCISE section: Kinex World ────────────────────────
+                    // ── MEGA DANCE + Kinex World ─────────────────────────────
+                    _PracticeCard(
+                      imagePath: 'assets/images/practice_card2.png',
+                      aspectRatio: 1772 / 638,
+                      onTap: onStartGame,
+                    ),
+                    SizedBox(height: h * 0.025),
                     _PracticeCard(
                       imagePath: 'assets/images/practice_card3.png',
                       aspectRatio: 1762 / 650,

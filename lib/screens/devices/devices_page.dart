@@ -6,17 +6,18 @@ import '../../ble/ble_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 
-/// Connects the two Kinex boards: the Leg board (EMG, "Kinex-EMG") and the Hand
-/// board (MPU6050 tilt, "Kinex-Hand"). Each has its own connection, so you can
-/// connect one, the other, or both. They share the phone's single BLE scanner,
-/// so a board's connect button is disabled while the other board is scanning or
-/// connecting — connect them one at a time.
+/// Connects the three Kinex boards: Leg-L (EMG, teal), Leg-R (EMG, purple) and
+/// Hand (MPU6050 tilt, blue). Each has its own connection, so you can connect
+/// any subset. They share the phone's single BLE scanner, so a board's connect
+/// button is disabled while ANY other board is scanning or connecting —
+/// connect them one at a time.
 class DevicesPage extends ConsumerWidget {
   const DevicesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final legState = ref.watch(bleControllerProvider);
+    final legLState = ref.watch(bleControllerProvider);
+    final legRState = ref.watch(legRBleProvider);
     final handState = ref.watch(handBleProvider);
 
     bool busy(BleState s) =>
@@ -36,25 +37,36 @@ class DevicesPage extends ConsumerWidget {
             context.r(24) + MediaQuery.paddingOf(context).bottom),
         children: [
           _DeviceCard(
-            provider: bleControllerProvider,
-            title: 'อุปกรณ์ขา',
-            subtitle: 'เซนเซอร์กล้ามเนื้อ (EMG) · Kinex-EMG',
-            icon: Icons.directions_walk,
-            accent: KColors.teal,
-            state: legState,
-            otherBusy: busy(handState),
-            namePrefix: 'Kinex-EMG',
-          ),
-          SizedBox(height: context.r(14)),
-          _DeviceCard(
             provider: handBleProvider,
             title: 'อุปกรณ์มือ',
-            subtitle: 'เซนเซอร์การเอียง (MPU6050) · Kinex-Hand',
+            subtitle: 'เซนเซอร์การเอียง (MPU6050) · Kinex-…-H',
             icon: Icons.back_hand,
             accent: KColors.blue,
             state: handState,
-            otherBusy: busy(legState),
-            namePrefix: 'Kinex-Hand',
+            otherBusy: busy(legLState) || busy(legRState),
+            matches: matchesHandBoard,
+          ),
+          SizedBox(height: context.r(14)),
+          _DeviceCard(
+            provider: bleControllerProvider,
+            title: 'อุปกรณ์ขาซ้าย',
+            subtitle: 'เซนเซอร์กล้ามเนื้อ (EMG) · Kinex-…-L',
+            icon: Icons.directions_walk,
+            accent: KColors.teal,
+            state: legLState,
+            otherBusy: busy(handState) || busy(legRState),
+            matches: matchesLegLBoard,
+          ),
+          SizedBox(height: context.r(14)),
+          _DeviceCard(
+            provider: legRBleProvider,
+            title: 'อุปกรณ์ขาขวา',
+            subtitle: 'เซนเซอร์กล้ามเนื้อ (EMG) · Kinex-…-R',
+            icon: Icons.directions_walk,
+            accent: KColors.purple,
+            state: legRState,
+            otherBusy: busy(handState) || busy(legLState),
+            matches: matchesLegRBoard,
           ),
           SizedBox(height: context.r(20)),
           Center(
@@ -80,8 +92,8 @@ class _DeviceCard extends ConsumerWidget {
   final IconData icon;
   final Color accent;
   final BleState state;
-  final bool otherBusy; // the OTHER board is scanning/connecting → block this one
-  final String namePrefix;
+  final bool otherBusy; // ANY other board is scanning/connecting → block this one
+  final bool Function(String lowerName) matches;
 
   const _DeviceCard({
     required this.provider,
@@ -91,7 +103,7 @@ class _DeviceCard extends ConsumerWidget {
     required this.accent,
     required this.state,
     required this.otherBusy,
-    required this.namePrefix,
+    required this.matches,
   });
 
   @override
@@ -194,11 +206,11 @@ class _DeviceCard extends ConsumerWidget {
                               : 'เชื่อมต่อ',
                       style: thaiSans(size: r(15), color: Colors.white),
                     ),
-                    // Block while THIS board is busy, or the OTHER board is using
+                    // Block while THIS board is busy, or ANOTHER board is using
                     // the shared scanner.
                     onPressed: (scanning || connecting || otherBusy)
                         ? null
-                        : () => ctl.quickConnect(namePrefix: namePrefix),
+                        : () => ctl.quickConnect(matches: matches),
                   ),
           ),
           if (otherBusy && !connected && !scanning && !connecting) ...[

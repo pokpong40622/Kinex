@@ -7,21 +7,23 @@ import '../theme/app_theme.dart';
 import '../theme/responsive.dart';
 
 /// The one place that explains — and performs — the fact that a Kinex set is
-/// TWO separate boards: the leg board (EMG) and the hand board (tilt). Users
-/// kept connecting one and assuming they were done, so this panel always shows
-/// both slots side by side with a "x / 2" counter, never a single button.
+/// THREE separate boards: the left-leg board (EMG), the right-leg board (EMG)
+/// and the hand board (tilt). Users kept connecting one and assuming they
+/// were done, so this panel always shows all three slots with an "x / 3"
+/// counter, never a single button.
 ///
 /// Used by the home top-bar Bluetooth sheet and by the cold-launch connect
 /// page, so both entry points tell the same story.
 ///
 /// Colour rules (deliberately narrow, for elderly users on a bright tablet):
-///   • identity colour — teal = leg, blue = hand. Only on the icon tile and the
-///     board's own connect button, so a board is recognisable at a glance.
+///   • identity colour — teal = leg-L, purple = leg-R, blue = hand. Only on
+///     the icon tile and the board's own connect button, so a board is
+///     recognisable at a glance.
 ///   • state colour — grey = not connected, amber = working, green = connected,
 ///     red = disconnect. Never reused for identity, so "green" always and only
 ///     means "this one is done".
 class DeviceConnectPanel extends ConsumerWidget {
-  /// Shown under the two rows; null hides the footer button entirely.
+  /// Shown under the three rows; null hides the footer button entirely.
   final VoidCallback? onOpenDebug;
 
   /// Shown as the closing action once the user is finished.
@@ -29,57 +31,76 @@ class DeviceConnectPanel extends ConsumerWidget {
 
   const DeviceConnectPanel({super.key, this.onOpenDebug, this.onDone});
 
-  static const legColor = KColors.teal;
+  static const legLColor = KColors.teal;
+  static Color get legRColor => KColors.purple;
   static const handColor = KColors.blue;
+
+  static const _totalBoards = 3;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final leg = ref.watch(bleControllerProvider);
+    final legL = ref.watch(bleControllerProvider);
+    final legR = ref.watch(legRBleProvider);
     final hand = ref.watch(handBleProvider);
     final r = context.r;
 
     bool busy(BleState s) =>
         s.status == BleStatus.scanning || s.status == BleStatus.connecting;
 
-    final done = [leg, hand]
+    final done = [legL, legR, hand]
         .where((s) => s.status == BleStatus.connected)
         .length;
+    final allDone = done == _totalBoards;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Header(done: done, r: r),
+        _Header(done: done, total: _totalBoards, r: r),
         SizedBox(height: r(16)),
         _BoardRow(
           step: 1,
-          title: 'กล่องขา',
-          where: 'ติดแผ่น EMG ที่ขา — วัดกล้ามเนื้อ',
+          title: 'กล่องขาซ้าย',
+          where: 'ติดแผ่น EMG ที่ขาซ้าย — วัดกล้ามเนื้อ',
           icon: Icons.directions_walk_rounded,
-          identity: legColor,
-          state: leg,
-          otherBusy: busy(hand),
+          identity: legLColor,
+          state: legL,
+          otherBusy: busy(legR) || busy(hand),
           onConnect: () => ref
               .read(bleControllerProvider.notifier)
-              .quickConnect(namePrefix: 'Kinex-EMG'),
+              .quickConnect(matches: matchesLegLBoard),
           onDisconnect: () =>
               ref.read(bleControllerProvider.notifier).disconnect(),
         ),
         SizedBox(height: r(10)),
         _BoardRow(
           step: 2,
+          title: 'กล่องขาขวา',
+          where: 'ติดแผ่น EMG ที่ขาขวา — วัดกล้ามเนื้อ',
+          icon: Icons.directions_walk_rounded,
+          identity: legRColor,
+          state: legR,
+          otherBusy: busy(legL) || busy(hand),
+          onConnect: () => ref
+              .read(legRBleProvider.notifier)
+              .quickConnect(matches: matchesLegRBoard),
+          onDisconnect: () => ref.read(legRBleProvider.notifier).disconnect(),
+        ),
+        SizedBox(height: r(10)),
+        _BoardRow(
+          step: 3,
           title: 'กล่องมือ',
           where: 'ถือไว้ในมือ — วัดการเอียง',
           icon: Icons.back_hand_rounded,
           identity: handColor,
           state: hand,
-          otherBusy: busy(leg),
+          otherBusy: busy(legL) || busy(legR),
           onConnect: () => ref
               .read(handBleProvider.notifier)
-              .quickConnect(namePrefix: 'Kinex-Hand'),
+              .quickConnect(matches: matchesHandBoard),
           onDisconnect: () => ref.read(handBleProvider.notifier).disconnect(),
         ),
-        if (leg.needsSettings || hand.needsSettings) ...[
+        if (legL.needsSettings || legR.needsSettings || hand.needsSettings) ...[
           SizedBox(height: r(12)),
           _PermissionNotice(r: r),
         ],
@@ -89,9 +110,8 @@ class DeviceConnectPanel extends ConsumerWidget {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    done == 2 ? KColors.teal : Colors.grey.shade200,
-                foregroundColor: done == 2 ? Colors.white : KColors.navyText,
+                backgroundColor: allDone ? KColors.teal : Colors.grey.shade200,
+                foregroundColor: allDone ? Colors.white : KColors.navyText,
                 elevation: 0,
                 padding: EdgeInsets.symmetric(vertical: r(14)),
                 shape: RoundedRectangleBorder(
@@ -99,11 +119,11 @@ class DeviceConnectPanel extends ConsumerWidget {
               ),
               onPressed: onDone,
               child: Text(
-                done == 2 ? 'พร้อมแล้ว เริ่มใช้งาน' : 'ข้ามไปก่อน',
+                allDone ? 'พร้อมแล้ว เริ่มใช้งาน' : 'ข้ามไปก่อน',
                 style: thaiSans(
                     size: r(16),
                     weight: FontWeight.w700,
-                    color: done == 2 ? Colors.white : KColors.navyText),
+                    color: allDone ? Colors.white : KColors.navyText),
               ),
             ),
           ),
@@ -122,15 +142,17 @@ class DeviceConnectPanel extends ConsumerWidget {
   }
 }
 
-// ── Header: the "there are two of them" message + progress ───────────────────
+// ── Header: the "there are three of them" message + progress ────────────────
 
 class _Header extends StatelessWidget {
   final int done;
+  final int total;
   final double Function(double) r;
-  const _Header({required this.done, required this.r});
+  const _Header({required this.done, required this.total, required this.r});
 
   @override
   Widget build(BuildContext context) {
+    final allDone = done == total;
     return Column(
       children: [
         Text('เชื่อมต่ออุปกรณ์ Kinex',
@@ -141,17 +163,17 @@ class _Header extends StatelessWidget {
                 color: KColors.navyText)),
         SizedBox(height: r(6)),
         Text(
-          'ชุด Kinex มี 2 กล่อง — กล่องขา และ กล่องมือ\nต้องเชื่อมต่อทีละกล่อง ให้ครบทั้งสอง',
+          'ชุด Kinex มี 3 กล่อง — กล่องขาซ้าย กล่องขาขวา และกล่องมือ\nต้องเชื่อมต่อทีละกล่อง ให้ครบทั้งสาม',
           textAlign: TextAlign.center,
           style: thaiSans(size: r(13.5), color: Colors.grey.shade600),
         ),
         SizedBox(height: r(12)),
         // Progress counter — the single number that tells the user they are not
-        // finished after connecting just one board.
+        // finished until all three boards are connected.
         Container(
           padding: EdgeInsets.symmetric(horizontal: r(14), vertical: r(7)),
           decoration: BoxDecoration(
-            color: (done == 2 ? KColors.teal : KColors.orangeDark)
+            color: (allDone ? KColors.teal : KColors.orangeDark)
                 .withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(r(20)),
           ),
@@ -159,17 +181,17 @@ class _Header extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                  done == 2
+                  allDone
                       ? Icons.check_circle_rounded
                       : Icons.info_outline_rounded,
                   size: r(17),
-                  color: done == 2 ? KColors.teal : KColors.orangeDark),
+                  color: allDone ? KColors.teal : KColors.orangeDark),
               SizedBox(width: r(7)),
-              Text('เชื่อมต่อแล้ว $done จาก 2',
+              Text('เชื่อมต่อแล้ว $done จาก $total',
                   style: thaiSans(
                       size: r(13),
                       weight: FontWeight.w700,
-                      color: done == 2 ? KColors.teal : KColors.orangeDark)),
+                      color: allDone ? KColors.teal : KColors.orangeDark)),
             ],
           ),
         ),
@@ -187,7 +209,7 @@ class _BoardRow extends StatelessWidget {
   final IconData icon;
   final Color identity;
   final BleState state;
-  final bool otherBusy; // the other board owns the shared scanner right now
+  final bool otherBusy; // another board owns the shared scanner right now
   final VoidCallback onConnect;
   final VoidCallback onDisconnect;
 
@@ -223,7 +245,7 @@ class _BoardRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Step number + identity tile: "this is board 1 of 2".
+              // Step number + identity tile: "this is board N of 3".
               Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -310,8 +332,8 @@ class _BoardRow extends StatelessWidget {
                             child: const CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
                         : Icon(Icons.bluetooth_searching_rounded, size: r(18)),
-                    // Both slots share the phone's one BLE scanner, so only one
-                    // can search at a time.
+                    // All three slots share the phone's one BLE scanner, so
+                    // only one can search at a time.
                     onPressed: (working || otherBusy) ? null : onConnect,
                     label: Text(
                       working ? 'กำลังค้นหา…' : 'เชื่อมต่อ$title',

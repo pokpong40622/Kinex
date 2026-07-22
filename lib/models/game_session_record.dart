@@ -80,9 +80,7 @@ class GameSessionRecord {
       dateTime: dateTime,
       gameId: 'hangglider',
       gameName: 'นักร่อน',
-      // No dedicated glider icon in assets/images/game_icons/ yet — fall back to
-      // thedasher.png so the row never breaks. Swap when art lands.
-      iconAsset: 'assets/images/game_icons/thedasher.png',
+      iconAsset: 'assets/images/game_icons/hangglider.png',
       durationSeconds: (j['durationSeconds'] as num?)?.toDouble() ?? 0,
       scoreLabel: '$score/$total',
       percent: total > 0 ? (score / total * 100) : 0,

@@ -30,7 +30,7 @@ class ShopState {
     activeTheme: 'golden_morning',
     unlockedCharacters: {'character_kid'},
     activeCharacter: 'character_kid',
-    unlockedGames: {},
+    unlockedGames: {'thedasher'}, // The Dasher ships free/owned by default.
     userName: 'ผู้ใช้ KINEX',
   );
 

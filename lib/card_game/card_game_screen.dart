@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/kawaii_widgets.dart';
 
 /// Entry point for the embedded "การ์ดเรียนรู้ ทรงตัวดี ไม่หกล้ม" card game.
 ///
@@ -9,14 +11,45 @@ import 'theme/app_theme.dart';
 /// things the standalone app used to provide: the image backdrop and the card
 /// game's own [ThemeData] (Kanit font, transparent scaffolds, warm palette).
 /// A back button is added since the game no longer owns the app root.
-class CardGameScreen extends StatelessWidget {
+///
+/// Unlike the rest of the app (locked portrait in main.dart, since the other
+/// screens' layouts are portrait-only), the card game is comfortable in
+/// landscape too, so orientation is unlocked on entry and restored to the
+/// app default on exit.
+class CardGameScreen extends StatefulWidget {
   const CardGameScreen({super.key});
+
+  @override
+  State<CardGameScreen> createState() => _CardGameScreenState();
+}
+
+class _CardGameScreenState extends State<CardGameScreen> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    // Restore the app-wide portrait lock (see main.dart) on the way out.
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Theme(
       data: AppTheme.theme,
-      child: _ImageBackdrop(
+      child: CardGameBackground(
         child: Stack(
           children: [
             const HomeScreen(),
@@ -30,8 +63,10 @@ class CardGameScreen extends StatelessWidget {
                     shape: const CircleBorder(),
                     elevation: 2,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: AppColors.ink),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppColors.ink,
+                      ),
                       tooltip: 'กลับ',
                       onPressed: () => Navigator.of(context).maybePop(),
                     ),
@@ -42,28 +77,6 @@ class CardGameScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ImageBackdrop extends StatelessWidget {
-  final Widget child;
-  const _ImageBackdrop({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const RepaintBoundary(
-          child: Image(
-            image: AssetImage('assets/images/card_game/background.png'),
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.low,
-          ),
-        ),
-        child,
-      ],
     );
   }
 }

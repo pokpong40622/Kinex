@@ -17,7 +17,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_embed_unity/flutter_embed_unity.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../data/game_repository.dart';
+import '../models/daily_quest.dart';
 import '../models/game_session_record.dart';
+import '../state/quest_providers.dart';
 import '../state/emergency_contact.dart';
 import '../state/dasher_difficulty.dart';
 import '../state/tutorial_prefs.dart';
@@ -93,6 +95,7 @@ class _TheDasherGameScreenState extends ConsumerState<TheDasherGameScreen> {
       );
       await ref.read(gameRepositoryProvider).add(record);
       ref.invalidate(gameHistoryProvider);
+      await ref.read(dailyQuestsProvider.notifier).bump(QuestId.playGame);
     } else if (data.contains('sos_call')) {
       await _handleSosCall();
     }

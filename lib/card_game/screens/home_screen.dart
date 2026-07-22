@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/tts_service.dart';
+import '../../state/tts_settings.dart';
 import '../data/content.dart';
 import '../models/models.dart';
 import '../services/daily_progress_store.dart';
@@ -7,14 +10,19 @@ import '../widgets/kawaii_widgets.dart';
 import '../widgets/mascot_painter.dart';
 import 'mode_select_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+/// Narrator intro line spoken once when this, the card game's first/home
+/// page, is shown — a short welcome, not a read-out of the whole screen.
+const _introLine =
+    'ยินดีต้อนรับสู่การ์ดเรียนรู้ ทรงตัวดี ไม่หกล้ม เลือกหัวข้อ แล้วเริ่มเล่นแบบสบาย ๆ ได้เลยครับ';
+
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   DailyProgress _progress = const DailyProgress(
     points: 0,
     goal: DailyProgressStore.dailyGoal,
@@ -24,6 +32,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadProgress();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!ref.read(ttsNarratorEnabledProvider)) return;
+      ref.read(ttsServiceProvider).speak(_introLine);
+    });
   }
 
   Future<void> _loadProgress() async {
@@ -116,7 +128,7 @@ class _HomeHero extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'เลือกหัวข้อ แล้วเริ่มเล่นแบบสบาย ๆ ได้เลยค่ะ',
+                    'เลือกหัวข้อ แล้วเริ่มเล่นแบบสบาย ๆ ได้เลยครับ',
                     style: AppTheme.body(
                       size: 17,
                       weight: FontWeight.w700,
@@ -213,7 +225,7 @@ class _DailyProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final remaining = (progress.goal - progress.points).clamp(0, progress.goal);
     final message = progress.isComplete
-        ? 'ครบเป้าหมายวันนี้แล้ว เก่งมากค่ะ!'
+        ? 'ครบเป้าหมายวันนี้แล้ว เก่งมากครับ!'
         : 'อีก $remaining แต้ม จะครบเป้าหมายรายวัน';
 
     return KawaiiCard(

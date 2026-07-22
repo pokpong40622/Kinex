@@ -125,6 +125,16 @@ class KColors {
     stops: [0.0, 0.55, 1.0],
   );
 
+  // ภารกิจ — green, picking up the lime/green progress fills and reward
+  // buttons already used on the quest screen itself.
+  static const questCardInk = Color(0xFF14532D);
+  static const questCardGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF4FA765), Color(0xFF2F8C57), Color(0xFF1E7350)],
+    stops: [0.0, 0.55, 1.0],
+  );
+
   // การ์ดเรียนรู้ — indigo easing into plum. The third home card needs to read
   // as a sibling of the other two without repeating either's temperature, so it
   // sits between the assessment card's cool blue and the learn card's warm clay.

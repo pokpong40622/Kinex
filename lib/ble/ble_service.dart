@@ -262,11 +262,16 @@ class BleController extends Notifier<BleState> {
 
   // ─── Quick connect (top-bar button) ───────────────────────────────────────
 
-  /// One-tap connect: scans briefly and connects to the first device whose name
-  /// contains [namePrefix]. The Leg board advertises as "Kinex-EMG" (the default
-  /// here) and the Hand board as "Kinex-Hand", so each device slot connects to
-  /// its own board. The full device picker still lives in the BLE Debug window.
-  Future<void> quickConnect({String namePrefix = 'Kinex-EMG'}) async {
+  /// One-tap connect: scans briefly and connects to the first matching device.
+  /// Default matching is "name contains [namePrefix]" (case-insensitive) — kept
+  /// for backward compatibility. Pass [matches] to use a custom predicate
+  /// instead (the suffix-based Hand/Leg-L/Leg-R matching below); when given,
+  /// [namePrefix] is ignored. The full device picker still lives in the BLE
+  /// Debug window.
+  Future<void> quickConnect({
+    String namePrefix = 'Kinex-EMG',
+    bool Function(String lowerName)? matches,
+  }) async {
     try {
       if (state.status == BleStatus.connected ||
           state.status == BleStatus.connecting) {
@@ -291,9 +296,10 @@ class BleController extends Notifier<BleState> {
         scanResults: [],
         clearError: true,
       );
-      _log(BleLogKind.sys, 'Quick-connect: scanning for "$namePrefix"…');
+      _log(BleLogKind.sys, 'Quick-connect: scanning…');
 
       final lower = namePrefix.toLowerCase();
+      final match = matches ?? (String n) => n.contains(lower);
       var connecting = false;
 
       _scanSub = FlutterBluePlus.onScanResults.listen(
@@ -303,7 +309,7 @@ class BleController extends Notifier<BleState> {
             final name = r.device.platformName.isNotEmpty
                 ? r.device.platformName
                 : r.advertisementData.advName;
-            if (name.toLowerCase().contains(lower)) {
+            if (match(name.trim().toLowerCase())) {
               connecting = true;
               final id = r.device.remoteId.str;
               await stopScan();
@@ -321,7 +327,7 @@ class BleController extends Notifier<BleState> {
         if (!scanning && state.status == BleStatus.scanning) {
           state = state.copyWith(status: BleStatus.idle);
           if (!connecting) {
-            _log(BleLogKind.sys, 'Quick-connect: no "$namePrefix" device found');
+            _log(BleLogKind.sys, 'Quick-connect: no matching device found');
           }
         }
       });
@@ -519,17 +525,43 @@ class BleController extends Notifier<BleState> {
   }
 }
 
+// ─── Board name matching (suffix contract) ────────────────────────────────────
+
+// Each board derives a random-looking BLE name from its own chip MAC, with a
+// fixed side suffix so the app can pair reliably regardless of the random
+// part: "Kinex-<HEX>-H" (hand), "Kinex-<HEX>-L" (leg-L), "Kinex-<HEX>-R"
+// (leg-R). Matching is done on the SUFFIX of the trimmed, lowercased name —
+// not a plain "contains" — so a stray "l"/"r"/"h" inside the random hex token
+// can't cause a false match. Old boards not yet reflashed with the MAC-based
+// name still advertise the fixed legacy names ("Kinex-EMG", "Kinex-Hand"), so
+// each matcher also accepts those for backward compatibility.
+bool matchesHandBoard(String lowerName) =>
+    lowerName.contains('kinex') &&
+    (lowerName.endsWith('-h') || lowerName.contains('hand'));
+
+bool matchesLegLBoard(String lowerName) =>
+    lowerName.contains('kinex') &&
+    (lowerName.endsWith('-l') || lowerName.contains('emg'));
+
+bool matchesLegRBoard(String lowerName) =>
+    lowerName.contains('kinex') && lowerName.endsWith('-r');
+
 // ─── Provider ────────────────────────────────────────────────────────────────
 
-// Two independent board slots, each its own BLE connection. flutter_blue_plus
-// keeps multiple devices connected at once, so both can be live together — or
-// either one alone. The Leg board (EMG) uses [bleControllerProvider] so every
-// existing EMG screen is unchanged; the Hand board (MPU6050 tilt) uses
-// [handBleProvider]. They share the global BLE scanner, so the Devices page
-// connects them one at a time (it disables a board's button while the other is
-// scanning/connecting).
+// Three independent board slots, each its own BLE connection. flutter_blue_plus
+// keeps multiple devices connected at once, so all three can be live together
+// — or any subset alone. [bleControllerProvider] is the Leg-L board (kept
+// under its original name so existing EMG screens are unchanged — the single
+// legacy "Kinex-EMG" board pairs here too, see [matchesLegLBoard]); the Hand
+// board (MPU6050 tilt) uses [handBleProvider]; the Leg-R board uses
+// [legRBleProvider]. They share the global BLE scanner, so the Devices page
+// connects them one at a time (it disables a board's button while any other
+// board is scanning/connecting).
 final bleControllerProvider =
     NotifierProvider<BleController, BleState>(BleController.new);
 
 final handBleProvider =
+    NotifierProvider<BleController, BleState>(BleController.new);
+
+final legRBleProvider =
     NotifierProvider<BleController, BleState>(BleController.new);

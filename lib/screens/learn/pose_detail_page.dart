@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/pose_library.dart';
+import '../../models/daily_quest.dart';
+import '../../services/tts_service.dart';
 import '../../state/learn_progress.dart';
+import '../../state/quest_providers.dart';
+import '../../state/tts_settings.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/kui.dart';
 import '../../theme/responsive.dart';
@@ -32,8 +36,13 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
     // Mark viewed after the first frame — same pattern as other pages that
     // touch a provider from initState (see emg_detail_page.dart).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (poseById(widget.poseId) != null) {
+      final pose = poseById(widget.poseId);
+      if (pose != null) {
         ref.read(learnProgressProvider.notifier).markViewed(widget.poseId);
+        ref.read(dailyQuestsProvider.notifier).bump(QuestId.learnPose);
+        if (ref.read(ttsNarratorEnabledProvider)) {
+          ref.read(ttsServiceProvider).speak('${pose.name} ${pose.subtitle}');
+        }
       }
     });
   }
@@ -92,7 +101,9 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
                   child: Text(
                     'ไม่พบท่านี้',
                     style: thaiSans(
-                        size: context.r(18), weight: FontWeight.w700),
+                      size: context.r(18),
+                      weight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -114,9 +125,7 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
             SizedBox(height: context.r(8)),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.r(16)),
-              child: Row(
-                children: [_BackButton(onTap: () => _exit(context))],
-              ),
+              child: Row(children: [_BackButton(onTap: () => _exit(context))]),
             ),
             Expanded(
               child: PageView.builder(
@@ -140,7 +149,9 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
             ),
             Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: context.r(24), vertical: context.r(20)),
+                horizontal: context.r(24),
+                vertical: context.r(20),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -173,8 +184,7 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
                     ),
                   ),
                   isLast
-                      ? _DoneButton(
-                          color: color, onTap: () => _finish(context))
+                      ? _DoneButton(color: color, onTap: () => _finish(context))
                       : _WizardNavButton(
                           icon: Icons.arrow_forward_ios_rounded,
                           color: color,
@@ -199,7 +209,11 @@ class _OverviewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-          context.r(16), context.r(12), context.r(16), context.r(20)),
+        context.r(16),
+        context.r(12),
+        context.r(16),
+        context.r(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -209,11 +223,14 @@ class _OverviewPage extends StatelessWidget {
             _PosePhoto(pose: pose),
           ],
           SizedBox(height: context.r(22)),
-          Text('ข้อมูลโดยสังเขป',
-              style: thaiSans(
-                  size: context.r(14),
-                  weight: FontWeight.w700,
-                  color: KColors.navyText.withAlpha(170))),
+          Text(
+            'ข้อมูลโดยสังเขป',
+            style: thaiSans(
+              size: context.r(14),
+              weight: FontWeight.w700,
+              color: KColors.navyText.withAlpha(170),
+            ),
+          ),
           SizedBox(height: context.r(10)),
           _FactsWrap(pose: pose),
         ],
@@ -240,7 +257,11 @@ class _StepPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-          context.r(16), context.r(12), context.r(16), context.r(20)),
+        context.r(16),
+        context.r(12),
+        context.r(16),
+        context.r(20),
+      ),
       child: Column(
         children: [
           SizedBox(height: context.r(16)),
@@ -252,18 +273,20 @@ class _StepPage extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: const [
                 BoxShadow(
-                    color: Color(0x1F000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3)),
+                  color: Color(0x1F000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
+                ),
               ],
             ),
             alignment: Alignment.center,
             child: Text(
               '${stepIndex + 1}',
               style: thaiSans(
-                  size: context.r(24),
-                  weight: FontWeight.w800,
-                  color: Colors.white),
+                size: context.r(24),
+                weight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
           ),
           SizedBox(height: context.r(22)),
@@ -276,9 +299,10 @@ class _StepPage extends StatelessWidget {
                 pose.steps[stepIndex],
                 textAlign: TextAlign.center,
                 style: thaiSans(
-                    size: context.r(19),
-                    weight: FontWeight.w700,
-                    color: KColors.navyText),
+                  size: context.r(19),
+                  weight: FontWeight.w700,
+                  color: KColors.navyText,
+                ),
               ),
             ),
           ),
@@ -289,9 +313,10 @@ class _StepPage extends StatelessWidget {
             ],
             if (pose.tips.isNotEmpty) ...[
               SizedBox(height: context.r(20)),
-              Text('เคล็ดลับ',
-                  style:
-                      thaiSans(size: context.r(18), weight: FontWeight.w800)),
+              Text(
+                'เคล็ดลับ',
+                style: thaiSans(size: context.r(18), weight: FontWeight.w800),
+              ),
               SizedBox(height: context.r(10)),
               _TipsCard(tips: pose.tips),
             ],
@@ -322,14 +347,20 @@ class _PosePhoto extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.photo_camera_back_rounded,
-                  size: context.r(16), color: color),
+              Icon(
+                Icons.photo_camera_back_rounded,
+                size: context.r(16),
+                color: color,
+              ),
               SizedBox(width: context.r(6)),
-              Text('ตัวอย่างท่า',
-                  style: thaiSans(
-                      size: context.r(13),
-                      weight: FontWeight.w700,
-                      color: color)),
+              Text(
+                'ตัวอย่างท่า',
+                style: thaiSans(
+                  size: context.r(13),
+                  weight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
             ],
           ),
           SizedBox(height: context.r(8)),
@@ -363,7 +394,10 @@ class _HeroCard extends StatelessWidget {
         border: Border.all(color: KColors.hairline, width: 1),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 1)),
+            color: Color(0x0A000000),
+            blurRadius: 6,
+            offset: Offset(0, 1),
+          ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -384,7 +418,10 @@ class _HeroCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: color.withAlpha(24),
                         borderRadius: BorderRadius.circular(context.r(15)),
-                        border: Border.all(color: color.withAlpha(70), width: 1),
+                        border: Border.all(
+                          color: color.withAlpha(70),
+                          width: 1,
+                        ),
                       ),
                       child: Icon(pose.icon, color: color, size: context.r(26)),
                     ),
@@ -396,28 +433,35 @@ class _HeroCard extends StatelessWidget {
                           Text(
                             pose.name,
                             style: thaiSans(
-                                size: context.r(20),
-                                weight: FontWeight.w800,
-                                color: KColors.navyText),
+                              size: context.r(20),
+                              weight: FontWeight.w800,
+                              color: KColors.navyText,
+                            ),
                           ),
                           SizedBox(height: context.r(5)),
                           Text(
                             pose.subtitle,
                             style: thaiSans(
-                                size: context.r(13.5),
-                                weight: FontWeight.w500,
-                                color: KColors.navyText.withAlpha(160)),
+                              size: context.r(13.5),
+                              weight: FontWeight.w500,
+                              color: KColors.navyText.withAlpha(160),
+                            ),
                           ),
                           SizedBox(height: context.r(12)),
                           Wrap(
                             spacing: context.r(8),
                             runSpacing: context.r(8),
                             children: [
-                              KPill(pose.category.thaiShort,
-                                  color: color, icon: pose.category.icon),
-                              KPill(pose.target,
-                                  color: color,
-                                  icon: Icons.track_changes_rounded),
+                              KPill(
+                                pose.category.thaiShort,
+                                color: color,
+                                icon: pose.category.icon,
+                              ),
+                              KPill(
+                                pose.target,
+                                color: color,
+                                icon: Icons.track_changes_rounded,
+                              ),
                             ],
                           ),
                         ],
@@ -475,18 +519,22 @@ class _BreathingCallout extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('การหายใจ',
-                    style: thaiSans(
-                        size: context.r(14.5),
-                        weight: FontWeight.w800,
-                        color: KColors.blue)),
+                Text(
+                  'การหายใจ',
+                  style: thaiSans(
+                    size: context.r(14.5),
+                    weight: FontWeight.w800,
+                    color: KColors.blue,
+                  ),
+                ),
                 SizedBox(height: context.r(4)),
                 Text(
                   text,
                   style: thaiSans(
-                      size: context.r(13.5),
-                      weight: FontWeight.w600,
-                      color: KColors.navyText),
+                    size: context.r(13.5),
+                    weight: FontWeight.w600,
+                    color: KColors.navyText,
+                  ),
                 ),
               ],
             ),
@@ -514,16 +562,20 @@ class _TipsCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.lightbulb_outline_rounded,
-                    color: KColors.orangeDark, size: context.r(19)),
+                Icon(
+                  Icons.lightbulb_outline_rounded,
+                  color: KColors.orangeDark,
+                  size: context.r(19),
+                ),
                 SizedBox(width: context.r(9)),
                 Expanded(
                   child: Text(
                     tips[i],
                     style: thaiSans(
-                        size: context.r(13.5),
-                        weight: FontWeight.w600,
-                        color: KColors.navyText),
+                      size: context.r(13.5),
+                      weight: FontWeight.w600,
+                      color: KColors.navyText,
+                    ),
                   ),
                 ),
               ],
@@ -551,25 +603,28 @@ class _CautionCallout extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.health_and_safety_rounded,
-              color: Color(0xFFEF6C00)),
+          const Icon(Icons.health_and_safety_rounded, color: Color(0xFFEF6C00)),
           SizedBox(width: context.r(10)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ข้อควรระวัง',
-                    style: thaiSans(
-                        size: context.r(14.5),
-                        weight: FontWeight.w800,
-                        color: const Color(0xFFB23C00))),
+                Text(
+                  'ข้อควรระวัง',
+                  style: thaiSans(
+                    size: context.r(14.5),
+                    weight: FontWeight.w800,
+                    color: const Color(0xFFB23C00),
+                  ),
+                ),
                 SizedBox(height: context.r(4)),
                 Text(
                   text,
                   style: thaiSans(
-                      size: context.r(13.5),
-                      weight: FontWeight.w600,
-                      color: const Color(0xFFB23C00)),
+                    size: context.r(13.5),
+                    weight: FontWeight.w600,
+                    color: const Color(0xFFB23C00),
+                  ),
                 ),
               ],
             ),
@@ -598,11 +653,17 @@ class _BackButton extends StatelessWidget {
           border: Border.all(color: KColors.hairline, width: 1),
           boxShadow: const [
             BoxShadow(
-                color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 1)),
+              color: Color(0x0A000000),
+              blurRadius: 6,
+              offset: Offset(0, 1),
+            ),
           ],
         ),
-        child: Icon(Icons.arrow_back_rounded,
-            size: context.r(24), color: KColors.navyText),
+        child: Icon(
+          Icons.arrow_back_rounded,
+          size: context.r(24),
+          color: KColors.navyText,
+        ),
       ),
     );
   }
@@ -614,8 +675,11 @@ class _WizardNavButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _WizardNavButton(
-      {required this.icon, required this.color, required this.onTap});
+  const _WizardNavButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -671,14 +735,16 @@ class _DoneButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_rounded,
-                color: Colors.white, size: context.r(22)),
+            Icon(Icons.check_rounded, color: Colors.white, size: context.r(22)),
             SizedBox(width: context.r(6)),
-            Text('เสร็จสิ้น',
-                style: thaiSans(
-                    size: context.r(16),
-                    weight: FontWeight.w700,
-                    color: Colors.white)),
+            Text(
+              'เสร็จสิ้น',
+              style: thaiSans(
+                size: context.r(16),
+                weight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
           ],
         ),
       ),

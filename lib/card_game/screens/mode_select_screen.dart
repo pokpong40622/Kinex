@@ -48,7 +48,7 @@ class ModeSelectScreen extends StatelessWidget {
                               style: AppTheme.heading(size: 32),
                             ),
                             Text(
-                              'อยากเล่นแบบไหนดีคะ?',
+                              'อยากเล่นแบบไหนดีครับ?',
                               style: AppTheme.body(
                                 size: 23,
                                 color: AppColors.inkLight,

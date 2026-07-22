@@ -1,4 +1,9 @@
 /*
+ * LEGACY single-leg build — superseded by firmware/kinex_leg_L/ and
+ * firmware/kinex_leg_R/ (one board per leg, MAC-derived "Kinex-<HEX>-L/-R"
+ * names). Kept in place for boards not yet reflashed; the app still pairs
+ * "Kinex-EMG" to the Leg-L slot for backward compatibility.
+ *
  * Kinex EMG bridge — ESP32-C3 Super Mini
  * ----------------------------------------
  * BLE link between the Kinex Flutter app and the ESP32, used by the EMG
@@ -7,7 +12,7 @@
  * MOCK DATA: sends fake per-channel values over BLE (no analogRead) so the app,
  * the realtime graph and the MVC capture can be tested WITHOUT sensors wired.
  * The REAL-sensor build is saved alongside in
- * firmware/kinex_emg_esp32c3_realsensor/ — flash THAT one for real readings.
+ * firmware/kinex_leg_realsensor/ — flash THAT one for real readings.
  * Every value is still sent over BLE AND printed to Serial.
  *
  * ── Sensor wiring (RIGHT leg, 4 channels) ───────────────────────────────────
@@ -88,7 +93,7 @@ void notifyApp(const String& line) {
 // ── EMG read (MOCK) ──────────────────────────────────────────────────────────
 // Fake per-channel value: baseline + noise, so the 4 traces look distinct and
 // the min/mean/max come out sensible. NO analogRead here — this is the mock
-// build. The real build (firmware/kinex_emg_esp32c3_realsensor/) does
+// build. The real build (firmware/kinex_leg_realsensor/) does
 // `return analogRead(EMG_PINS[channel]);` instead. Channel 0..3 = VL,BF,TA,GCM.
 int readEmg(int channel) {
   static const int base[4] = {280, 340, 220, 380};  // VL, BF, TA, GCM baselines

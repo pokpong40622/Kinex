@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/tts_service.dart';
+import '../../state/tts_settings.dart';
 import '../data/content.dart';
 import '../models/models.dart';
+import '../services/card_sfx.dart';
 import '../theme/app_theme.dart';
 import '../widgets/kawaii_widgets.dart';
 import '../widgets/pictogram_painter.dart';
@@ -8,15 +12,16 @@ import 'result_screen.dart';
 
 const _letters = ['ก', 'ข', 'ค', 'ง'];
 
-class MultipleChoiceScreen extends StatefulWidget {
+class MultipleChoiceScreen extends ConsumerStatefulWidget {
   final Topic topic;
   const MultipleChoiceScreen({super.key, required this.topic});
 
   @override
-  State<MultipleChoiceScreen> createState() => _MultipleChoiceScreenState();
+  ConsumerState<MultipleChoiceScreen> createState() =>
+      _MultipleChoiceScreenState();
 }
 
-class _MultipleChoiceScreenState extends State<MultipleChoiceScreen> {
+class _MultipleChoiceScreenState extends ConsumerState<MultipleChoiceScreen> {
   late final List<McQuestion> _questions = mcQuestions[widget.topic.id]!;
   int _index = 0;
   int? _selected;
@@ -24,15 +29,29 @@ class _MultipleChoiceScreenState extends State<MultipleChoiceScreen> {
 
   McQuestion get _q => _questions[_index];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _speakQuestion());
+  }
+
+  void _speakQuestion() {
+    if (!ref.read(ttsNarratorEnabledProvider)) return;
+    ref.read(ttsServiceProvider).speak(_q.question);
+  }
+
   void _select(int i) {
     if (_selected != null) return;
     setState(() {
       _selected = i;
       if (i == _q.correctIndex) _correctCount++;
     });
+    final sfx = ref.read(cardSfxProvider);
+    i == _q.correctIndex ? sfx.correct() : sfx.wrong();
   }
 
   void _next() {
+    ref.read(cardSfxProvider).next();
     if (_index == _questions.length - 1) {
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -54,6 +73,7 @@ class _MultipleChoiceScreenState extends State<MultipleChoiceScreen> {
       _index++;
       _selected = null;
     });
+    _speakQuestion();
   }
 
   @override
@@ -63,165 +83,168 @@ class _MultipleChoiceScreenState extends State<MultipleChoiceScreen> {
     final isCorrect = answered && _selected == _q.correctIndex;
 
     return Scaffold(
-      body: SafeArea(
-        child: CenteredGameArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                KawaiiTopBar(
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.ink,
-                          size: 34,
+      body: CardGameBackground(
+        child: SafeArea(
+          child: CenteredGameArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  KawaiiTopBar(
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.ink,
+                            size: 34,
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'ข้อ ก ข ค ง · ${widget.topic.title.replaceAll('\n', ' ')}',
+                        Expanded(
+                          child: Text(
+                            'ข้อ ก ข ค ง · ${widget.topic.title.replaceAll('\n', ' ')}',
+                            style: AppTheme.body(
+                              size: 22,
+                              weight: FontWeight.w700,
+                              color: AppColors.inkLight,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          'ข้อ ${_index + 1} / ${_questions.length}',
                           style: AppTheme.body(
                             size: 22,
                             weight: FontWeight.w700,
-                            color: AppColors.inkLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        'ข้อ ${_index + 1} / ${_questions.length}',
-                        style: AppTheme.body(
-                          size: 22,
-                          weight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: (_index + (answered ? 1 : 0)) / _questions.length,
-                    minHeight: 12,
-                    backgroundColor: color.withValues(alpha: 0.15),
-                    valueColor: AlwaysStoppedAnimation(color),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth > 760;
-                      final questionCard = KawaiiCard(
-                        borderColor: color,
-                        borderWidth: 9,
-                        radius: 34,
-                        padding: const EdgeInsets.all(28),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 104,
-                              height: 104,
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: PictogramIcon(
-                                  type: _q.illustration,
-                                  size: 70,
-                                  accent: color,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 22),
-                            Expanded(
-                              child: Text(
-                                _q.question,
-                                style: AppTheme.body(
-                                  size: 26,
-                                  weight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      final options = GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: 4,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 18,
-                          crossAxisSpacing: 18,
-                          childAspectRatio: wide ? 4.1 : 2.35,
-                        ),
-                        itemBuilder: (context, i) {
-                          if (!answered) {
-                            return AnswerTile.idle(
-                              letter: _letters[i],
-                              text: _q.options[i],
-                              color: color,
-                              onTap: () => _select(i),
-                            );
-                          }
-                          if (i == _q.correctIndex) {
-                            return AnswerTile.correct(
-                              letter: _letters[i],
-                              text: _q.options[i],
-                              color: color,
-                            );
-                          }
-                          if (i == _selected) {
-                            return AnswerTile.wrong(
-                              letter: _letters[i],
-                              text: _q.options[i],
-                              color: color,
-                            );
-                          }
-                          return AnswerTile.faded(
-                            letter: _letters[i],
-                            text: _q.options[i],
                             color: color,
-                          );
-                        },
-                      );
-
-                      return SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            questionCard,
-                            const SizedBox(height: 16),
-                            options,
-                          ],
+                          ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
-                ),
-                if (answered) ...[
-                  const SizedBox(height: 12),
-                  FeedbackBanner(
-                    correct: isCorrect,
-                    message: isCorrect
-                        ? 'เก่งมากค่ะ! ตอบถูกต้องเลย'
-                        : 'ไม่เป็นไรนะคะ คำตอบที่ใช่คือ "${_q.options[_q.correctIndex]}"',
-                    nextLabel: _index == _questions.length - 1
-                        ? 'ดูผล'
-                        : 'ข้อต่อไป',
-                    onNext: _next,
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: LinearProgressIndicator(
+                      value: (_index + (answered ? 1 : 0)) / _questions.length,
+                      minHeight: 12,
+                      backgroundColor: color.withValues(alpha: 0.15),
+                      valueColor: AlwaysStoppedAnimation(color),
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth > 760;
+                        final questionCard = KawaiiCard(
+                          borderColor: color,
+                          borderWidth: 9,
+                          radius: 34,
+                          padding: const EdgeInsets.all(28),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 104,
+                                height: 104,
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: PictogramIcon(
+                                    type: _q.illustration,
+                                    size: 70,
+                                    accent: color,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 22),
+                              Expanded(
+                                child: Text(
+                                  _q.question,
+                                  style: AppTheme.body(
+                                    size: 26,
+                                    weight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        final options = GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 4,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 18,
+                                crossAxisSpacing: 18,
+                                childAspectRatio: wide ? 4.1 : 2.35,
+                              ),
+                          itemBuilder: (context, i) {
+                            if (!answered) {
+                              return AnswerTile.idle(
+                                letter: _letters[i],
+                                text: _q.options[i],
+                                color: color,
+                                onTap: () => _select(i),
+                              );
+                            }
+                            if (i == _q.correctIndex) {
+                              return AnswerTile.correct(
+                                letter: _letters[i],
+                                text: _q.options[i],
+                                color: color,
+                              );
+                            }
+                            if (i == _selected) {
+                              return AnswerTile.wrong(
+                                letter: _letters[i],
+                                text: _q.options[i],
+                                color: color,
+                              );
+                            }
+                            return AnswerTile.faded(
+                              letter: _letters[i],
+                              text: _q.options[i],
+                              color: color,
+                            );
+                          },
+                        );
+
+                        return SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              questionCard,
+                              const SizedBox(height: 16),
+                              options,
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (answered) ...[
+                    const SizedBox(height: 12),
+                    FeedbackBanner(
+                      correct: isCorrect,
+                      message: isCorrect
+                          ? 'เก่งมากครับ! ตอบถูกต้องเลย'
+                          : 'ไม่เป็นไรนะครับ คำตอบที่ใช่คือ "${_q.options[_q.correctIndex]}"',
+                      nextLabel: _index == _questions.length - 1
+                          ? 'ดูผล'
+                          : 'ข้อต่อไป',
+                      onNext: _next,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

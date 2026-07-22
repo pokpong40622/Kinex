@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/daily_quest.dart';
+import '../../state/quest_providers.dart';
 import '../services/daily_progress_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/kawaii_widgets.dart';
 
 /// A soft, celebratory screen shown at the end of every round. There is no
 /// "fail" state here on purpose — every attempt gets a warm, proud message.
-class ResultScreen extends StatefulWidget {
+class ResultScreen extends ConsumerStatefulWidget {
   final Color color;
   final int correctCount;
   final int total;
@@ -20,10 +23,10 @@ class ResultScreen extends StatefulWidget {
   });
 
   @override
-  State<ResultScreen> createState() => _ResultScreenState();
+  ConsumerState<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> {
+class _ResultScreenState extends ConsumerState<ResultScreen> {
   late final int _earnedPoints = DailyProgressStore.pointsForScore(
     widget.correctCount,
   );
@@ -39,16 +42,19 @@ class _ResultScreenState extends State<ResultScreen> {
     final progress = await DailyProgressStore.addQuizScore(widget.correctCount);
     if (!mounted) return;
     setState(() => _progress = progress);
+    // Any round of the card game (score doesn't matter) satisfies the daily
+    // "เล่นการ์ดเรียนรู้" quest.
+    await ref.read(dailyQuestsProvider.notifier).bump(QuestId.cardGame);
   }
 
   String get _message {
     if (widget.total == 0 || widget.correctCount == widget.total) {
-      return 'เก่งมากค่ะ! ทำได้ครบทุกข้อเลย';
+      return 'เก่งมากครับ! ทำได้ครบทุกข้อเลย';
     }
     if (widget.correctCount >= (widget.total / 2)) {
-      return 'ทำได้ดีมากค่ะ วันนี้เรียนรู้เพิ่มขึ้นอีกแล้ว';
+      return 'ทำได้ดีมากครับ วันนี้เรียนรู้เพิ่มขึ้นอีกแล้ว';
     }
-    return 'ไม่เป็นไรค่ะ ลองใหม่ได้เรื่อยๆ ทุกครั้งคือการเรียนรู้';
+    return 'ไม่เป็นไรครับ ลองใหม่ได้เรื่อยๆ ทุกครั้งคือการเรียนรู้';
   }
 
   int get _percent => widget.total == 0

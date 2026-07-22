@@ -1,15 +1,17 @@
 /*
  * Kinex HAND bridge — ESP32-S3 (Mini)
  * -----------------------------------
- * Second Kinex board (alongside the Leg board "Kinex-EMG"). Reads an MPU6050
- * over I2C and streams the HAND TILT ANGLES on all three axes (X/Y/Z) to the
- * Kinex app over BLE — view them live in the app's BLE Debug console. Every
- * value is also printed to Serial (tab-separated) for the Arduino Serial Plotter.
- * Angles only: raw acceleration is never sent.
+ * One of three Kinex boards (alongside the Leg-L and Leg-R EMG boards). Reads
+ * an MPU6050 over I2C and streams the HAND TILT ANGLES on all three axes
+ * (X/Y/Z) to the Kinex app over BLE — view them live in the app's BLE Debug
+ * console. Every value is also printed to Serial (tab-separated) for the
+ * Arduino Serial Plotter. Angles only: raw acceleration is never sent.
  *
- * The app can hold this board AND the Leg board connected at the same time:
- * this one advertises as "Kinex-Hand", the Leg board as "Kinex-EMG", so the
- * app's two device slots each connect to their own board.
+ * The app can hold this board AND both Leg boards connected at the same time.
+ * Each board derives a unique name from its own chip MAC, with a fixed side
+ * suffix so the app pairs reliably: this one advertises as "Kinex-<HEX>-H"
+ * (e.g. "Kinex-3F7A-H"), the Leg boards as "...-L" / "...-R". The app matches
+ * on the suffix, not the random hex, so re-flashing never breaks pairing.
  *
  * ── MPU6050 wiring (I2C) ─────────────────────────────────────────────────────
  *   MPU6050 VCC -> 3V3        MPU6050 GND -> GND
@@ -55,13 +57,18 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <math.h>
+#include "esp_mac.h"
 
 // ── Nordic UART Service UUIDs (must match the Flutter app) ──────────────────
 #define NUS_SERVICE   "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 #define NUS_RX_WRITE  "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  // app -> ESP32
 #define NUS_TX_NOTIFY "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  // ESP32 -> app
 
-const char* DEVICE_NAME = "Kinex-Hand";   // app Hand-slot matches "Kinex-Hand"
+// Filled in setup() from the chip's own BLE MAC: "Kinex-<HEX>-H", e.g.
+// "Kinex-3F7A-H". The app's Hand slot matches on the "-h" suffix (see
+// matchesHandBoard in lib/ble/ble_service.dart), not the random hex, so this
+// name never collides with another Kinex board and re-flashing is safe.
+char DEVICE_NAME[24];
 
 // ── MPU6050 (I2C) ────────────────────────────────────────────────────────────
 const int  SDA_PIN     = 8;      // <-- set to your wiring
@@ -249,6 +256,10 @@ void setup() {
     calibrateGyroZ();
   }
   Serial.println("x_roll\ty_pitch\tz_yaw");   // Serial Plotter header
+
+  uint8_t mac[6];
+  esp_read_mac(mac, ESP_MAC_BLE);
+  snprintf(DEVICE_NAME, sizeof(DEVICE_NAME), "Kinex-%02X%02X-H", mac[4], mac[5]);
 
   BLEDevice::init(DEVICE_NAME);
   BLEDevice::setMTU(80);

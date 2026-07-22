@@ -5,10 +5,12 @@ import '../../data/assessment_repository.dart';
 import '../../data/assessment_session.dart';
 import '../../models/assessment_record.dart';
 import '../../models/assessment_test.dart';
+import '../../models/daily_quest.dart';
 import '../../models/fall_risk.dart';
 import '../../models/fitness_level.dart';
 import '../../services/sppb_scoring.dart';
 import '../../state/assessment_profile.dart';
+import '../../state/quest_providers.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
 import '../../theme/kui.dart';
@@ -175,6 +177,7 @@ class FinalSummaryPage extends ConsumerWidget {
         );
     ref.read(assessmentSessionProvider.notifier).reset();
     ref.invalidate(assessmentHistoryProvider);
+    await ref.read(dailyQuestsProvider.notifier).bump(QuestId.assessment);
 
     if (!context.mounted) return;
     context.go('/assessment/history');

@@ -42,6 +42,10 @@ const kCharacterCatalog = <CharacterItem>[
   CharacterItem(
       'character_kid', 'น้องคิเน็กซ์', 'assets/images/character_kid.png', 0),
   CharacterItem('char_main', 'ฮีโร่หลัก', 'assets/images/char_main.png', 800),
+  // Kinex Grandpa — rigged model added on the Unity side; this is the shop
+  // entry only. Purchasing persists ownership like any other cosmetic, but
+  // actually swapping the in-game model is a follow-up (out of scope here).
+  CharacterItem('char_grandpa', 'คุณปู่ Kinex', 'assets/images/grandpa.png', 600),
 ];
 
 /// Looks up a character by id, falling back to the starter character if the

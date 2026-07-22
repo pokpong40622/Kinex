@@ -1,7 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/content.dart';
 import '../models/models.dart';
+import '../services/card_sfx.dart';
 import '../theme/app_theme.dart';
 import '../widgets/kawaii_widgets.dart';
 import '../widgets/pictogram_painter.dart';
@@ -11,15 +13,15 @@ import 'result_screen.dart';
 /// curved line is drawn to connect them once matched. Tap-to-connect (rather
 /// than drag-to-draw) keeps this comfortable for hands that find precise
 /// dragging difficult — the connecting line still appears as the reward.
-class MatchingScreen extends StatefulWidget {
+class MatchingScreen extends ConsumerStatefulWidget {
   final Topic topic;
   const MatchingScreen({super.key, required this.topic});
 
   @override
-  State<MatchingScreen> createState() => _MatchingScreenState();
+  ConsumerState<MatchingScreen> createState() => _MatchingScreenState();
 }
 
-class _MatchingScreenState extends State<MatchingScreen> {
+class _MatchingScreenState extends ConsumerState<MatchingScreen> {
   late final List<MatchPair> _pairs = matchPairs[widget.topic.id]!;
   late final List<int> _leftOrder = List.generate(_pairs.length, (i) => i);
   late final List<int> _rightOrder = List.generate(_pairs.length, (i) => i)
@@ -87,6 +89,7 @@ class _MatchingScreenState extends State<MatchingScreen> {
 
   void _evaluate() {
     if (_selectedLeft == _selectedRight) {
+      ref.read(cardSfxProvider).correct();
       setState(() {
         _matched.add(_selectedLeft!);
         _selectedLeft = null;
@@ -112,6 +115,7 @@ class _MatchingScreenState extends State<MatchingScreen> {
         });
       }
     } else {
+      ref.read(cardSfxProvider).wrong();
       setState(() {
         _mismatchLeft = _selectedLeft;
         _mismatchRight = _selectedRight;
@@ -132,127 +136,129 @@ class _MatchingScreenState extends State<MatchingScreen> {
   Widget build(BuildContext context) {
     final color = widget.topic.color;
     return Scaffold(
-      body: SafeArea(
-        child: CenteredGameArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                KawaiiTopBar(
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.ink,
-                          size: 34,
+      body: CardGameBackground(
+        child: SafeArea(
+          child: CenteredGameArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  KawaiiTopBar(
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppColors.ink,
+                            size: 34,
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'จับคู่การ์ด · ${widget.topic.title.replaceAll('\n', ' ')}',
+                        Expanded(
+                          child: Text(
+                            'จับคู่การ์ด · ${widget.topic.title.replaceAll('\n', ' ')}',
+                            style: AppTheme.body(
+                              size: 22,
+                              weight: FontWeight.w700,
+                              color: AppColors.inkLight,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          'จับคู่แล้ว ${_matched.length} / ${_pairs.length}',
                           style: AppTheme.body(
                             size: 22,
                             weight: FontWeight.w700,
-                            color: AppColors.inkLight,
+                            color: color,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        'จับคู่แล้ว ${_matched.length} / ${_pairs.length}',
-                        style: AppTheme.body(
-                          size: 22,
-                          weight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'แตะการ์ดสถานการณ์ แล้วแตะวิธีดูแลที่เข้าคู่กันนะคะ',
-                  style: AppTheme.body(size: 20, color: AppColors.inkLight),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Stack(
-                    key: _stackKey,
-                    children: [
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: CustomPaint(
-                            painter: _LinePainter(
-                              matched: _matched,
-                              leftCenters: _leftCenters,
-                              rightCenters: _rightCenters,
-                              color: AppColors.happyGreen,
+                  const SizedBox(height: 4),
+                  Text(
+                    'แตะการ์ดสถานการณ์ แล้วแตะวิธีดูแลที่เข้าคู่กันนะครับ',
+                    style: AppTheme.body(size: 20, color: AppColors.inkLight),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Stack(
+                      key: _stackKey,
+                      children: [
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: CustomPaint(
+                              painter: _LinePainter(
+                                matched: _matched,
+                                leftCenters: _leftCenters,
+                                rightCenters: _rightCenters,
+                                color: AppColors.happyGreen,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1080),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    for (final i in _leftOrder)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1080),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      for (final i in _leftOrder)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: _MatchCard(
+                                            key: _leftKeys[i],
+                                            text: _pairs[i].situation,
+                                            illustration:
+                                                _pairs[i].situationIllustration,
+                                            color: color,
+                                            state: _stateFor(i, isLeft: true),
+                                            onTap: () => _tapLeft(i),
+                                          ),
                                         ),
-                                        child: _MatchCard(
-                                          key: _leftKeys[i],
-                                          text: _pairs[i].situation,
-                                          illustration:
-                                              _pairs[i].situationIllustration,
-                                          color: color,
-                                          state: _stateFor(i, isLeft: true),
-                                          onTap: () => _tapLeft(i),
-                                        ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 76),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    for (final i in _rightOrder)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
+                                const SizedBox(width: 76),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      for (final i in _rightOrder)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: _MatchCard(
+                                            key: _rightKeys[i],
+                                            text: _pairs[i].tip,
+                                            illustration:
+                                                _pairs[i].tipIllustration,
+                                            color: color,
+                                            state: _stateFor(i, isLeft: false),
+                                            onTap: () => _tapRight(i),
+                                          ),
                                         ),
-                                        child: _MatchCard(
-                                          key: _rightKeys[i],
-                                          text: _pairs[i].tip,
-                                          illustration:
-                                              _pairs[i].tipIllustration,
-                                          color: color,
-                                          state: _stateFor(i, isLeft: false),
-                                          onTap: () => _tapRight(i),
-                                        ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
