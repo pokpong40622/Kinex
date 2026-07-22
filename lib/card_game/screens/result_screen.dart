@@ -45,6 +45,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     // Any round of the card game (score doesn't matter) satisfies the daily
     // "เล่นการ์ดเรียนรู้" quest.
     await ref.read(dailyQuestsProvider.notifier).bump(QuestId.cardGame);
+    // The score quest counts CORRECT answers across the day, so it takes this
+    // round's tally rather than a flat +1.
+    await ref
+        .read(dailyQuestsProvider.notifier)
+        .bump(QuestId.cardGameScore, by: widget.correctCount);
   }
 
   String get _message {

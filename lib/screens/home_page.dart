@@ -5,7 +5,6 @@ import '../theme/app_theme.dart';
 import '../theme/kui.dart';
 import '../state/home_intro_providers.dart';
 import '../data/assessment_repository.dart';
-import '../data/emg_repository.dart';
 import '../models/fall_risk.dart';
 import '../widgets/fall_risk_cards.dart';
 import '../widgets/device_connect_panel.dart';
@@ -72,7 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (!mounted) return;
 
       if (result == OnboardingResult.installRequested) {
-        // Open the real EMG install + MVC-capture guide.
+        // Open the real EMG strap-install + at-rest calibration guide.
         final guideResult = await context.push('/hardware-guide');
         if (!mounted) return;
         // result == true only when the guide was fully finished; anything else
@@ -298,11 +297,10 @@ class _KinexNavBar extends StatelessWidget {
 /// testing the EMG strap at all, so a missing BT connection always outranks
 /// the "strap not installed" reminder.
 ///   1. legL board (bleControllerProvider) not connected → Bluetooth warning,
-///      tap opens the same connect sheet as the top-bar BT button. This is
-///      the only board hardware_guide_page.dart actually reads from.
-///   2. BT connected but [mvcCalibrationProvider] has no complete
-///      calibration (or the user skipped this run) → strap-install warning,
-///      tap opens the hardware guide (unchanged behaviour).
+///      tap opens the same connect sheet as the top-bar BT button.
+///   2. BT connected but the user has not finished the install guide this run
+///      ([emgInstallSkippedProvider]) → strap-install warning, tap opens the
+///      hardware guide.
 ///   3. Both fine → hidden.
 class _EmgReminderBanner extends ConsumerWidget {
   const _EmgReminderBanner();
@@ -325,11 +323,13 @@ class _EmgReminderBanner extends ConsumerWidget {
       );
     }
 
+    // The hardware guide no longer captures an MVC calibration (the current EMG
+    // stack self-calibrates at rest, see ble/emg_pipeline.dart), so
+    // mvcCalibrationProvider would never become complete again and the banner
+    // would be stuck on forever. The per-run skip flag is now the only gate:
+    // the install guide runs on every launch and clears it on finish.
     final skipped = ref.watch(emgInstallSkippedProvider);
-    final cal = ref.watch(mvcCalibrationProvider).value;
-    final calibrated = cal != null && cal.isComplete;
-    // Show whenever the user skipped this run, or there's no complete calibration.
-    if (!skipped && calibrated) return const SizedBox.shrink();
+    if (!skipped) return const SizedBox.shrink();
 
     return _bar(
       context,
@@ -442,9 +442,19 @@ class _HomeTabState extends ConsumerState<_HomeTab> {
                   children: [
                     Expanded(
                       flex: 46,
-                      child: _AssessmentCard(
-                        cardKey: widget.assessKey,
-                        onTap: () => context.push('/assessment'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _AssessmentCard(
+                            cardKey: widget.assessKey,
+                            onTap: () => context.push('/assessment'),
+                          ),
+                          SizedBox(height: h * 0.012),
+                          // Same column, so the demo card inherits the ประเมิน
+                          // card's width and matches its height ratio exactly.
+                          _DemoTourCard(onTap: () => context.push('/demo')),
+                        ],
                       ),
                     ),
                     SizedBox(width: w * 0.03),
@@ -868,8 +878,104 @@ class _AssessmentCard extends StatelessWidget {
   }
 }
 
-/// Home-tab ภารกิจ panel: today's four daily quests with a live check state and
-/// coin reward, driven by [dailyQuestsProvider]. Replaces the old green
+/// Home-tab entry point for the "quick tour" demo — 3 poses of THE DASHER then
+/// 2 of QUAKE ESCAPE, ending on a result page. Geometry cloned from
+/// [_AssessmentCard] (same height ratio, radius, padding structure) so the two
+/// cards read as a set; warm amber→ember gradient keeps it visually distinct.
+class _DemoTourCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _DemoTourCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final h = size.height;
+    final cardH = h * 0.145;
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: double.infinity,
+        height: cardH,
+        child: LayoutBuilder(
+          builder: (context, cs) {
+            final cw = cs.maxWidth;
+            final vPad = cardH * 0.12;
+            final gap1 = cardH * 0.04;
+            final gap2 = cardH * 0.06;
+            final btnVPad = cw * 0.025;
+            return Container(
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                gradient: KColors.demoTourGradient,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: KColors.hairline, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                      color: KColors.demoTourInk.withValues(alpha: 0.30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          cw * 0.06, vPad, cw * 0.03, vPad),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('ลองเล่นใน 2 นาที',
+                              style: thaiSans(
+                                  size: cw * 0.052,
+                                  weight: FontWeight.w800,
+                                  color: Colors.white)),
+                          SizedBox(height: gap1),
+                          Text('รู้จัก KINEX แบบเร็ว ๆ — 2 เกม 5 ท่า',
+                              style: thaiSans(
+                                  size: cw * 0.028,
+                                  weight: FontWeight.w600,
+                                  color: Colors.white)),
+                          SizedBox(height: gap2),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: cw * 0.05, vertical: btnVPad),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('เริ่มทดลอง',
+                                style: thaiSans(
+                                    size: cw * 0.034,
+                                    weight: FontWeight.w800,
+                                    color: KColors.demoTourInk)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(right: cw * 0.05),
+                    child: Icon(Icons.sports_esports_rounded,
+                        size: cw * 0.16, color: Colors.white.withAlpha(230)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// How many quests the Home panel shows. There are more daily quests than fit
+/// beside the ประเมิน card; the rest live on the full quest page.
+const int _homePanelQuests = 4;
+
+/// Home-tab ภารกิจ panel: a short list of today's daily quests with a live check
+/// state and coin reward, driven by [dailyQuestsProvider]. Replaces the old green
 /// "go look at quests" card — the goals themselves now sit on Home so the user
 /// sees at a glance what's left to do today. Tapping opens the full quest page.
 ///
@@ -920,10 +1026,20 @@ class _DailyQuestPanel extends ConsumerWidget {
               ),
               SizedBox(height: cw * 0.035),
               quests.maybeWhen(
+                // Home shows at most _homePanelQuests of them, unfinished
+                // first: the full list is longer than this card can hold
+                // without pushing the rest of Home off screen, and showing the
+                // ones still to do is what makes the card worth glancing at.
+                // The count above is still out of ALL quests, and "ดูเพิ่มเติม"
+                // opens the complete list.
                 data: (list) => Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (final q in list) _QuestPanelRow(quest: q, cw: cw),
+                    for (final q in [
+                      ...list.where((q) => !q.done),
+                      ...list.where((q) => q.done),
+                    ].take(_homePanelQuests))
+                      _QuestPanelRow(quest: q, cw: cw),
                   ],
                 ),
                 // Quiet placeholder while prefs load — same title above stays
@@ -1344,37 +1460,23 @@ class _ProfileCard extends ConsumerWidget {
     final w = size.width;
     final h = size.height;
     final cardH = h * 0.10;
-    // Was cardH*0.48 with a cardH/2 (full-stadium) card radius and only a
-    // cardH*0.15 inset before the avatar — that combination made the pill's
-    // rounded left cap clip the top/bottom-left of the avatar circle (the
-    // corner curve reaches x≈0.36*cardH at the avatar's own top/bottom edge,
-    // well past the old inset). Smaller avatar + a matching inset + a calmer
-    // (non-stadium) card radius keeps every corner of the avatar inside the
-    // clip.
-    final avatarR = cardH * 0.40;
-    final radius = cardH * 0.30;
-    final inset = cardH * 0.10; // avatar's left/top/bottom margin, symmetric
+    final avatarR = cardH * 0.48;
 
     return SizedBox(
       height: cardH,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius: BorderRadius.circular(cardH / 2),
           border: Border.all(color: KColors.hairline, width: 1),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(radius),
+          borderRadius: BorderRadius.circular(cardH / 2),
           child: Stack(
             children: [
               Positioned.fill(child: Container(color: const Color(0xFFF4F4F4))),
-              // Accent block sits directly behind the (white) text column —
-              // full height, starting right after the avatar's own margin —
-              // instead of the old diagonal cut that sliced through the
-              // vertically-centred text and put its top half on the grey
-              // background (unreadable white-on-white).
               Positioned(
-                left: avatarR * 2 + inset * 2,
-                top: 0,
+                left: avatarR * 0.4,
+                top: cardH * 0.55,
                 bottom: 0,
                 right: 0,
                 child: Container(color: KColors.blue),
@@ -1382,10 +1484,11 @@ class _ProfileCard extends ConsumerWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(width: inset),
+                  SizedBox(width: avatarR * 0.15),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'settings') context.push('/settings');
+                      if (value == 'emg_graph') context.push('/emg/graph');
                       if (value == 'devices') context.push('/devices');
                       if (value == 'debug') context.push('/ble-debug');
                       if (value == 'games') context.push('/game-debug');
@@ -1404,6 +1507,22 @@ class _ProfileCard extends ConsumerWidget {
                                 color: KColors.navyText, size: 20),
                             const SizedBox(width: 10),
                             Text('ตั้งค่า',
+                                style: thaiSans(
+                                    size: 16,
+                                    weight: FontWeight.w600,
+                                    color: KColors.navyText)),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'emg_graph',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.show_chart_rounded,
+                                color: KColors.navyText, size: 20),
+                            const SizedBox(width: 10),
+                            Text('EMG Graph',
                                 style: thaiSans(
                                     size: 16,
                                     weight: FontWeight.w600,
@@ -1481,7 +1600,7 @@ class _ProfileCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: inset * 1.2),
+                  SizedBox(width: w * 0.025),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1492,9 +1611,6 @@ class _ProfileCard extends ConsumerWidget {
                                   _ResultPill(risk: rec?.risk),
                               orElse: () => _ResultPill(risk: null),
                             ),
-                        // Was missing entirely — the pill and the name text
-                        // sat flush against each other with no gap.
-                        SizedBox(height: cardH * 0.06),
                         Text(ref.watch(userNameProvider),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

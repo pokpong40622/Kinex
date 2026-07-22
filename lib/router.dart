@@ -19,6 +19,7 @@ import 'screens/the_dasher_intro_page.dart';
 import 'screens/the_dasher_start_page.dart';
 import 'screens/hang_glider_game_screen.dart';
 import 'screens/quake_escape_game_screen.dart';
+import 'screens/quick_demo_screen.dart';
 import 'screens/assessment/assessment_landing_page.dart';
 import 'screens/assessment/assessment_intro_page.dart';
 import 'screens/assessment/person_info_page.dart';
@@ -36,6 +37,7 @@ import 'screens/assessment/history_list_page.dart';
 import 'screens/assessment/history_detail_page.dart';
 import 'screens/learn/learn_library_page.dart';
 import 'screens/learn/pose_detail_page.dart';
+import 'screens/learn/pose_coach_page.dart';
 import 'screens/world/world_hero_page.dart';
 import 'screens/world/world_game_screen.dart';
 import 'screens/world/world_result_page.dart';
@@ -43,6 +45,8 @@ import 'screens/world/world_history_page.dart';
 import 'screens/world/world_history_detail_page.dart';
 import 'screens/emg/emg_pin_page.dart';
 import 'screens/emg/emg_detail_page.dart';
+import 'screens/emg/emg_live_balance_page.dart';
+import 'screens/emg/emg_graph_page.dart';
 import 'screens/onboarding/hardware_guide_page.dart';
 import 'screens/onboarding/connect_device_page.dart';
 import 'screens/debug/ble_debug_page.dart';
@@ -59,6 +63,14 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
         // EMG detail behind a 6-digit gate (full-screen, outside the nav shell).
         GoRoute(path: '/emg/pin', builder: (context, _) => const EmgPinPage()),
         GoRoute(path: '/emg/detail', builder: (context, _) => const EmgDetailPage()),
+        // Live left/right co-contraction (CCI) view, streamed from both leg boards.
+        GoRoute(
+            path: '/emg/live',
+            builder: (context, _) => const EmgLiveBalancePage()),
+        // Full 5-group EMG dashboard (raw/RMS/%MVC/CCI/stability) for both legs.
+        GoRoute(
+            path: '/emg/graph',
+            builder: (context, _) => const EmgGraphPage()),
         // BLE connect-device landing (full-screen, shown before hardware guide).
         GoRoute(
             path: '/connect-device',
@@ -128,6 +140,8 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/quake-escape',
                 builder: (context, _) => const QuakeEscapeGameScreen()),
+            // "Quick tour" demo — 3 Dasher poses, 2 Quake Escape poses, result.
+            GoRoute(path: '/demo', builder: (context, _) => const QuickDemoScreen()),
             // Fitness-assessment module (pure Flutter). More routes added per phase.
             GoRoute(
                 path: '/assessment',
@@ -177,6 +191,11 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/learn',
                 builder: (context, _) => const LearnLibraryPage()),
+            // Live camera coach — currently only the hip_abduction pose has one.
+            // Three segments, so it never collides with '/learn/:poseId'.
+            GoRoute(
+                path: '/learn/coach/hip_abduction',
+                builder: (context, _) => const PoseCoachPage()),
             GoRoute(
                 path: '/learn/:poseId',
                 builder: (context, state) => PoseDetailPage(

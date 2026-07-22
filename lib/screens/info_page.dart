@@ -11,6 +11,7 @@ import '../state/shop_providers.dart';
 import '../state/assessment_profile.dart';
 import '../data/assessment_repository.dart';
 import '../data/customize_catalog.dart';
+import '../theme/game_brand.dart';
 import '../services/assessment_pdf.dart';
 import '../theme/app_theme.dart';
 import '../theme/kui.dart';
@@ -264,6 +265,42 @@ class _SectionBanner extends StatelessWidget {
   }
 }
 
+// Small entry button into the live L/R co-contraction view (emg_live_balance_page.dart).
+// Matches _SectionBanner's tinted-pill visual language so it reads as part of
+// the same header row, not a separate control.
+class _LiveBalanceButton extends StatelessWidget {
+  const _LiveBalanceButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/emg/live'),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: context.r(10), vertical: context.r(9)),
+        decoration: BoxDecoration(
+          color: KColors.purple.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(context.r(14)),
+          border: Border.all(color: KColors.purple.withValues(alpha: 0.22)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.graphic_eq_rounded,
+                size: context.r(15), color: KColors.purple),
+            SizedBox(width: context.r(4)),
+            Text('เรียลไทม์',
+                style: montserrat(
+                    size: context.r(12),
+                    weight: FontWeight.w800,
+                    color: KColors.purple)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Balance card (EMG L/R) ─────────────────────────────────────────────────
 
 /// Sums each muscle reading's %MVC per leg from the balance report and
@@ -310,7 +347,16 @@ class _BalanceCardState extends ConsumerState<_BalanceCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionBanner('สมดุลซ้าย–ขวา (EMG)', icon: Icons.compare_arrows_rounded),
+          Row(
+            children: [
+              const Expanded(
+                child: _SectionBanner('สมดุลซ้าย–ขวา (EMG)',
+                    icon: Icons.compare_arrows_rounded),
+              ),
+              SizedBox(width: context.r(8)),
+              const _LiveBalanceButton(),
+            ],
+          ),
           SizedBox(height: context.r(8)),
           Text(
             '% การใช้กล้ามเนื้อจาก EMG ขณะทำท่าที่ลงน้ำหนัก 2 ข้างเท่ากัน '
@@ -660,29 +706,12 @@ class _GameRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: context.r(44),
-            height: context.r(44),
-            // Same tinted-plate + BoxFit.contain treatment as the shop's
-            // _GameUnlockCard icon (shop_page.dart) — some game-icon assets
-            // are wide title-banner art, not square icons, and BoxFit.cover
-            // was center-cropping those to an unreadable sliver. Matching
-            // both pages keeps the icon treatment uniform app-wide.
-            padding: EdgeInsets.all(context.r(5)),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: KColors.purple.withAlpha(30),
-              borderRadius: BorderRadius.circular(context.r(13)),
-            ),
-            child: Image.asset(
-              record.iconAsset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stack) => Icon(
-                  Icons.sports_esports_rounded,
-                  color: KColors.indigo,
-                  size: context.r(22)),
-            ),
-          ),
+          // Brand plate keyed on gameId, shared with the shop list so the same
+          // game reads identically in both places (see theme/game_brand.dart).
+          GameIconTile(
+              gameId: record.gameId,
+              size: context.r(44),
+              radius: context.r(13)),
           SizedBox(width: context.r(11)),
           Expanded(
             child: Column(

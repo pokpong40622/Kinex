@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../theme/game_brand.dart';
 import '../theme/kui.dart';
 import '../theme/responsive.dart';
 import '../state/shop_providers.dart';
@@ -519,29 +520,7 @@ class _GameUnlockCard extends ConsumerWidget {
               ),
       child: Row(
         children: [
-          Container(
-            width: r(52),
-            height: r(52),
-            // Some game-icon assets are wide title-banner art (e.g. Hang
-            // Glider / Quake Escape), not square icons — BoxFit.cover was
-            // center-cropping those down to an unreadable sliver of gradient.
-            // BoxFit.contain always shows the whole image (a no-op for the
-            // assets that already are square) and the padding + tinted plate
-            // keep every icon, regardless of source aspect ratio, looking
-            // like a deliberate badge instead of a stretched/cropped photo.
-            padding: EdgeInsets.all(r(6)),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: KColors.purple.withAlpha(30),
-              borderRadius: BorderRadius.circular(r(14)),
-            ),
-            child: Image.asset(
-              item.iconAsset,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stack) =>
-                  Icon(item.icon, size: r(26), color: KColors.purple),
-            ),
-          ),
+          GameIconTile(gameId: item.id, size: r(52), radius: r(14)),
           SizedBox(width: r(14)),
           Expanded(
             child: Column(

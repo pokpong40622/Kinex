@@ -48,8 +48,13 @@ class _QuakeEscapeGameScreenState
   void initState() {
     super.initState();
     // Portrait balance game — lock to portraitUp only while playing.
-    SystemChrome.setPreferredOrientations(
-        const [DeviceOrientation.portraitUp]);
+    // Portrait, but BOTH ways up: the tablet gets rotated 180° depending on
+    // which side the charging cable is on, and pinning portraitUp alone left
+    // the game upside down in that orientation.
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     _requestCameraPermission();
   }
 

@@ -146,6 +146,15 @@ class KColors {
     stops: [0.0, 0.55, 1.0],
   );
 
+  // ลองเล่นใน 2 นาที — warm amber→ember, distinct from the cool assessment
+  // card so the two read as siblings (see home_page.dart _DemoTourCard).
+  static const demoTourInk = Color(0xFFB23B2E);
+  static const demoTourGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFF9A2E), Color(0xFFEF5A4C)],
+  );
+
   // Healthcare palette for the fitness-assessment module.
   static const tealGradient = LinearGradient(
     begin: Alignment.topLeft,

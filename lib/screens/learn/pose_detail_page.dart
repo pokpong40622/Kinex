@@ -116,6 +116,9 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
     final color = pose.category.color;
     final pageCount = 1 + pose.steps.length;
     final isLast = _page == pageCount - 1;
+    // Only this one pose has a live camera coach so far; every other pose keeps
+    // the plain read-only wizard.
+    final hasCoach = pose.id == 'hip_abduction';
 
     return Scaffold(
       backgroundColor: KColors.appBg,
@@ -147,6 +150,19 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
                 },
               ),
             ),
+            if (hasCoach && isLast)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  context.r(24),
+                  0,
+                  context.r(24),
+                  context.r(4),
+                ),
+                child: _PracticeButton(
+                  color: color,
+                  onTap: () => context.push('/learn/coach/hip_abduction'),
+                ),
+              ),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: context.r(24),
@@ -191,6 +207,56 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
                           onTap: () => _goTo(_page + 1),
                         ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "ฝึกกับกล้อง" — opens the live Unity camera coach. Shown on the final wizard
+/// page of the one pose that has a coach.
+class _PracticeButton extends StatelessWidget {
+  final Color color;
+  final VoidCallback onTap;
+  const _PracticeButton({required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        height: context.r(56),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(context.r(28)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.videocam_rounded,
+              color: Colors.white,
+              size: context.r(24),
+            ),
+            SizedBox(width: context.r(8)),
+            Text(
+              'ฝึกกับกล้อง',
+              style: thaiSans(
+                size: context.r(17),
+                weight: FontWeight.w800,
+                color: Colors.white,
               ),
             ),
           ],

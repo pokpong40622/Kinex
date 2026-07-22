@@ -4,7 +4,9 @@ import '../models/daily_quest.dart';
 import '../state/quest_providers.dart';
 import '../theme/app_theme.dart';
 
-/// ภารกิจ — the four daily quests, driven by [dailyQuestsProvider].
+/// ภารกิจ — the full list of daily quests, driven by [dailyQuestsProvider].
+/// Home shows only the first few (see `_homePanelQuests`); this page shows all
+/// of them, so it scrolls.
 ///
 /// This used to be the second bottom-nav tab, and it drew three fixed PNG cards
 /// with hardcoded progress. It now reads real progress that auto-completes as
