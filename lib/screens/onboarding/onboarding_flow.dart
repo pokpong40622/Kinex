@@ -397,7 +397,7 @@ class _InstallBody extends StatelessWidget {
       children: [
         _HaloIcon(icon: Icons.sensors_rounded, color: KColors.teal),
         SizedBox(height: context.r(20)),
-        Text('ติดตั้งแผ่นเซ็นเซอร์ EMG',
+        Text('ติดตั้งสายรัดเซ็นเซอร์ EMG',
             textAlign: TextAlign.center,
             style: thaiSans(
                 size: context.r(22),
@@ -405,7 +405,7 @@ class _InstallBody extends StatelessWidget {
                 color: KColors.navyText)),
         SizedBox(height: context.r(12)),
         Text(
-            'ก่อนเริ่มฝึก มาติดแผ่น EMG ที่ขาของคุณ แล้ววัดค่ากล้ามเนื้อกันก่อน '
+            'ก่อนเริ่มฝึก มาติดสายรัด EMG ที่ขาของคุณ แล้ววัดค่ากล้ามเนื้อกันก่อน '
             'ใช้เวลาไม่นาน',
             textAlign: TextAlign.center,
             style: thaiSans(

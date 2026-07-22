@@ -535,13 +535,25 @@ class BleController extends Notifier<BleState> {
 // can't cause a false match. Old boards not yet reflashed with the MAC-based
 // name still advertise the fixed legacy names ("Kinex-EMG", "Kinex-Hand"), so
 // each matcher also accepts those for backward compatibility.
+//
+// The legacy fallbacks are only consulted when the name carries NO explicit
+// side suffix. Without that guard "Kinex-EMG-R" would match the Leg-L matcher
+// via its "emg" substring and quickConnect could bind the right board to the
+// left slot.
+bool _hasSideSuffix(String lowerName) =>
+    lowerName.endsWith('-l') ||
+    lowerName.endsWith('-r') ||
+    lowerName.endsWith('-h');
+
 bool matchesHandBoard(String lowerName) =>
     lowerName.contains('kinex') &&
-    (lowerName.endsWith('-h') || lowerName.contains('hand'));
+    (lowerName.endsWith('-h') ||
+        (!_hasSideSuffix(lowerName) && lowerName.contains('hand')));
 
 bool matchesLegLBoard(String lowerName) =>
     lowerName.contains('kinex') &&
-    (lowerName.endsWith('-l') || lowerName.contains('emg'));
+    (lowerName.endsWith('-l') ||
+        (!_hasSideSuffix(lowerName) && lowerName.contains('emg')));
 
 bool matchesLegRBoard(String lowerName) =>
     lowerName.contains('kinex') && lowerName.endsWith('-r');

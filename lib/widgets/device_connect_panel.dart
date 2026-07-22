@@ -61,7 +61,7 @@ class DeviceConnectPanel extends ConsumerWidget {
         _BoardRow(
           step: 1,
           title: 'กล่องขาซ้าย',
-          where: 'ติดแผ่น EMG ที่ขาซ้าย — วัดกล้ามเนื้อ',
+          where: 'ติดสายรัด EMG ที่ขาซ้าย — วัดกล้ามเนื้อ',
           icon: Icons.directions_walk_rounded,
           identity: legLColor,
           state: legL,
@@ -76,7 +76,7 @@ class DeviceConnectPanel extends ConsumerWidget {
         _BoardRow(
           step: 2,
           title: 'กล่องขาขวา',
-          where: 'ติดแผ่น EMG ที่ขาขวา — วัดกล้ามเนื้อ',
+          where: 'ติดสายรัด EMG ที่ขาขวา — วัดกล้ามเนื้อ',
           icon: Icons.directions_walk_rounded,
           identity: legRColor,
           state: legR,

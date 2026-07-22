@@ -105,7 +105,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
               subtitle: Text(
-                'ปิดแล้วจะแสดงเฉพาะการเชื่อมต่อบลูทูธและการติดตั้งแผ่น EMG',
+                'ปิดแล้วจะแสดงเฉพาะการเชื่อมต่อบลูทูธและการติดตั้งสายรัด EMG',
                 style: thaiSans(
                   size: 12,
                   weight: FontWeight.w500,

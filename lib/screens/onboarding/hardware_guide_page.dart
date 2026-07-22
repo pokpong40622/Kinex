@@ -110,7 +110,7 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
     steps.add(const _GuideStep(
       kind: _StepKind.welcome,
       title: 'ติดตั้งอุปกรณ์ EMG',
-      body: 'ติดแผ่นเซนเซอร์ EMG 4 จุด บนขาทั้งสองข้าง '
+      body: 'ติดสายรัดเซนเซอร์ EMG 4 จุด บนขาทั้งสองข้าง '
           '(ซ้ายและขวา ตำแหน่งเดียวกัน) แล้ววัดค่ากล้ามเนื้อก่อนเริ่มใช้งาน',
     ));
     for (var n = 1; n <= 4; n++) {
@@ -118,8 +118,8 @@ class _HardwareGuidePageState extends ConsumerState<HardwareGuidePage>
       steps.add(_GuideStep(
         kind: _StepKind.install,
         imagePath: 'assets/images/hardware_guide/R$n-1.png',
-        title: 'ติดแผ่น ${m.code} · ${m.thaiName}',
-        body: 'ติดแผ่น ${m.code} · ${m.thaiName} '
+        title: 'ติดสายรัด ${m.code} · ${m.thaiName}',
+        body: 'ติดสายรัด ${m.code} · ${m.thaiName} '
             'บนขาทั้งสองข้าง ตำแหน่งเดียวกันตามภาพ แล้วกด "ถัดไป"',
         padIndex: n,
         muscle: m,

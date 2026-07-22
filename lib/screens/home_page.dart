@@ -294,28 +294,60 @@ class _KinexNavBar extends StatelessWidget {
 
 // ── EMG REMINDER BANNER ─────────────────────────────────────────────────────
 
-/// Thin full-width banner shown only when EMG pads are not yet calibrated.
-/// Reads [mvcCalibrationProvider]; auto-hides once calibration is complete.
-/// Tapping reopens the hardware-guide.
+/// Thin full-width banner, Bluetooth-aware: BT is the prerequisite for
+/// testing the EMG strap at all, so a missing BT connection always outranks
+/// the "strap not installed" reminder.
+///   1. legL board (bleControllerProvider) not connected → Bluetooth warning,
+///      tap opens the same connect sheet as the top-bar BT button. This is
+///      the only board hardware_guide_page.dart actually reads from.
+///   2. BT connected but [mvcCalibrationProvider] has no complete
+///      calibration (or the user skipped this run) → strap-install warning,
+///      tap opens the hardware guide (unchanged behaviour).
+///   3. Both fine → hidden.
 class _EmgReminderBanner extends ConsumerWidget {
   const _EmgReminderBanner();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final btConnected = ref.watch(
+        bleControllerProvider.select((s) => s.status == BleStatus.connected));
+
+    if (!btConnected) {
+      return _bar(
+        context,
+        text: 'ยังไม่ได้เชื่อมต่อบลูทูธ — แตะเพื่อเชื่อมต่อ',
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (_) => const _BleConnectSheet(),
+        ),
+      );
+    }
+
     final skipped = ref.watch(emgInstallSkippedProvider);
     final cal = ref.watch(mvcCalibrationProvider).value;
     final calibrated = cal != null && cal.isComplete;
     // Show whenever the user skipped this run, or there's no complete calibration.
     if (!skipped && calibrated) return const SizedBox.shrink();
 
-    final w = MediaQuery.sizeOf(context).width;
-    return GestureDetector(
+    return _bar(
+      context,
+      text: 'ยังไม่ได้ติดตั้งสายรัด EMG — แตะเพื่อติดตั้ง',
       onTap: () async {
         final result = await context.push('/hardware-guide');
         if (result == true) {
           ref.read(emgInstallSkippedProvider.notifier).state = false;
         }
       },
+    );
+  }
+
+  Widget _bar(BuildContext context,
+      {required String text, required VoidCallback onTap}) {
+    final w = MediaQuery.sizeOf(context).width;
+    return GestureDetector(
+      onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: w * 0.04),
@@ -332,7 +364,7 @@ class _EmgReminderBanner extends ConsumerWidget {
             SizedBox(width: w * 0.02),
             Expanded(
               child: Text(
-                'ยังไม่ได้ติดตั้งแผ่น EMG — แตะเพื่อติดตั้ง',
+                text,
                 style: thaiSans(
                     size: 13,
                     weight: FontWeight.w700,
@@ -850,68 +882,71 @@ class _DailyQuestPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final quests = ref.watch(dailyQuestsProvider);
-    return GestureDetector(
-      onTap: onTap,
-      child: LayoutBuilder(
-        builder: (context, cs) {
-          final cw = cs.maxWidth;
-          return Container(
-            padding: EdgeInsets.fromLTRB(
-                cw * 0.055, cw * 0.05, cw * 0.055, cw * 0.05),
-            decoration: cardDecoration(radius: 22, color: Colors.white),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+    return LayoutBuilder(
+      builder: (context, cs) {
+        final cw = cs.maxWidth;
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+              cw * 0.055, cw * 0.05, cw * 0.055, cw * 0.05),
+          decoration: cardDecoration(radius: 22, color: Colors.white),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.emoji_events_rounded,
+                      size: cw * 0.075, color: KColors.orangeDark),
+                  SizedBox(width: cw * 0.025),
+                  Expanded(
+                    child: Text('ภารกิจวันนี้',
+                        style: thaiSans(
+                            size: cw * 0.058,
+                            weight: FontWeight.w800,
+                            color: KColors.navyText)),
+                  ),
+                  quests.maybeWhen(
+                    data: (list) {
+                      final done = list.where((q) => q.done).length;
+                      return Text('$done/${list.length}',
+                          style: montserrat(
+                              size: cw * 0.05,
+                              weight: FontWeight.w900,
+                              color: KColors.navyText));
+                    },
+                    orElse: () => const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+              SizedBox(height: cw * 0.035),
+              quests.maybeWhen(
+                data: (list) => Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.emoji_events_rounded,
-                        size: cw * 0.075, color: KColors.orangeDark),
-                    SizedBox(width: cw * 0.025),
-                    Expanded(
-                      child: Text('ภารกิจวันนี้',
-                          style: thaiSans(
-                              size: cw * 0.058,
-                              weight: FontWeight.w800,
-                              color: KColors.navyText)),
-                    ),
-                    quests.maybeWhen(
-                      data: (list) {
-                        final done = list.where((q) => q.done).length;
-                        return Text('$done/${list.length}',
-                            style: montserrat(
-                                size: cw * 0.05,
-                                weight: FontWeight.w900,
-                                color: KColors.navyText));
-                      },
-                      orElse: () => const SizedBox.shrink(),
-                    ),
+                    for (final q in list) _QuestPanelRow(quest: q, cw: cw),
                   ],
                 ),
-                SizedBox(height: cw * 0.035),
-                quests.maybeWhen(
-                  data: (list) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final q in list) _QuestPanelRow(quest: q, cw: cw),
-                    ],
-                  ),
-                  // Quiet placeholder while prefs load — same title above stays
-                  // put, so Home never flashes a spinner or jumps height.
-                  orElse: () => Padding(
-                    padding: EdgeInsets.symmetric(vertical: cw * 0.06),
-                    child: Text('กำลังโหลด…',
-                        style: thaiSans(
-                            size: cw * 0.04,
-                            weight: FontWeight.w600,
-                            color: const Color(0xFF9AA3B8))),
-                  ),
+                // Quiet placeholder while prefs load — same title above stays
+                // put, so Home never flashes a spinner or jumps height.
+                orElse: () => Padding(
+                  padding: EdgeInsets.symmetric(vertical: cw * 0.06),
+                  child: Text('กำลังโหลด…',
+                      style: thaiSans(
+                          size: cw * 0.04,
+                          weight: FontWeight.w600,
+                          color: const Color(0xFF9AA3B8))),
                 ),
-              ],
-            ),
-          );
-        },
-      ),
+              ),
+              SizedBox(height: cw * 0.04),
+              // Explicit "see more" CTA to the full ภารกิจ page — reuses the
+              // same calm, blue-tinted button already used for this exact
+              // purpose on the character dashboard (_SeeMoreButton), so both
+              // home pages share one "see more" idiom.
+              _SeeMoreButton(onTap: onTap),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1309,23 +1344,37 @@ class _ProfileCard extends ConsumerWidget {
     final w = size.width;
     final h = size.height;
     final cardH = h * 0.10;
-    final avatarR = cardH * 0.48;
+    // Was cardH*0.48 with a cardH/2 (full-stadium) card radius and only a
+    // cardH*0.15 inset before the avatar — that combination made the pill's
+    // rounded left cap clip the top/bottom-left of the avatar circle (the
+    // corner curve reaches x≈0.36*cardH at the avatar's own top/bottom edge,
+    // well past the old inset). Smaller avatar + a matching inset + a calmer
+    // (non-stadium) card radius keeps every corner of the avatar inside the
+    // clip.
+    final avatarR = cardH * 0.40;
+    final radius = cardH * 0.30;
+    final inset = cardH * 0.10; // avatar's left/top/bottom margin, symmetric
 
     return SizedBox(
       height: cardH,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(cardH / 2),
+          borderRadius: BorderRadius.circular(radius),
           border: Border.all(color: KColors.hairline, width: 1),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(cardH / 2),
+          borderRadius: BorderRadius.circular(radius),
           child: Stack(
             children: [
               Positioned.fill(child: Container(color: const Color(0xFFF4F4F4))),
+              // Accent block sits directly behind the (white) text column —
+              // full height, starting right after the avatar's own margin —
+              // instead of the old diagonal cut that sliced through the
+              // vertically-centred text and put its top half on the grey
+              // background (unreadable white-on-white).
               Positioned(
-                left: avatarR * 0.4,
-                top: cardH * 0.55,
+                left: avatarR * 2 + inset * 2,
+                top: 0,
                 bottom: 0,
                 right: 0,
                 child: Container(color: KColors.blue),
@@ -1333,7 +1382,7 @@ class _ProfileCard extends ConsumerWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(width: avatarR * 0.15),
+                  SizedBox(width: inset),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'settings') context.push('/settings');
@@ -1432,7 +1481,7 @@ class _ProfileCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: w * 0.025),
+                  SizedBox(width: inset * 1.2),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1443,6 +1492,9 @@ class _ProfileCard extends ConsumerWidget {
                                   _ResultPill(risk: rec?.risk),
                               orElse: () => _ResultPill(risk: null),
                             ),
+                        // Was missing entirely — the pill and the name text
+                        // sat flush against each other with no gap.
+                        SizedBox(height: cardH * 0.06),
                         Text(ref.watch(userNameProvider),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

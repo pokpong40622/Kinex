@@ -522,6 +522,14 @@ class _GameUnlockCard extends ConsumerWidget {
           Container(
             width: r(52),
             height: r(52),
+            // Some game-icon assets are wide title-banner art (e.g. Hang
+            // Glider / Quake Escape), not square icons — BoxFit.cover was
+            // center-cropping those down to an unreadable sliver of gradient.
+            // BoxFit.contain always shows the whole image (a no-op for the
+            // assets that already are square) and the padding + tinted plate
+            // keep every icon, regardless of source aspect ratio, looking
+            // like a deliberate badge instead of a stretched/cropped photo.
+            padding: EdgeInsets.all(r(6)),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: KColors.purple.withAlpha(30),
@@ -529,7 +537,7 @@ class _GameUnlockCard extends ConsumerWidget {
             ),
             child: Image.asset(
               item.iconAsset,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               errorBuilder: (context, error, stack) =>
                   Icon(item.icon, size: r(26), color: KColors.purple),
             ),

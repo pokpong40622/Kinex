@@ -240,7 +240,7 @@ class _MvcContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ยังไม่ได้วัดค่าสูงสุด (MVC) — วัดได้ตอนติดตั้งแผ่น EMG',
+            'ยังไม่ได้วัดค่าสูงสุด (MVC) — วัดได้ตอนติดตั้งสายรัด EMG',
             style: thaiSans(
               size: context.r(14),
               color: const Color(0xFF8090AA),

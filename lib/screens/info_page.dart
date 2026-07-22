@@ -660,20 +660,27 @@ class _GameRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(context.r(13)),
+          Container(
+            width: context.r(44),
+            height: context.r(44),
+            // Same tinted-plate + BoxFit.contain treatment as the shop's
+            // _GameUnlockCard icon (shop_page.dart) — some game-icon assets
+            // are wide title-banner art, not square icons, and BoxFit.cover
+            // was center-cropping those to an unreadable sliver. Matching
+            // both pages keeps the icon treatment uniform app-wide.
+            padding: EdgeInsets.all(context.r(5)),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: KColors.purple.withAlpha(30),
+              borderRadius: BorderRadius.circular(context.r(13)),
+            ),
             child: Image.asset(
               record.iconAsset,
-              width: context.r(44),
-              height: context.r(44),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stack) => Container(
-                width: context.r(44),
-                height: context.r(44),
-                color: const Color(0xFFE7E5F5),
-                child: Icon(Icons.sports_esports_rounded,
-                    color: KColors.indigo, size: context.r(24)),
-              ),
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stack) => Icon(
+                  Icons.sports_esports_rounded,
+                  color: KColors.indigo,
+                  size: context.r(22)),
             ),
           ),
           SizedBox(width: context.r(11)),
