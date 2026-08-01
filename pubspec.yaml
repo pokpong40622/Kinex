@@ -43,6 +43,11 @@ dependencies:
   intl: ^0.20.2
   flutter_screen_recording: ^2.0.25
   gal: ^2.3.2
+  flutter_blue_plus: ^2.3.9
+  fl_chart: ^0.69.0
+  pdf: ^3.11.1
+  printing: ^5.13.2
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -64,7 +69,32 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/game_icons/
+    - assets/images/the_dasher/
+    - assets/images/quake_escape/
     - assets/images/assessment/
+    - assets/images/card_game/
+    - assets/images/hardware_guide/
+    - assets/images/info/
+    - assets/images/learn/
+    - assets/images/onboarding/
+    - assets/audio/card_game/
+
+  fonts:
+    - family: Kanit
+      fonts:
+        - asset: assets/fonts/Kanit-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Kanit-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Kanit-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Kanit-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Kanit-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Kanit-Black.ttf
+          weight: 900
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

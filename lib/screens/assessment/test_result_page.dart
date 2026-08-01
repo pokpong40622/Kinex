@@ -4,16 +4,16 @@ import 'package:go_router/go_router.dart';
 import '../../data/assessment_session.dart';
 import '../../models/assessment_stage.dart';
 import '../../models/assessment_test.dart';
-import '../../models/fitness_level.dart';
+import '../../models/test_results.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/responsive.dart';
+import '../../theme/kui.dart';
 import '../../widgets/assessment_button.dart';
 import '../../widgets/assessment_progress_rail.dart';
 import '../../widgets/assessment_scaffold.dart';
-import '../../widgets/fitness_level_badge.dart';
 
-/// Shows the result of a single movement test: the raw measurement (if any)
-/// plus its [FitnessLevel] badge, with options to continue or repeat.
+/// Shows the result of a single SPPB test: the raw measurement plus the domain
+/// points earned (0–4), with options to continue or repeat.
 class TestResultPage extends ConsumerWidget {
   final String testId;
   const TestResultPage({super.key, required this.testId});
@@ -39,7 +39,8 @@ class TestResultPage extends ConsumerWidget {
                 SizedBox(height: context.r(24)),
                 AssessmentButton(
                   label: 'กลับไปทำแบบทดสอบ',
-                  onTap: () => context.go('/assessment/test/$testId/instructions'),
+                  onTap: () =>
+                      context.go('/assessment/test/$testId/instructions'),
                 ),
               ],
             ),
@@ -48,13 +49,7 @@ class TestResultPage extends ConsumerWidget {
       );
     }
 
-    final level = (result as dynamic).level as FitnessLevel;
-    final valueText = switch (test.method) {
-      TestMethod.camera => '${(result as dynamic).reps} ครั้ง',
-      TestMethod.manualStopwatch =>
-        '${((result as dynamic).seconds as double).toStringAsFixed(2)} วินาที',
-      TestMethod.manualChoice => null,
-    };
+    final (points, valueText) = _describe(result);
 
     return AssessmentScaffold(
       title: test.thaiName,
@@ -65,15 +60,38 @@ class TestResultPage extends ConsumerWidget {
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(context.r(24)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (valueText != null) ...[
-                Text(valueText, style: thaiSans(size: context.r(64), weight: FontWeight.w900)),
-                SizedBox(height: context.r(16)),
+          child: KCard(
+            radius: context.r(22),
+            padding: EdgeInsets.symmetric(
+                horizontal: context.r(24), vertical: context.r(30)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: context.r(72),
+                  height: context.r(72),
+                  decoration: const BoxDecoration(
+                    color: KColors.teal,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.check_rounded,
+                      color: Colors.white, size: context.r(42)),
+                ),
+                SizedBox(height: context.r(20)),
+                Text('ผลการทดสอบ',
+                    style: thaiSans(
+                        size: context.r(14),
+                        weight: FontWeight.w700,
+                        color: KColors.navyText.withAlpha(150))),
+                SizedBox(height: context.r(8)),
+                Text(valueText,
+                    textAlign: TextAlign.center,
+                    style: thaiSans(
+                        size: context.r(30), weight: FontWeight.w800)),
+                SizedBox(height: context.r(24)),
+                _PointsBadge(points: points),
               ],
-              FitnessLevelBadge(level, fontSize: context.r(28)),
-            ],
+            ),
           ),
         ),
       ),
@@ -82,7 +100,16 @@ class TestResultPage extends ConsumerWidget {
         children: [
           AssessmentButton(
             label: 'ไปต่อ',
-            onTap: () => context.go('/assessment/progress'),
+            // Jump straight to the next test (or the summary) instead of bouncing
+            // back to the progress hub and making the senior tap "ทำต่อ" again.
+            onTap: () {
+              if (!session.allMovementTestsComplete) {
+                context.go(
+                    '/assessment/test/${session.nextIncompleteTestId}/instructions');
+              } else {
+                context.go('/assessment/summary');
+              }
+            },
           ),
           SizedBox(height: context.r(12)),
           AssessmentButton(
@@ -92,6 +119,53 @@ class TestResultPage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// (points, human-readable measurement) for the given SPPB result.
+  (int, String) _describe(Object result) {
+    switch (result) {
+      case BalanceResult r:
+        final held = [r.sideBySideSec, r.semiTandemSec, r.tandemSec]
+            .where((s) => s >= 10.0)
+            .length;
+        return (r.points, 'ยืนทรงตัวผ่าน $held ท่า');
+      case GaitResult r:
+        return (
+          r.points,
+          r.unable ? 'เดินไม่ได้' : '${r.seconds.toStringAsFixed(1)} วินาที'
+        );
+      case ChairStandResult r:
+        return (
+          r.points,
+          !r.preTestPassed
+              ? 'ลุกยืนไม่ได้'
+              : '${r.seconds.toStringAsFixed(1)} วินาที (5 ครั้ง)'
+        );
+      default:
+        return (0, '');
+    }
+  }
+}
+
+class _PointsBadge extends StatelessWidget {
+  final int points;
+  const _PointsBadge({required this.points});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: context.r(26), vertical: context.r(13)),
+      decoration: BoxDecoration(
+        color: KColors.teal,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text('$points / 4 คะแนน',
+          style: thaiSans(
+              size: context.r(26),
+              weight: FontWeight.w900,
+              color: Colors.white)),
     );
   }
 }

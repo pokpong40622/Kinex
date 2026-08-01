@@ -27,11 +27,13 @@ class _WeightInputPageState extends ConsumerState<WeightInputPage> {
 
     return AssessmentScaffold(
       title: 'น้ำหนัก',
+      stepIndex: 2,
+      stepCount: 4,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const StageImage(name: 'body', height: 120),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           BigNumberPad(
             unit: 'กก.',
             min: 20,

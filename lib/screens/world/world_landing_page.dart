@@ -25,6 +25,33 @@ class WorldLandingPage extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(
             context.r(20), context.r(4), context.r(20), context.r(12)),
         children: [
+          // Mode badge: this game = EXERCISE (mirrors MEGA DANCE's REHAB badge).
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              margin: EdgeInsets.only(bottom: context.r(12)),
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.r(14), vertical: context.r(7)),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.fitness_center_rounded,
+                      color: Colors.white, size: context.r(16)),
+                  SizedBox(width: context.r(8)),
+                  Text('EXERCISE · ออกกำลังกาย',
+                      style: montserrat(
+                          size: context.r(13),
+                          weight: FontWeight.w800,
+                          color: Colors.white)),
+                ],
+              ),
+            ),
+          ),
           Text('ออกกำลังกายไปกับผู้ฝึก',
               style: thaiSans(
                   size: context.r(20),

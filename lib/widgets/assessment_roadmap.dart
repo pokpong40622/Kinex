@@ -55,16 +55,11 @@ class AssessmentRoadmap extends StatelessWidget {
       margin: EdgeInsets.symmetric(vertical: context.r(6)),
       padding: EdgeInsets.symmetric(horizontal: context.r(16), vertical: context.r(14)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isCurrent ? _teal.withAlpha(18) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: isCurrent ? Border.all(color: _teal, width: 2) : null,
-        boxShadow: [
-          BoxShadow(
-            color: isCurrent ? _teal.withAlpha(40) : const Color(0x14000000),
-            blurRadius: isCurrent ? 16 : 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+            color: isCurrent ? _teal : KColors.hairline,
+            width: isCurrent ? 1.5 : 1),
       ),
       child: Row(
         children: [
@@ -113,20 +108,19 @@ class AssessmentRoadmap extends StatelessWidget {
   }
 
   Widget _node(BuildContext context, IconData icon, Color color, {bool isDone = false, bool pulse = false}) {
+    final active = color != _grey;
     return Container(
       width: context.r(48),
       height: context.r(48),
       decoration: BoxDecoration(
-        color: color == _grey ? const Color(0xFFEFF3F2) : color,
+        color: active ? color : const Color(0xFFEFF3F2),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: pulse
-            ? [BoxShadow(color: color.withAlpha(110), blurRadius: 14)]
-            : null,
+        border: Border.all(
+            color: pulse ? _teal : Colors.white, width: pulse ? 3 : 3),
       ),
       child: Icon(
         isDone ? Icons.check_rounded : icon,
-        color: color == _grey ? _grey : Colors.white,
+        color: active ? Colors.white : _grey,
         size: context.r(24),
       ),
     );
@@ -167,9 +161,11 @@ class AssessmentRoadmap extends StatelessWidget {
   }
 
   Widget _pill(BuildContext context, String text, Color color) => Container(
-        padding: EdgeInsets.symmetric(horizontal: context.r(12), vertical: context.r(6)),
+        padding: EdgeInsets.symmetric(horizontal: context.r(13), vertical: context.r(7)),
         decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.circular(999)),
+          color: color,
+          borderRadius: BorderRadius.circular(999),
+        ),
         child: Text(text,
             style: thaiSans(size: context.r(12), weight: FontWeight.w800, color: Colors.white)),
       );

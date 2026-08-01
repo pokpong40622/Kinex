@@ -102,7 +102,7 @@ class WorldBand {
 
   static WorldBand of(double avg) {
     if (avg >= 85) return const WorldBand('ยอดเยี่ยม', KColors.greenDark);
-    if (avg >= 70) return const WorldBand('ดีมาก', KColors.purple);
+    if (avg >= 70) return WorldBand('ดีมาก', KColors.purple);
     if (avg >= 50) return const WorldBand('ดี', KColors.blue);
     return const WorldBand('สู้ๆ นะ', KColors.orangeDark);
   }

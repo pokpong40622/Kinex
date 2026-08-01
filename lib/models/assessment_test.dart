@@ -1,12 +1,11 @@
-// Static catalog of the six "movement" tests (the three-band ones that run
-// through the instruction → calibrate/manual → live/manual → result template).
-// Weight, Height and BMI are handled by their own dedicated screens and are
-// not in this list.
+// Static catalog of the three SPPB movement tests (balance, gait speed, chair
+// stand). Weight, Height and BMI are handled by their own dedicated screens and
+// are not in this list. Each test runs through the shared instruction screen and
+// then a dedicated run screen (see the router).
 
 enum TestMethod {
-  camera, // live ML Kit pose rep counting
-  manualStopwatch, // in-app stopwatch (TUG)
-  manualChoice, // helper picks ดีมาก/ดี/เสี่ยง (reach tests)
+  camera, // live ML Kit pose (balance hold / chair-stand rep timing)
+  manualStopwatch, // helper-operated in-app stopwatch (gait speed)
 }
 
 class AssessmentTest {
@@ -15,7 +14,7 @@ class AssessmentTest {
   final String thaiComponent;
   final TestMethod method;
 
-  /// Test window for camera/timed tests, in seconds (0 if not applicable).
+  /// Hold/target window in seconds for timed tests (0 if not applicable).
   final int durationSeconds;
 
   final List<String> instructions; // ordered Thai steps
@@ -34,94 +33,56 @@ class AssessmentTest {
   });
 }
 
-/// The six movement tests, in administration order (flexibility → strength →
-/// cardio → balance). IDs match the route :testId path parameter.
+/// The three SPPB tests, in administration order (balance → gait → chair stand).
+/// IDs match the route :testId path parameter.
 const List<AssessmentTest> kMovementTests = [
   AssessmentTest(
-    id: 'back_scratch',
-    thaiName: 'แตะมือด้านหลัง',
-    thaiComponent: 'ความยืดหยุ่นของหัวไหล่และแขน',
-    method: TestMethod.manualChoice,
-    durationSeconds: 0,
-    equipment: null,
-    instructions: [
-      'ยกแขนขวาขึ้นเหนือไหล่ แล้วงอลงไปด้านหลัง ฝ่ามือแนบกลางหลัง',
-      'เอาแขนซ้ายอ้อมจากด้านล่างขึ้นไปด้านหลัง พยายามให้ปลายนิ้วทั้งสองข้างแตะกัน',
-      'ทำ 2 ครั้ง เลือกครั้งที่ดีที่สุด แล้วสลับข้างทำซ้ำ',
-    ],
-    thresholdText:
-        'ปลายนิ้วทับซ้อนกัน = ดีมาก · แตะกันพอดี = ดี · แตะไม่ถึง = เสี่ยง',
-  ),
-  AssessmentTest(
-    id: 'sit_reach',
-    thaiName: 'นั่งเก้าอี้แตะปลายเท้า',
-    thaiComponent: 'ความยืดหยุ่นของกล้ามเนื้อหลังและขา',
-    method: TestMethod.manualChoice,
-    durationSeconds: 0,
-    equipment: 'เก้าอี้ที่มั่นคง',
-    instructions: [
-      'นั่งที่ขอบเก้าอี้ เหยียดขาข้างหนึ่งตรงไปข้างหน้า ส้นเท้าวางพื้น ปลายเท้าชี้ขึ้น',
-      'ค่อย ๆ ก้มตัวยื่นมือทั้งสองไปแตะปลายเท้า เข่าตึง',
-      'ทำ 2 ครั้ง เลือกครั้งที่ดีที่สุด',
-    ],
-    thresholdText:
-        'ปลายนิ้วเลยปลายเท้า = ดีมาก · แตะถึงปลายเท้า = ดี · แตะไม่ถึง = เสี่ยง',
-  ),
-  AssessmentTest(
-    id: 'arm_curl',
-    thaiName: 'งอแขนยกน้ำหนัก 30 วินาที',
-    thaiComponent: 'ความแข็งแรงของกล้ามเนื้อแขน',
+    id: 'balance',
+    thaiName: 'ประเมินการทรงตัว',
+    thaiComponent: 'การทรงตัว (Balance Tests)',
     method: TestMethod.camera,
-    durationSeconds: 30,
-    equipment: 'ดัมเบล/ขวดน้ำ (หญิง 2.3 กก. / ชาย 3.6 กก.)',
+    durationSeconds: 10,
+    equipment: 'พื้นที่โล่งราบ · มีที่จับยึดใกล้ ๆ · มีผู้ดูแลคอยประคองตลอด',
     instructions: [
-      'นั่งตัวตรง ถือน้ำหนักไว้ในมือข้างถนัด แขนเหยียดลงข้างลำตัว',
-      'งอข้อศอกยกน้ำหนักขึ้นจนสุด แล้วเหยียดลงจนสุด นับเป็น 1 ครั้ง',
-      'ทำให้ได้มากที่สุดภายใน 30 วินาที',
+      'ทำ 3 ท่ายืนต่อเนื่อง โดยพยายามยืนนิ่งท่าละ 10 วินาที',
+      'ท่าที่ 1 ยืนเท้าชิดกัน · ท่าที่ 2 ยืนเหลื่อมเท้าครึ่งก้าว · ท่าที่ 3 ยืนต่อส้น-ปลายเท้า',
+      'จัดวางเท้าตามภาพในแต่ละท่า แล้วกดเริ่มเพื่อจับเวลา 10 วินาที',
+      'ถ้าเสียการทรงตัวหรือต้องขยับเท้า ระบบจะหยุดจับเวลาให้เอง',
     ],
-    thresholdText: 'มากกว่า 11 ครั้ง = ดีมาก · 11 ครั้ง = ดี · น้อยกว่า 11 = เสี่ยง',
+    thresholdText:
+        'แต่ละท่ายืนครบ 10 วินาทีได้คะแนน · ท่าต่อส้นเท้าเต็ม 10 วิ = 2 คะแนน (รวมสูงสุด 4 คะแนน)',
+  ),
+  AssessmentTest(
+    id: 'gait_speed',
+    thaiName: 'วัดความเร็วในการเดิน 4 เมตร',
+    thaiComponent: 'ความเร็วในการเดินทางราบ (Gait Speed)',
+    method: TestMethod.manualStopwatch,
+    durationSeconds: 0,
+    equipment: 'ทางเดินราบ ทำเครื่องหมายจุดเริ่มและระยะ 4 เมตร',
+    instructions: [
+      'ทำเครื่องหมายจุดเริ่มต้นและจุดสิ้นสุดให้ห่างกัน 4 เมตร',
+      'ให้ผู้รับการทดสอบเดินด้วยความเร็วปกติจากจุดเริ่มจนสุดระยะ',
+      'ผู้ดูแลกดเริ่มเมื่อก้าวเท้าแรก และกดหยุดเมื่อผ่านเส้น 4 เมตร',
+      'ทำ 2 ครั้ง ระบบจะเลือกเวลาที่เร็วที่สุดมาคิดคะแนน',
+    ],
+    thresholdText:
+        'น้อยกว่า 4.82 วิ = 4 · 4.82–6.20 = 3 · 6.21–8.70 = 2 · มากกว่า 8.70 = 1 · เดินไม่ได้ = 0',
   ),
   AssessmentTest(
     id: 'chair_stand',
-    thaiName: 'ลุกยืน-นั่งบนเก้าอี้ 30 วินาที',
-    thaiComponent: 'ความแข็งแรงของกล้ามเนื้อขา',
-    method: TestMethod.camera,
-    durationSeconds: 30,
-    equipment: 'เก้าอี้ที่มั่นคง ไม่มีที่วางแขน',
-    instructions: [
-      'นั่งกลางเก้าอี้ หลังตรง ไขว้แขนแนบอก',
-      'ลุกขึ้นยืนจนตัวตรง แล้วนั่งลง นับเป็น 1 ครั้ง',
-      'ทำให้ได้มากที่สุดภายใน 30 วินาที',
-    ],
-    thresholdText: 'มากกว่า 8 ครั้ง = ดีมาก · 8 ครั้ง = ดี · น้อยกว่า 8 = เสี่ยง',
-  ),
-  AssessmentTest(
-    id: 'step_test',
-    thaiName: 'ยืนยกเข่าขึ้นลง 2 นาที',
-    thaiComponent: 'ความอดทนของระบบหัวใจและไหลเวียนเลือด',
-    method: TestMethod.camera,
-    durationSeconds: 120,
-    equipment: null,
-    instructions: [
-      'ยืนตรง ยกเข่าขึ้นสลับซ้าย-ขวา ให้เข่าสูงระดับกึ่งกลางระหว่างสะโพกกับหัวเข่า',
-      'ระบบจะนับเฉพาะเข่าขวาที่ยกถึงระดับที่กำหนด',
-      'ก้าวต่อเนื่องให้ได้มากที่สุดภายใน 2 นาที',
-    ],
-    thresholdText: 'มากกว่า 65 ครั้ง = ดีมาก · 65 ครั้ง = ดี · น้อยกว่า 65 = เสี่ยง',
-  ),
-  AssessmentTest(
-    id: 'tug',
-    thaiName: 'ลุก-เดิน-นั่ง ไปกลับ (TUG)',
-    thaiComponent: 'การทรงตัวและการเคลื่อนไหว',
+    thaiName: 'ลุกยืนจากเก้าอี้ 5 ครั้ง',
+    thaiComponent: 'ความแข็งแรงของขา (Chair Stand)',
     method: TestMethod.camera,
     durationSeconds: 0,
-    equipment: 'เก้าอี้มีที่วางแขน · กรวย/จุดหมายห่าง 3 เมตร',
+    equipment: 'เก้าอี้ที่มั่นคง ไม่มีที่วางแขน · มีผู้ดูแลอยู่ใกล้ ๆ',
     instructions: [
-      'นั่งบนเก้าอี้ หลังพิงพนัก ให้กล้องเห็นร่างกายชัดเจน',
-      'ระบบจะเริ่มจับเวลาเมื่อคุณลุกขึ้น และหยุดเมื่อคุณนั่งลง',
-      'ลุกขึ้นยืน เดินไปข้างหน้า 3 เมตร อ้อมจุดหมาย เดินกลับมานั่งลง',
+      'นั่งกลางเก้าอี้ หลังตรง ไขว้แขนแนบอก',
+      'ทดสอบก่อน: ลองลุกขึ้นยืนหนึ่งครั้งโดยไม่ใช้มือ ถ้าทำไม่ได้ให้หยุด (0 คะแนน)',
+      'จากนั้นลุกขึ้นยืนจนสุดแล้วนั่งลง ทำให้ครบ 5 ครั้งเร็วที่สุด',
+      'ระบบจะจับเวลาตั้งแต่ครั้งแรกจนลุกครบ 5 ครั้ง',
     ],
-    thresholdText: 'น้อยกว่า 12 วินาที = ดีมาก · 12 วินาที = ดี · มากกว่า 12 = เสี่ยง',
+    thresholdText:
+        'ไม่เกิน 11.19 วิ = 4 · 11.20–13.69 = 3 · 13.70–16.69 = 2 · มากกว่า 16.7 = 1 · เกิน 60 วิ/ทำไม่ได้ = 0',
   ),
 ];
 

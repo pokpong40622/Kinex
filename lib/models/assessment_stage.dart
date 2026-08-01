@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/assessment_session.dart';
 
-/// The assessment is presented as a 5-stage journey (a "train line"). The first
-/// stage groups น้ำหนัก/ส่วนสูง/BMI; the other four group the six movement tests
-/// by fitness component. Used by the roadmap (Intro/Progress) and the slim
-/// in-test progress rail.
+/// The assessment is presented as a 4-stage journey (a "train line"). The first
+/// stage groups น้ำหนัก/ส่วนสูง/BMI; the other three are the SPPB domains
+/// (balance → gait → chair stand). Used by the roadmap (Intro/Progress) and the
+/// slim in-test progress rail.
 
 enum StageStatus { done, current, upcoming }
 
@@ -32,28 +32,22 @@ const List<AssessmentStage> kStages = [
     testIds: [],
   ),
   AssessmentStage(
-    title: 'ความยืดหยุ่น',
-    subtitle: 'แตะมือด้านหลัง · นั่งแตะปลายเท้า',
-    icon: Icons.self_improvement,
-    testIds: ['back_scratch', 'sit_reach'],
-  ),
-  AssessmentStage(
-    title: 'ความแข็งแรงของกล้ามเนื้อ',
-    subtitle: 'งอแขนยกน้ำหนัก · ลุกยืน-นั่ง',
-    icon: Icons.fitness_center,
-    testIds: ['arm_curl', 'chair_stand'],
-  ),
-  AssessmentStage(
-    title: 'ความอดทนของหัวใจ',
-    subtitle: 'ยกเข่าขึ้นลง 2 นาที',
-    icon: Icons.favorite_outline,
-    testIds: ['step_test'],
-  ),
-  AssessmentStage(
     title: 'การทรงตัว',
-    subtitle: 'ลุก-เดิน-นั่ง ไปกลับ',
+    subtitle: 'ยืนทรงตัว 3 ท่า',
+    icon: Icons.accessibility_new,
+    testIds: ['balance'],
+  ),
+  AssessmentStage(
+    title: 'ความเร็วในการเดิน',
+    subtitle: 'เดินราบ 4 เมตร',
     icon: Icons.directions_walk,
-    testIds: ['tug'],
+    testIds: ['gait_speed'],
+  ),
+  AssessmentStage(
+    title: 'ความแข็งแรงของขา',
+    subtitle: 'ลุกยืนจากเก้าอี้ 5 ครั้ง',
+    icon: Icons.event_seat,
+    testIds: ['chair_stand'],
   ),
 ];
 

@@ -1,17 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
+import '../models/person_info.dart';
+import '../state/assessment_profile.dart';
+import '../state/shop_providers.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   bool _isMale = true;
+  final _nameController = TextEditingController();
+  final _ageController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  // Carry whatever the user typed into the shared profile so the homepage name,
+  // the ข้อมูล page and the assessment all start pre-filled. Blank fields are left
+  // untouched, so an empty login keeps the current defaults.
+  void _onLogin() {
+    final name = _nameController.text.trim();
+    final age = int.tryParse(_ageController.text.trim());
+    if (name.isNotEmpty) {
+      ref.read(userNameProvider.notifier).state = name;
+    }
+    ref.read(savedProfileProvider.notifier).patch(
+          name: name.isNotEmpty ? name : null,
+          age: age,
+          gender: _isMale ? Gender.male : Gender.female,
+        );
+    context.go('/home');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +72,9 @@ class _LoginPageState extends State<LoginPage> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            Text('Login',
-                                style: GoogleFonts.poppins(
+                            Text('เข้าสู่ระบบ',
+                                style: TextStyle(
+                                  fontFamily: 'Kanit',
                                   fontSize: w * 0.069,
                                   fontWeight: FontWeight.w900,
                                   foreground: Paint()
@@ -52,7 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ..strokeWidth = 6
                                     ..color = const Color(0xFF5361AF),
                                 )),
-                            Text('Login',
+                            Text('เข้าสู่ระบบ',
                                 style: poppins(
                                     size: w * 0.069,
                                     weight: FontWeight.w900,
@@ -63,22 +93,24 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(height: h * 0.03),
                       _InputField(
                         icon: 'assets/images/icon_user.png',
-                        hint: 'Username',
+                        hint: 'ชื่อผู้ใช้',
+                        controller: _nameController,
                         w: w,
                         h: h,
                       ),
                       SizedBox(height: h * 0.02),
                       _InputField(
                         icon: 'assets/images/icon_padlock.png',
-                        hint: 'Password',
+                        hint: 'รหัสผ่าน',
                         w: w,
                         h: h,
                         obscure: true,
                       ),
                       SizedBox(height: h * 0.02),
                       _InputField(
-                        textIcon: 'AGE',
-                        hint: 'Age',
+                        textIcon: 'อายุ',
+                        hint: 'อายุ',
+                        controller: _ageController,
                         w: w,
                         h: h,
                         keyboardType: TextInputType.number,
@@ -93,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(height: h * 0.03),
                       Center(
                         child: GestureDetector(
-                          onTap: () => context.go('/home'),
+                          onTap: _onLogin,
                           child: Container(
                             width: w * 0.54,
                             height: h * 0.09,
@@ -110,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                             alignment: Alignment.center,
-                            child: Text('LOGIN',
+                            child: Text('เข้าสู่ระบบ',
                                 style: montserrat(
                                     size: w * 0.052,
                                     weight: FontWeight.w900,
@@ -147,6 +179,7 @@ class _InputField extends StatelessWidget {
   final String? icon;
   final String? textIcon;
   final String hint;
+  final TextEditingController? controller;
   final double w;
   final double h;
   final bool obscure;
@@ -156,6 +189,7 @@ class _InputField extends StatelessWidget {
     this.icon,
     this.textIcon,
     required this.hint,
+    this.controller,
     required this.w,
     required this.h,
     this.obscure = false,
@@ -193,6 +227,7 @@ class _InputField extends StatelessWidget {
           SizedBox(width: w * 0.04),
           Expanded(
             child: TextField(
+              controller: controller,
               obscureText: obscure,
               keyboardType: keyboardType,
               style: montserrat(

@@ -14,9 +14,9 @@ class AssessmentIntroPage extends ConsumerWidget {
   const AssessmentIntroPage({super.key});
 
   static const _prep = [
-    (Icons.event_seat_rounded, 'เก้าอี้มั่นคง'),
-    (Icons.straighten_rounded, 'พื้นที่ ~3 เมตร'),
-    (Icons.fitness_center_rounded, 'ดัมเบล/ขวดน้ำ'),
+    (Icons.event_seat_rounded, 'เก้าอี้มั่นคง ไม่มีที่วางแขน'),
+    (Icons.straighten_rounded, 'ทางเดิน 4 เมตร'),
+    (Icons.people_alt_rounded, 'มีผู้ดูแลคอยประคอง'),
     (Icons.wb_sunny_rounded, 'แสงสว่างพอ'),
   ];
 
@@ -26,41 +26,48 @@ class AssessmentIntroPage extends ConsumerWidget {
     return AssessmentScaffold(
       title: 'แผนการประเมิน',
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
         children: [
-          Text('5 ขั้นตอน ใช้เวลาประมาณ 20–30 นาที',
+          Text('แบบประเมินการหกล้ม (SPPB) · 4 ขั้นตอน ใช้เวลาประมาณ 10 นาที',
               style: thaiSans(
                   size: 15,
                   weight: FontWeight.w600,
                   color: KColors.navyText.withAlpha(160))),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           AssessmentRoadmap(session: session),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _RecordingToggleCard(ref: ref),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text('สิ่งที่ต้องเตรียม',
               style: thaiSans(size: 16, weight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          const SizedBox(height: 12),
+          // Fixed 2-column grid instead of a variable-width wrap — the even
+          // rhythm is calmer and easier to scan than staggered chip widths.
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 2.6,
             children: [for (final p in _prep) _PrepChip(icon: p.$1, label: p.$2)],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFB74D).withAlpha(150), width: 1),
             ),
             child: Row(
               children: [
                 const Icon(Icons.health_and_safety_rounded,
                     color: Color(0xFFEF6C00)),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'หากเวียนศีรษะหรือเหนื่อยมาก ให้หยุดพักทันที',
+                    'ควรมีผู้ดูแลอยู่ข้าง ๆ คอยประคองตลอดการทดสอบ · หากเวียนศีรษะหรือเสียการทรงตัว ให้หยุดพักทันที',
                     style: thaiSans(
                         size: 13.5,
                         weight: FontWeight.w600,
@@ -88,10 +95,12 @@ class _RecordingToggleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = ref.watch(recordingEnabledProvider);
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: KColors.hairline, width: 1),
+      ),
       child: SwitchListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         secondary: Icon(
@@ -123,21 +132,30 @@ class _PrepChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x12000000), blurRadius: 6, offset: Offset(0, 2)),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: KColors.hairline, width: 1),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20, color: KColors.tealDark),
-          const SizedBox(width: 8),
-          Text(label, style: thaiSans(size: 14, weight: FontWeight.w700)),
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: KColors.teal,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 19, color: Colors.white),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(label,
+                style: thaiSans(size: 13, weight: FontWeight.w700)),
+          ),
         ],
       ),
     );

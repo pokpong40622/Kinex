@@ -59,13 +59,13 @@ class _MegaDanceGameScreenState extends State<MegaDanceGameScreen> {
     Widget body;
     if (!_checked) {
       body = const Center(
-        child: Text('Starting camera…', style: TextStyle(color: Colors.white)),
+        child: Text('กำลังเปิดกล้อง…', style: TextStyle(color: Colors.white)),
       );
     } else if (_cameraStatus.isGranted) {
       body = EmbedUnity(onMessageFromUnity: _onUnityMessage);
     } else {
       body = const Center(
-        child: Text('Camera permission needed to play',
+        child: Text('ต้องอนุญาตให้ใช้กล้องเพื่อเล่นนะครับ',
             style: TextStyle(color: Colors.white)),
       );
     }

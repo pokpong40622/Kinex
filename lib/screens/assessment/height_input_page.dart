@@ -25,18 +25,20 @@ class _HeightInputPageState extends ConsumerState<HeightInputPage> {
 
     return AssessmentScaffold(
       title: 'ส่วนสูง',
+      stepIndex: 1,
+      stepCount: 4,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const StageImage(name: 'body', height: 120),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           BigNumberPad(
-          unit: 'ซม.',
-          min: 80,
-          max: 220,
-          initial: initial,
-          onChanged: (v) => setState(() => _value = v),
-        ),
+            unit: 'ซม.',
+            min: 80,
+            max: 220,
+            initial: initial,
+            onChanged: (v) => setState(() => _value = v),
+          ),
         ],
       ),
       bottom: AssessmentButton(

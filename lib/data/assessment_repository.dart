@@ -13,7 +13,8 @@ class AssessmentRepository {
     final raw = prefs.getStringList(_key) ?? const [];
     final records = raw
         .map((s) =>
-            AssessmentRecord.fromJson(jsonDecode(s) as Map<String, dynamic>))
+            AssessmentRecord.tryFromJson(jsonDecode(s) as Map<String, dynamic>))
+        .whereType<AssessmentRecord>() // drop incompatible legacy (SFT) records
         .toList();
     records.sort((a, b) => b.dateTime.compareTo(a.dateTime)); // newest first
     return records;
@@ -42,4 +43,12 @@ final assessmentRepositoryProvider =
 final assessmentHistoryProvider =
     FutureProvider<List<AssessmentRecord>>((ref) async {
   return ref.watch(assessmentRepositoryProvider).load();
+});
+
+/// The most recent assessment, or null if the user has never assessed.
+/// Watched by the home screen to show the result badge or a "not assessed" hint.
+final latestAssessmentProvider =
+    FutureProvider<AssessmentRecord?>((ref) async {
+  final records = await ref.watch(assessmentHistoryProvider.future);
+  return records.isNotEmpty ? records.first : null;
 });

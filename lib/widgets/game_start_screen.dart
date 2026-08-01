@@ -17,6 +17,10 @@ class GameStartScreen extends StatelessWidget {
   /// Image.asset, or any widget. Null = no art.
   final Widget? art;
 
+  /// Optional mode badge rendered below the tagline inside the hero card
+  /// (e.g. REHAB / EXERCISE chip). Null = no badge.
+  final Widget? badge;
+
   /// One short tip line shown below the card (Thai or English).
   final String tipText;
 
@@ -35,6 +39,7 @@ class GameStartScreen extends StatelessWidget {
     required this.tagline,
     required this.accentGradient,
     this.art,
+    this.badge,
     required this.tipText,
     this.startLabel = 'START',
     required this.onStart,
@@ -73,6 +78,7 @@ class GameStartScreen extends StatelessWidget {
                     tagline: tagline,
                     gradient: accentGradient,
                     art: art,
+                    badge: badge,
                   ),
                 ),
               ),
@@ -166,12 +172,14 @@ class _HeroCard extends StatelessWidget {
   final String tagline;
   final Gradient gradient;
   final Widget? art;
+  final Widget? badge;
 
   const _HeroCard({
     required this.title,
     required this.tagline,
     required this.gradient,
     this.art,
+    this.badge,
   });
 
   @override
@@ -213,6 +221,10 @@ class _HeroCard extends StatelessWidget {
                         weight: FontWeight.w600,
                         color: Colors.white.withAlpha(220)),
                   ),
+                  if (badge != null) ...[
+                    SizedBox(height: context.r(12)),
+                    badge!,
+                  ],
                 ],
               ),
             ),
