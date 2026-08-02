@@ -116,9 +116,10 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
     final color = pose.category.color;
     final pageCount = 1 + pose.steps.length;
     final isLast = _page == pageCount - 1;
-    // Only this one pose has a live camera coach so far; every other pose keeps
-    // the plain read-only wizard.
-    final hasCoach = pose.id == 'hip_abduction';
+    // Where this pose sits in the 9-pose library — the same "X จาก N" the
+    // success screen counts, shown up front so the wizard feels like part of a
+    // collection rather than a lone page.
+    final poseIndex = poseLibrary.indexWhere((p) => p.id == pose.id) + 1;
 
     return Scaffold(
       backgroundColor: KColors.appBg,
@@ -128,7 +129,20 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
             SizedBox(height: context.r(8)),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: context.r(16)),
-              child: Row(children: [_BackButton(onTap: () => _exit(context))]),
+              child: Row(
+                children: [
+                  _BackButton(onTap: () => _exit(context)),
+                  const Spacer(),
+                  KPill(
+                    'ท่าที่ $poseIndex จาก ${poseLibrary.length}',
+                    color: color,
+                    icon: Icons.auto_stories_rounded,
+                  ),
+                  const Spacer(),
+                  // Balances the back button so the pill stays optically centred.
+                  SizedBox(width: context.r(48)),
+                ],
+              ),
             ),
             Expanded(
               child: PageView.builder(
@@ -150,19 +164,29 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
                 },
               ),
             ),
-            if (hasCoach && isLast)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  context.r(24),
-                  0,
-                  context.r(24),
-                  context.r(4),
-                ),
-                child: _PracticeButton(
-                  color: color,
-                  onTap: () => context.push('/learn/coach/hip_abduction'),
-                ),
-              ),
+            // The camera is the REWARD at the end of the wizard, not a shortcut
+            // past it: read every step, see the example photo, and only then
+            // does "ลองทำเอง" appear. (The library card still has its own
+            // one-tap camera button for people who already know the pose.)
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              switchInCurve: Curves.easeOutCubic,
+              child: isLast
+                  ? Padding(
+                      key: const ValueKey('try'),
+                      padding: EdgeInsets.fromLTRB(
+                        context.r(24),
+                        0,
+                        context.r(24),
+                        context.r(4),
+                      ),
+                      child: _TryItButton(
+                        color: color,
+                        onTap: () => context.push('/learn/coach/${pose.id}'),
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity, key: ValueKey('none')),
+            ),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: context.r(24),
@@ -216,12 +240,14 @@ class _PoseDetailPageState extends ConsumerState<PoseDetailPage> {
   }
 }
 
-/// "ฝึกกับกล้อง" — opens the live Unity camera coach. Shown on the final wizard
-/// page of the one pose that has a coach.
-class _PracticeButton extends StatelessWidget {
+/// "ลองทำเอง" — opens the live camera coach. Only ever shown on the wizard's
+/// final page, so it is styled as the primary action of the whole screen:
+/// solid fill, not the tinted outline it used to wear when it sat on every page
+/// competing with the step content.
+class _TryItButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
-  const _PracticeButton({required this.color, required this.onTap});
+  const _TryItButton({required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -230,15 +256,15 @@ class _PracticeButton extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Container(
         width: double.infinity,
-        height: context.r(56),
+        height: context.r(62),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(context.r(28)),
+          borderRadius: BorderRadius.circular(context.r(31)),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -248,13 +274,13 @@ class _PracticeButton extends StatelessWidget {
             Icon(
               Icons.videocam_rounded,
               color: Colors.white,
-              size: context.r(24),
+              size: context.r(26),
             ),
-            SizedBox(width: context.r(8)),
+            SizedBox(width: context.r(9)),
             Text(
-              'ฝึกกับกล้อง',
+              'ลองทำเอง',
               style: thaiSans(
-                size: context.r(17),
+                size: context.r(20),
                 weight: FontWeight.w800,
                 color: Colors.white,
               ),
@@ -372,6 +398,13 @@ class _StepPage extends StatelessWidget {
               ),
             ),
           ),
+          // The booklet photo repeats on every step page: the user is reading
+          // "lift the knee" and needs to see what that looks like right there,
+          // not three swipes back on the overview.
+          if (pose.image != null) ...[
+            SizedBox(height: context.r(18)),
+            _PosePhoto(pose: pose, height: context.r(170)),
+          ],
           if (showExtras) ...[
             if (pose.breathing != null) ...[
               SizedBox(height: context.r(20)),
@@ -390,7 +423,63 @@ class _StepPage extends StatelessWidget {
               SizedBox(height: context.r(20)),
               _CautionCallout(text: pose.caution!),
             ],
+            SizedBox(height: context.r(20)),
+            _ReadyHint(color: color),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Closing note on the final step — points at the "ลองทำเอง" button that
+/// appears in the bar below, so the jump from reading to the camera is
+/// explained rather than just appearing.
+class _ReadyHint extends StatelessWidget {
+  final Color color;
+  const _ReadyHint({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(context.r(14)),
+      decoration: BoxDecoration(
+        color: color.withAlpha(18),
+        borderRadius: BorderRadius.circular(context.r(16)),
+        border: Border.all(color: color.withAlpha(60), width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.videocam_rounded,
+            color: color,
+            size: context.r(22),
+          ),
+          SizedBox(width: context.r(10)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'อ่านครบแล้ว พร้อมลองหรือยัง?',
+                  style: thaiSans(
+                    size: context.r(14.5),
+                    weight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+                SizedBox(height: context.r(3)),
+                Text(
+                  'กดปุ่ม "ลองทำเอง" ด้านล่าง แล้วทำตามท่านี้หน้ากล้อง',
+                  style: thaiSans(
+                    size: context.r(13),
+                    weight: FontWeight.w600,
+                    color: KColors.navyText.withAlpha(170),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -401,7 +490,8 @@ class _StepPage extends StatelessWidget {
 /// on a calm flat card so the cut-out figure reads clearly.
 class _PosePhoto extends StatelessWidget {
   final LearnPose pose;
-  const _PosePhoto({required this.pose});
+  final double? height;
+  const _PosePhoto({required this.pose, this.height});
 
   @override
   Widget build(BuildContext context) {
@@ -434,7 +524,7 @@ class _PosePhoto extends StatelessWidget {
             borderRadius: BorderRadius.circular(context.r(14)),
             child: Image.asset(
               pose.image!,
-              height: context.r(220),
+              height: height ?? context.r(220),
               fit: BoxFit.contain,
             ),
           ),

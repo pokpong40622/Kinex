@@ -307,13 +307,52 @@ class _PoseCard extends ConsumerWidget {
               ],
             ),
           ),
-          SizedBox(width: context.r(6)),
-          Icon(
-              discovered
-                  ? Icons.chevron_right_rounded
-                  : Icons.lock_outline_rounded,
-              size: context.r(22),
-              color: discovered ? color.withAlpha(180) : grey),
+          SizedBox(width: context.r(8)),
+          // Separate tap target: straight to the live camera coach, so the
+          // coach is one tap from the library. Tapping the rest of the card
+          // still opens the read-only wizard.
+          _CameraButton(
+            color: color,
+            onTap: () => context.push('/learn/coach/${pose.id}'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Camera affordance on a library card — its own bordered 52dp target with a
+/// Thai label under it, so it never reads as part of the card's own tap.
+class _CameraButton extends StatelessWidget {
+  final Color color;
+  final VoidCallback onTap;
+  const _CameraButton({required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: context.r(52),
+            height: context.r(52),
+            decoration: BoxDecoration(
+              color: color.withAlpha(26),
+              borderRadius: BorderRadius.circular(context.r(16)),
+              border: Border.all(color: color.withAlpha(90), width: 1.5),
+            ),
+            child: Icon(Icons.videocam_rounded,
+                color: color, size: context.r(26)),
+          ),
+          SizedBox(height: context.r(3)),
+          Text('ฝึกกับกล้อง',
+              style: thaiSans(
+                  size: context.r(10),
+                  weight: FontWeight.w700,
+                  color: color)),
         ],
       ),
     );

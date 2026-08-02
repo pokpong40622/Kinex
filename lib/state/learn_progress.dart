@@ -31,3 +31,32 @@ class LearnProgressNotifier extends StateNotifier<Set<String>> {
     await prefs.setStringList(_key, state.toList());
   }
 }
+
+/// Poses the user has actually PRACTISED to the end in front of the camera —
+/// i.e. Unity sent `coach_done`. Deliberately a separate set from
+/// [learnProgressProvider]: reading a pose is a much weaker signal than
+/// completing it, and the success screen's "X / 9 ท่า" counts only the latter.
+final posePracticedProvider =
+    StateNotifierProvider<PosePracticedNotifier, Set<String>>(
+        (ref) => PosePracticedNotifier());
+
+class PosePracticedNotifier extends StateNotifier<Set<String>> {
+  static const _key = 'learn_practiced_poses';
+
+  PosePracticedNotifier() : super(const {}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList(_key);
+    if (stored != null) state = stored.toSet();
+  }
+
+  Future<void> markPracticed(String id) async {
+    if (state.contains(id)) return;
+    state = {...state, id};
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_key, state.toList());
+  }
+}
