@@ -15,6 +15,7 @@ import '../state/shop_providers.dart';
 import '../models/daily_quest.dart';
 import '../state/quest_providers.dart';
 import 'info_page.dart';
+import 'practice_page.dart';
 import 'shop_page.dart';
 import 'learn/learning_center_page.dart';
 import 'onboarding/onboarding_flow.dart';
@@ -104,7 +105,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
           const LearningCenterPage(),
-          _PracticeTab(onStartGame: () => context.go('/mega-dance')),
+          PracticeTab(onStartGame: () => context.go('/mega-dance')),
           const _InfoTab(),
           const ShopTab(),
         ],
@@ -1655,187 +1656,6 @@ class _ResultPill extends StatelessWidget {
               : Icons.assignment_outlined,
         ),
       ),
-    );
-  }
-}
-
-// ── PRACTICE TAB ────────────────────────────────────────────────────────────
-
-class _PracticeTab extends StatelessWidget {
-  final VoidCallback onStartGame;
-  const _PracticeTab({required this.onStartGame});
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final w = size.width;
-    final h = size.height;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.asset('assets/images/bg_room.png', fit: BoxFit.cover),
-        SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                    w * 0.06, h * 0.025, w * 0.06, h * 0.02),
-                child: Text('ฝึกซ้อม',
-                    style: montserrat(
-                        size: w * 0.09,
-                        weight: FontWeight.w900,
-                        color: Colors.white)),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: w * 0.04, vertical: h * 0.01),
-                  children: [
-                    // ── Top three games: Hang Glider → Quake Escape → Dasher ──
-                    // Hang Glider (Unity scene id "hangglider") — tilt-controlled
-                    // quiz game, plays in landscape. This is its designed card.
-                    _PracticeCard(
-                      imagePath: 'assets/images/practice_card1.png',
-                      aspectRatio: 1780 / 536,
-                      onTap: () => context.push('/hang-glider'),
-                    ),
-                    SizedBox(height: h * 0.025),
-                    // Quake Escape (Unity scene id "quakeescape") — balance game;
-                    // dodge the collapsing city by standing on the safe leg.
-                    _PracticeCard(
-                      imagePath: 'assets/images/quake_escape/card.png',
-                      aspectRatio: 929 / 319,
-                      onTap: () => context.push('/quake-escape'),
-                    ),
-                    SizedBox(height: h * 0.025),
-                    // The Dasher (Unity scene id "thedasher") — the card opens the
-                    // mission/start page; the tutorial pop-ups now appear as an
-                    // overlay ON the game after เริ่มภารกิจ (normal game flow).
-                    _PracticeCard(
-                      imagePath: 'assets/images/the_dasher/card.png',
-                      aspectRatio: 855 / 367,
-                      onTap: () => context.push('/the-dasher-start'),
-                    ),
-                    SizedBox(height: h * 0.035),
-                    // ── MEGA DANCE + Kinex World ─────────────────────────────
-                    _PracticeCard(
-                      imagePath: 'assets/images/practice_card2.png',
-                      aspectRatio: 1772 / 638,
-                      onTap: onStartGame,
-                    ),
-                    SizedBox(height: h * 0.025),
-                    _PracticeCard(
-                      imagePath: 'assets/images/practice_card3.png',
-                      aspectRatio: 1762 / 650,
-                      onTap: () => context.go('/world'),
-                    ),
-                    SizedBox(height: h * 0.02),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Always-visible shortcut to the fitness assessment, locked bottom-right
-        // above the nav bar so it never scrolls away with the game list.
-        Positioned(
-          right: w * 0.05,
-          bottom: h * 0.11,
-          child: _AssessFab(onTap: () => context.push('/assessment')),
-        ),
-      ],
-    );
-  }
-}
-
-/// Confident primary shortcut to the ประเมิน (assessment) flow from the
-/// practice page. Solid teal fill, bigger footprint than a plain FAB so it
-/// reads as the page's main call-to-action rather than a decorative pill.
-class _AssessFab extends StatelessWidget {
-  final VoidCallback onTap;
-  const _AssessFab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-            horizontal: context.r(22), vertical: context.r(16)),
-        decoration: BoxDecoration(
-          gradient: KColors.assessmentCardGradient,
-          borderRadius: BorderRadius.circular(context.r(28)),
-          border: Border.all(color: KColors.hairline, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: KColors.assessmentInk.withValues(alpha: 0.35),
-              blurRadius: context.r(16),
-              offset: Offset(0, context.r(6)),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(context.r(6)),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.monitor_heart_rounded,
-                  color: Colors.white, size: context.r(24)),
-            ),
-            SizedBox(width: context.r(10)),
-            Text('ประเมินอีกครั้ง',
-                style: thaiSans(
-                    size: context.r(17),
-                    weight: FontWeight.w800,
-                    color: Colors.white)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PracticeCard extends StatelessWidget {
-  final String imagePath;
-  final double aspectRatio;
-  final VoidCallback? onTap;
-
-  const _PracticeCard({
-    required this.imagePath,
-    required this.aspectRatio,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    return Stack(
-      alignment: Alignment.centerLeft,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(25),
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: Image.asset(imagePath, fit: BoxFit.fill),
-          ),
-        ),
-        Positioned(
-          left: w * 0.05,
-          child: GestureDetector(
-            onTap: onTap,
-            child: Image.asset(
-              'assets/images/clicktostartbutton.png',
-              width: w * 0.30,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

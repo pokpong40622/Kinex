@@ -191,11 +191,14 @@ final routerProvider = Provider<GoRouter>((ref) => GoRouter(
             GoRoute(
                 path: '/learn',
                 builder: (context, _) => const LearnLibraryPage()),
-            // Live camera coach — currently only the hip_abduction pose has one.
-            // Three segments, so it never collides with '/learn/:poseId'.
+            // Live camera coach for any of the 9 poses. Still THREE segments,
+            // so it never collides with the two-segment '/learn/:poseId' — a
+            // pose id can never contain a '/', so '/learn/coach/x' can only
+            // ever match this route.
             GoRoute(
-                path: '/learn/coach/hip_abduction',
-                builder: (context, _) => const PoseCoachPage()),
+                path: '/learn/coach/:poseId',
+                builder: (context, state) => PoseCoachPage(
+                    poseId: state.pathParameters['poseId']!)),
             GoRoute(
                 path: '/learn/:poseId',
                 builder: (context, state) => PoseDetailPage(

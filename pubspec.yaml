@@ -78,6 +78,10 @@ flutter:
     - assets/images/info/
     - assets/images/learn/
     - assets/images/onboarding/
+    - assets/images/practice/
+    # Flutter asset directories are NOT recursive — the per-game card renders in
+    # the cards/ subfolder need their own entry or they resolve to nothing.
+    - assets/images/practice/cards/
     - assets/audio/card_game/
 
   fonts:
